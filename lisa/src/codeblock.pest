@@ -1,0 +1,11 @@
+codeblock = _{ (code | indented_reference | reference | comment)* ~ EOI }
+
+reference = { "<<" ~ identifier ~ ">>" }
+indented_reference = { (SOI | NEWLINE) ~ indentation ~ reference }
+code = { (!indented_reference ~ !reference ~ !comment ~ ANY)+ }
+comment = { optspaces ~ ("//" | "#" | ";;" ) ~ optspaces ~ "<" ~ ASCII_DIGIT+ ~ ">" ~ optspaces ~ &(EOI | NEWLINE) }
+
+identifier = @{ (ASCII_ALPHANUMERIC | "_") ~ (ASCII_ALPHANUMERIC | "_" | "-" )* }
+whitespace = @{ (" " | "\t") }
+indentation = @{ whitespace+ }
+optspaces = @{ whitespace* }

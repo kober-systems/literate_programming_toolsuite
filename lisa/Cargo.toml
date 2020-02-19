@@ -1,0 +1,14 @@
+[package]
+name = "lisa"
+version = "0.1.0"
+authors = ["Benjamin Kober <kober@optisense.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+asciidoctrine = { path = "../asciidoctrine" }
+pest = "2.1.0"
+pest_derive = "2.1.0"
+topological-sort = "0.1.0"
+rlua = "0.17.0"

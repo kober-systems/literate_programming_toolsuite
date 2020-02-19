@@ -1,0 +1,1757 @@
+Lisa - Literate Intuitive Sourcecode Analysis framework
+=======================================================
+Benjamin Kober <k.o.b.e.r@web.de>
+:toc: left
+
+Ein literate programming Werkzeug.
+
+
+Programmübersicht
+-----------------
+Programme sind festgehaltene Ideen. Die zugrunde liegenden Konzepte sind nicht
+an irgendeine Syntax sodern an Gedanken und Modelle gekoppelt. Dieses Programm
+soll dem Entwickler helfen sich wieder auf diese Konzepte konzentrieren zu
+können statt von einer vorgegebenen Struktur behindert zu werden.
+
+Das bringt verschiedene Vorteile mit sich:
+
+* Die Konzepte stehen stärker im Vordergrund und grundlegende Architekturfehler
+  fallen viel schneller auf.
+* Programme werden für andere (und auch für den Autor selbst) erfassbarer und
+  die Dokumentation deutlich besser.
+* Programme werden spannender.
+* Es regt zu mehr Kreativität an.
+
+Gleichzeitig gibt es auch eine ganze Menge Probleme mit diesem
+Programmierkonzept. Diese behandle ich in einem <<literate-problems,späteren Abschnitt>> und versuche
+Lösungsansätze dafür zu finden.
+
+Das Ziel dieses Programmes ist es
+
+Dieses Programm existiert nicht unabhängig von seinem Kontext. Es ist dazu
+gedacht asciidoc Texte in Programmcode und in Programmdokumentation
+umzuwandeln. Letzteres ist nicht schwer, denn das ist ja ohnehin die
+Hauptaufgabe von asciidoc. Mit http://asciidoctor.org/[Asciidoctor] besteht
+bereits ein hervoragendes Programm zu diesem Zweck. Da ich aber
+https://www.rust-lang.org/[rust] besser kennenlernen will und mit asciidoctrine (TODO link) einen
+eigenen asciidoc Interpreter in rust geschrieben habe, habe ich mich
+entschlossen `lisa` als asciidoctrine-extension zu implementieren.
+
+[[required_crates]]
+[source, rust]
+--------------------------------------------------------------------------------
+extern crate asciidoctrine;
+--------------------------------------------------------------------------------
+
+[[crate_usages]]
+[source, rust]
+--------------------------------------------------------------------------------
+use asciidoctrine::*;
+--------------------------------------------------------------------------------
+
+[[cargo_dependencies]]
+[source, toml]
+--------------------------------------------------------------------------------
+asciidoctrine = { path = "../asciidoctrine" }
+--------------------------------------------------------------------------------
+
+[[lisa-overview]]
+[ditaa]
+.Aufbau von lisa
+--------------------------------------------------------------------------------
+
+         /-----\   +-------+   /-----\
+         |     |   | {io}  |   |     |
+  ... -->| AST +-->| lisa  +-->| AST +--> ...
+         |     |   |       |   |     |
+         \-----/   +---+---+   \-----/
+                       |
+                       |   /------------------\-\
+                       |   |                  | |
+                       +-->| Ausgabedateien   | |
+                           | (Sourcecode,etc) | |
+                           \------------------/-/
+
+--------------------------------------------------------------------------------
+
+`lisa` arbeitet direkt auf einem asciidoc AST und erzeugt aus den darin
+enthaltenen Quelltext-Snippets (TODO link) Sourcecode Dateien (und manchmal
+auch weitere Dateien). Im AST fügt es einige zusätzliche Informationen hinzu
+(vor allem Referenzen, wo Code-Snippets verwendet werden TODO interner link).
+
+Die Hauptdatei hat dabei folgendes Gerüst:
+
+[source, rust, save]
+.src/lib.rs
+----
+<<required_crates>>
+
+<<internal_modules>>
+
+<<crate_usages>>
+
+<<internal_structs>>
+
+pub struct Lisa {
+  <<lisa_internal_variables>>
+}
+
+impl Lisa {
+  pub fn new() -> Self {
+    Lisa {
+      <<lisa_init_variables>>
+    }
+  }
+
+  <<internal_functions>>
+
+  /// Gets all snippets from the ast
+  pub fn extract_ast(&mut self, input: &AST) { // <3>
+    <<extract_ast>>
+  }
+
+  /// Build all snippets (Runs the vm)
+  pub fn generate_outputs(&mut self, mut ast: &AST) { // <5>
+    <<generate_outputs>>
+  }
+}
+
+impl Extension for Lisa { // <1>
+  fn transform<'a>(&mut self, mut input: AST<'a>) -> AST<'a> { // <2>
+    self.extract_ast(&input); // <3>
+
+    // TODO Das Snippet Stack Program vorbereiten.
+    self.check_dependencies();
+
+    self.generate_outputs(&input); // <5>
+
+    input
+  }
+}
+----
+<1> Da `lisa` eine asciidoctrine Erweiterung (TODO link) ist, implementiert das
+    Programm die dafür erforderliche Schnittstelle.
+<2> Als erste Funktion aller Erweiterungen wird immer die Funktion `transform`
+    aufgerufen. Sie bekommt den von asciidoctrine vorverarbeiteten AST sowie
+    eventuell vorhandene Argumente übergeben. Sie übernimmt diesen und gibt
+    hinterher eine modifizierte Version des ASTs zurück (welche dann
+    weiterverarbeitet werden kann).
+<3> Die grundlegende Aufgabe zu Beginn der Transformation ist das Extrahieren
+    des Quellcodes aus der Datei.
+<5> Zum Schluss können alle Dateien generiert und Scripte ausgeführt werden.
+
+Benutzung
+---------
+
+Generelles
+~~~~~~~~~~
+Beim schreiben eines literate Programmes sollte man wie bei einer
+wissenschaftlichen Arbeit vorgehen:
+
+* Zunächst schreibt man eine Übersicht mit der Ausgangslage, der Motivation und
+  einer groben Zusammenfassung des eigenen Lösungsansatzes.
+* Es ist gut sich frühzeitig Gedanken über verschiedene Lösungsalternativen zu
+  machen und diese gegeneinander abzuwägen (Das kann man auf jeder Ebene des
+  Programms tun. Sowohl bei der Architektur als auch bei Details)
+** Diesen Alternativen kann man einen eigenen Abschnitt oder ein eigenes Kapitel
+   widmen. Sobald mit der Umsetzung des Programms begonnen wird sollten sie
+   recht weit nach hinten wandern, da sie für die meisten Benutzer nicht
+   relevant sind.
+* Dann sollte man mit der Bedienung beginnen. So hat man eine User orientierte
+  Herangehensweise (eine Art User Story) und kann von dort aus leicht die
+  Requirements und darauf aufbauend die Unit Tests festhalten.
+** Sollte das Programm größer werden, ist es gut alle weniger offensichtlichen
+   Unittests (Corner Cases) nach hinten in ein eigenes Kapitel zu verschieben
+   und einen Link dorthin bereitzustellen.
+* Dann kommt das Kapitel mit der eigentlichen Implementierung.
+* Bei vielen Programmen wird es nützlich sein Beispiele (als eine Art Tutorial)
+  bereitzustellen.
+
+Zu Beginn kann man mit einem einzigen Dokument starten aber im Laufe der Zeit
+wird es bei größeren Projekten gut sein, sie in Kapitel (Module) zu gliedern und
+diese in ein Hauptdokument zu inkludieren.
+
+Die Reihenfolge des Schreibens kann sich überlagern (obwohl es gut ist mit der
+Übersicht und den grundlegenden Fragen zu beginnen) aber wahrscheinlich ist die
+Anordnung der Kapitel im endgültigen Dokument immer ähnlich. Im Laufe der
+Entwicklung wird man immer mal wieder aufräumen und umstrukturieren müssen
+(refaktoring).
+
+Quellcode generieren
+~~~~~~~~~~~~~~~~~~~~
+
+Extrahieren
+^^^^^^^^^^^
+Die normalen Quellcode Listings können gebraucht werden, um ein Programm zu
+erstellen.
+
+[listing]
+[source, asciidoc]
+................................................................................
+Fliestext ... <3>
+
+[[ID]] <2>
+[source, lua]
+.Überschrift
+----
+Quelltext ... <1>
+----
+
+Fliestext ... <3>
+................................................................................
+<1> `lisa` kümmert sich nur um Quelltext-Snippets.
+<2> Die ID (`anchor`) kann benutzt werden, um Code-Snippets zu referenzieren.
+<4> Der restliche Text wird von dem Programm ignoriert.
+
+////////////////////////////////////////////////////////////////////////////////
+Die `ID` kann verwendet werden, um Quelltextelemente in anderen Qelltexten
+einzubinden. Der `filename` kann dazu benutzt werden, um den Dateinamen einer
+Ausgabedatei festzulegen und der `Quelltext` kann als Inhalt dieser Dateien
+dienen.
+////////////////////////////////////////////////////////////////////////////////
+
+Die Code-Snippets werden jeweils einer Funktion übergeben:
+
+[[extract_ast]]
+[source, rust]
+----
+// extract snippets from all inner elements
+for element in input.elements.iter() {
+  self.extract(element);
+}
+----
+
+Zusammenfügen
+^^^^^^^^^^^^^
+Die verschiedenen Codeschnipsel kann man in anderen Codeschnipseln einbinden.
+Dafür verwendet man einfach eine `cross reference` auf den `anchor` des
+jeweiligen Schnipsels:
+
+[listing]
+[source,asciidoc]
+....
+We need the testmodule for this project.
+
+[[sample1_required_modules]] -- <1>
+[source, lua]
+----
+require "testmodule"
+----
+
+This is the importing file. We could print out the version.
+
+[source, lua]
+.sample1.lua
+----
+<<sample1_required_modules>> -- <2>
+
+print(testmodule.version)
+----
+....
+<1> Der Codeschnipsel bekommt eine ID (`anchor`)
+<2> Hier wird der obere Codeschnipsel über eine `cross reference` in diesen
+    eingebunden.
+
+Das Ergebnis wäre eine Datei:
+
+[source, lua]
+.sample1.lua
+----
+require "testmodule"
+
+print(testmodule.version)
+----
+
+Die Reihenfolge ist dabei egal.
+
+[listing]
+[source,asciidoc]
+....
+First we give a short outline of the program. It imports the required modules
+and then prints out its version.
+
+[source, lua]
+.sample2.lua
+----
+<<sample2_required_modules>>
+
+print(testmodule.version)
+----
+
+We need the testmodule for this project.
+
+[[sample2_required_modules]]
+[source, lua]
+----
+require "testmodule"
+----
+....
+
+In diesem Beispiel haben wir den Schnipsel `sample2_required_modules` erst nach dem
+importierenden Schnipsel geschrieben. Die Ausgabe bleibt aber die gleiche:
+
+[source, lua]
+.sample2.lua
+----
+require "testmodule"
+
+print(testmodule.version)
+----
+
+Außerdem kann man einen Codeschnipsel beliebig oft in einem oder meheren
+anderen Codeschnipseln einfügen.
+
+Verwenden zwei (oder mehr) Schnipsel den gleichen `anchor`, so wird der Inhalt
+in der Reihenfolge, in der die Schnipsel im Quelltext erscheinen,
+aneinandergefügt. Auf diese Weise kann man leicht Erklärungen in einen
+Quelltext einfügen oder an verschiedenen Stellen Ergänzungen zu einem
+Codebereich hinzufügen (z.B. die Imports erweitern).
+
+Wird eine `cross reference` im Quelltext eingerückt, so wird der ganze
+importierte Quelltext ebenfalls um die gleiche Höhe eingerückt (im Grunde wird
+vor jedem Zeilenbeginn der Text vor der `cross reference` wieder eingefügt).
+Will man das vermeiden, so kann man das Stichwort `inline` angeben (TODO
+wirklich? oder soll man in diesem Fall den Schnipsel einfach anders schreiben?
+Was ist mit dem Zeilenende hinter der `cross reference`? Manchmal wäre es gut
+es jedesmal hinten anzuhängen, manchmal nur einmal zu lassen und manchmal gar
+nichteinzufügen.)
+
+Will man einen den generierten Text in eine Datei speichern, so kann man den
+Dateinamen angeben.
+
+  TODO Quellcodebeispiele zwischen jedem Absatz
+
+TODO Es wäre zielich cool, wenn man einem Schnipsel Parameter übergeben könnte.
+Z.B. so
+
+[listing]
+[source,asciidoc]
+.Parameter in einem Schnipsel verwenden
+....
+First we give a short outline of the program. It imports the required modules
+and then prints out its version.
+
+[source, lua]
+.sample3.lua
+----
+<<sample3_require(module=testmodule)>>
+<<sample3_require(module=testmodule2)>>
+
+print(testmodule.version)
+----
+
+We need the testmodule for this project.
+
+[[sample3_require]]
+[source, lua]
+----
+require "{{module}}"
+----
+....
+
+Das Ergebnis wäre dann
+
+[source, lua]
+.sample3.lua
+----
+require "testmodule"
+require "testmodule2"
+
+print(testmodule.version)
+----
+
+TODO Überprüfen, ob diese Syntax Probleme verursachen könnte. Einerseits haben
+wir dadurch einen weiteren Parametertyp `{{}}`. Die gleiche Funktionalität ließe
+sich mit Sicherheit auch durch `pipe` implementieren. Andererseits könnte das
+ein sehr nützliches, intuitives und vielverwendetes Feature sein. TODO Gibt es
+mögliche Fehlerquellen, die nur durch dieses Feature eingeführt werden?
+
+TODO Einige weitere Features, die sich durch `pipe` implementieren lassen (und
+eventuell auch mit Standardfeatures von asciidoctrine) sind bedingte Ausführung
+oder Generierung (z.B. nur wenn ein Attribut auf der Kommandozeile definiert
+wurde, oder wenn ein bestimmtes OS vorhanden ist).
+
+TODO Ignorieren von Ersetzungszeichen in einigen Snippets oder anpassen des
+Musters. z.B. mit dem Attribut `lisa-reference="<<<"`.
+
+[[transform]]
+Transformieren
+^^^^^^^^^^^^^^
+Vorhandene Codeschnipsel können nicht nur zu einer größeren Einheit
+zusammengesetzt werden, sondern auch manipuliert werden. Auf diese Weise kann
+man eine Art Templates generieren um damit dynamisch angepasste Texte zu
+erzeugen. Anwendungen wären z.B. Serienbriefe oder die Ergänzung eines
+Lizenz-Headers in allen Quellcode Dateien.
+
+Die zu diesem Zweck bereitgestellten Funktionen werden jetzt erklärt:
+
+save (Speichern)
+++++++++++++++++
+Um überhaupt ein ausführbares Programm zu erhalten ist es unerlässlich den
+erzeugten Quellcode in ein tatsächliches Programm umwandeln zu können. Die
+wichtigste Möglichkeit dazu ist einen Schnipsel in eine Datei abspeichern zu
+können. Dazu wird das Attribut `save` verwendet:
+
+[listing]
+[source,asciidoc]
+....
+Lets create a "hello world" program.
+
+[source, lua, save]
+.hello.lua
+---
+print("Hello World")
+---
+....
+
+//////
+TODO sollte concat automatisch sein oder als attribut gesetzt werden?
+
+Im ursprünglichen WEB von Knuth wird immer angegeben, wo ein Schnipsel noch
+definiert wird. Das scheint sehr nützlich zu sein. Sollte ich so etwas auch
+implementieren?
+//////
+
+eval (Ausführen)
+++++++++++++++++
+Eine weitere Methode das Programm zu nutzen ist es direkt auszuführen. Das wird
+mit dem Atrribut `eval` gemacht.
+
+[listing]
+[source,asciidoc]
+....
+Lets run a "hello world" program.
+
+[source, lua, eval]
+.hello.lua
+---
+print("Hello World")
+---
+....
+
+Dieses Beispiel würde direkt "Hello World" auf der Konsole schreiben.
+
+pipe
+++++
+Manchmal möchte man einen Codeschnipsel in leicht modifizierter Form vielfach
+verwenden. In diesem Fall ist `pipe` ein sehr mächtiges Werkzeug.
+
+Wird `pipe` als Attribut an einen Code Block angehangen, wird der darin
+befindliche Code ausgeführt und das alle Argumente der Funktion `store` als
+Schnipsel, unter dem Namen des ersten Argumentes, abgelegt. Es werden alle im
+Domument definierten Parameter und das Dokument selbst als Variablen übergeben
+(das Verhalten lässt sich durch Parameter beeinflussen).
+
+[listing]
+[source,asciidoc]
+....
+Print out the doctument header when running the program.
+
+[source, lua, pipe]
+.hello-title.lua
+---
+store("print_header", [[=[print("${doc.header}")]]=])
+---
+....
+
+Damit ist `pipe` ein äußerst mächtiges Werkzeug da man beliebig komplexe
+Programme benutzen kann um Code Schnipsel zu erzeugen. Alle Methoden zum
+Transformieren und Zusammenfügen lassen sich auch mit `pipe` verwenden, so dass
+man sogar mit `pipe` erzeugte Codeschnipsel verwenden könnte um neue `pipe`
+Codeschnipsel zu erzeugen.
+
+Auch, wenn man beliebige Funktionen in einem `pipe` Block erst definieren und
+dann nutzen oder auch importieren kann (Man könnte z.B. eine SQL-Bibliothek
+importieren und aktuelle Daten aus einer Datenbank in seinen Quelltext
+einbauen) gibt es einige, häufig gebrauchte Funktionen, welche einem immer zur
+Verfügung stehen:
+
+store(name, schnipsel):: Speichert einen String unter einem Namen als Schnipsel
+  ab.
+map(liste, function):: Führt eine Funktion über eine Liste von Objekten aus.
+save(path, schnipsel):: Führt den `save` Befehl auf einem String aus. Dieser
+  wird unter dem Pfad `path` abgespeichert.
+eval(schnipsel, interpreter):: Führt den `eval` Befehl auf einem String aus.
+  Der String wird von dem übergebenen `interpreter` ausgeführt (Standard ist
+  `lua`).
+pipe(schnipsel_name, parameter):: Führt einen `pipe` Befehl auf einem anderen
+  Schnipsel aus.
+
+Einige Variablen sind immer stehen ebenfalls immer zur Verfügung:
+
+doc:: Der ursprüngliche AST, welcher an die Erweiterung übergeben wird.
+args:: Die Kommandozeilenparameter, die beim Aufruf zur Verfügung standen.
+rawsnippets:: Die Codeschnipsel, wie sie aus dem AST extrahiert wurden, bevor
+  die inneren Referenzen durch Schnipsel ersetzt wurden.
+snippets:: Die Codeschnipsel mit bereits eingesetzten Schnipseln an den
+  Referenzen.
+
+////////////////////////////////////////////////////////////////////////////////
+TODO man könnte sie z.B. als `Labeled List` anlegen:
+
+map::
+  ..............................................................................
+  Erklärung ...
+  [[map]]
+  [source, ruby]
+  ------------------------------
+  Implementierung ...
+  ------------------------------
+  ..............................................................................
+etc:: ...
+
+Sowohl `save` als auch `eval` könnten auf diese Weise implementiert werden und
+dadurch die üblichen Anwendungsfälle für literate Programming abdecken. Es
+sollten Werkzeuge zur Verfügung stehen, um die Reihenfolge der Ausführung
+festzulegen (vielleicht mit Abhänigkeiten, wie bei einem Makefile. Dabei
+sollten alle includierten Schnipsel rekursiv zu den Abhängigkeiten hinzugefügt
+werden. Es sollte aber auch möglich sein explizit Abhännigkeiten als Attribut
+zu definieren).
+////////////////////////////////////////////////////////////////////////////////
+
+Den Ausführungsfluss steuern
+++++++++++++++++++++++++++++
+Manchmal ist es wichtig, die Reihenfolge, in der die Funktionen ausgeführt
+werden, festlegen zu können. Ist die Reihenfolge nicht explizit definiert kann
+die Implementierung die `save`,`eval`,`pipe` etc Funktionen in einer beliebigen
+Reihenfolge oder sogar paralell ausführen. Oftmals ist das gut aber in einigen
+Fällen möchte man die Reihenfolge explizit festlegen. Hier einige Beispiele:
+
+* Wenn man ein Script mit `save` speichern will und genau danach dieses Script
+  in einem `eval` Schritt mit Parametern aufrufen möchte. In diesem Fall muss
+  der `save` Schritt vor `eval` ausgeführt werden. So einen Anwendungsfall hat
+  man oft bei build-, deploy-, und bootstrap Schritten.
+* Den umgekehrten Fall gibt es genauso: Man möchte mit `save` Snippets
+  einbinden, diese sollen aber noch in einem `pipe` Schritt generiert werden.
+* Manchmal hat man `pipe` Schritte, die wiederrum von generierten Snippets
+  (durch andere `pipe` Schritte) abhängen.
+
+Um diese und weitere Anwendungsfälle zu ermöglichen sind hier ein paar
+grundlegende Regeln und Attribute definiert:
+
+Sobald ein Snippet ein anderes Snippet einbindet ist es von diesem abhängig.
+Daher muss das eingebundene Snippet zuerst bearbeitet werden.
+
+Jedes Snippet unterstützt die Attribute `provides` und `depends`. Diese bekommen
+jeweils eine id oder eine Liste von ids übergeben. Alle Snippets mit einer in
+`depends` aufgelisteten id werden bearbeitet bevor das entsprechende Snippet
+bearbeitet wird. Außerdem werden alle Snippets vorher ausgeführt, die eine in
+`depends` aufgeführte id in ihrem `provides` Attribut aufführen.
+
+// TODO Soll eine Warnung ausgegeben werden, wenn eine `pipe` kein `provides`
+// definiert? Sollen die anderen Funktionen überhaupt `provides` definieren
+// können?
+
+Bei der Ausführung überprüft `lisa`, ob alle benötigten Snippets definiert
+wurden und ob keine Kreisabhängigkeiten bestehen (z.B. Snippet1 benötigt
+Snippet2 welches wiederum Snippet1 benötigt). In beiden Fällen würde der `AST`
+um eine Fehlermeldung erweitert werden, welche einmal direkt an der jeweiligen
+Stelle im Asciidoc Code eingefügt wird und einmal in einer Tabelle gleich zu
+Beginn des Dokumentes mit einem Link auf die Problemstelle.
+
+TODO Implementierung
+
+TODO Soll eine graphische Darstellung des Kontrollflusses generiert werden
+können? Notfalls wäre das mit `pipe` leicht implementiert.
+
+TODO Während der Ausführung könnte `lisa` leicht überprüfen, ob `pipe`
+tatsächlich alle ids speichert, die es in `provides` definiert und ob es keine
+weiteres definiert.
+
+Benutzerdokumentation erstellen
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Viele Kommentare über Literate Programming habe ich so verstanden, dass der
+Gedanke dabei ist die Programmalgorithmen zu beschreiben und dokumentieren aber
+*nicht* die Benutzerdokumentation.
+
+Ich finde diese Trennung macht keinen Sinn und stellt eine unnötige
+Beschränkung da. Eine Auseinandergehen der Benutzerdokumentation und der
+Implemntierung ist genauso schlimm, wie Abweichungen der
+Entwicklerdokumentation von der Implementierung. Das grosse Problem ist
+wahrscheinlich eher:
+
+* Man will den Benutzer nicht mit Implementerungsdetails ablenken (die er
+  mitunter gar nicht verstehen kann und die ihn davon abhalten könnten die
+  Informationen zu finden, welche er sucht)
+* Benutzerdokumentation ist schwerer auszuführen und damit auch schwerer auf
+  dem gleichen Stand zu halten, wie die Implementierung.
+
+Diese Probleme versuchte man damit zu umgehen, die Userdoku abzutrennen und
+jemand separat damit zu beauftragen sie zu pflegen.
+
+Dabei gibt es einen Teil des Quelltextes, welcher geradezu danach schreit, in
+die Benutzerdokumentation aufenommen zu werden:
+
+Spezifikationen (Unit Tests) schreiben
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Unit Tests beschreiben das Verhalten und die Schnittstellen eines Programmes.
+Damit entsprechen sie genau dem, was den Endnutzer interessiert.
+
+Das erste, was man bei einem Projekt erstellen sollte ist ein gutes Lasten- und
+Pflichtenheft. Es wird normalerweise in Zusammenarbeit mit dem Kunden oder dem
+Auftraggeber erarbeitet und legt genau fest, was von einem Programm erwartet
+wird. Eigentlich ist es nur naheliegend diese Informationen unmittelbar im
+Quelltext (und zwar in Form von Testcases) zu nutzen.
+
+Bisher ist die gängige Praxis (wenn überhaupt systhematisch getestet wird), in
+den Unittests nochmal seperat die Informationen aus dem Pflichtenheft
+abzufassen aber diesmal auf die Implementierung zugeschnitten. Das leistet
+einem Auseinanderdriften von Vorgaben und Implementierung Vorschub (oftmals
+werden die Tests erst sehr spät in der Entwicklung geschrieben und dann auch
+oft nur unvollständig).
+
+`lisa` hebt diese Einschränkung auf. Unit Tests können irgendwo in den
+Quelltext eingefügt werden. Dass macht es möglich eine normale
+Benutzerdokumentation zu schreiben und bei jeder Änderung zu überprüfen, ob
+sich das Nutzererlebnis verändert. Gleichzeitig kann man die Doku flexibel
+aufteilen z.B. in Getting Started, Tutorials und eine umfangreiche
+Dokumentation, welche alle Details genau erläutert. Weder der Stil, noch die
+Aufteilung, noch die Struktur sind fest vorgegeben, sondern können durch die in
+<<transform>> beschrebenen Funktionen dynamisch erstellt werden.
+
+TODO Beispiele mit Quellcode
+
+[[literate-problems]]
+Probleme mit dem literate programing Ansatz
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Es gibt einige Probleme, die man speziell beim literate programing hat, welche
+bei anderen Herangehensweisen nicht so auftreten. Viele davon hängen allerdings
+mehr mit den verfügbaren Tools zusammen als mit dieser Programmiermethode an
+sich.
+
+Bilder, Diagramme und Charts
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Um mir einen Überblick über ein Programmkonzept oder eine Architektur zu
+verschaffen finde ich im Allgemeinen Diagramme am nützlichsten. Oft beginne ich
+damit diese zu zeichnen.
+
+Im Laufe der Zeit verändern sich jedoch oft die Anforderungen an ein Programm
+und damit auch die Architektur. So veralten die Diagramme bald.
+
+Ebenso beginnen viele Programme damit, dass sie Daten analysieren (oft als Teil
+des Programms) und ausgehend von diesen Erkenntnissen das Programm aufbauen.
+Diese Daten können im Laufe der Zeit veralten.
+
+*Lösungsansatz:* Wenn man Funktionen hätte um aus Quelltext direkt Diagramme
+(Flowdiagramme, Zustandsmaschinen, etc) erstellen zu lassen könnte man diese
+anzeigen und hätte so immer aktuelle Diagramme. Oder man geht umgekehrt vor und
+generiert aus ASCII-Art Quelltext. Auch dieser bliebe dann immer aktuell.
+
+Um Charts darzustellen kann man Quelltext direkt als Chart ausgeben. Siehe z.B.
+das Jypiter Projekt (TODO link).
+
+Autovervollständigung und Syntax Highlighting
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Der Quelltext ist oft nicht leicht zu highlighten und auch die Verweiszeichen
+machen es nicht leichter. Zudem ist es sehr schwer eine sinnvolle
+Autovervollständigung für Quelltexte zu bekommen, da die Snippets verteilt und
+in der Reihenfolge verschoben sind.
+
+*Lösungsansatz:* Tools wie treesitter (TODO link) und LSP (TODO link) könnten
+helfen. Mit dem ersten kann man vielleicht auch sehr kleine Snippets sinnvoll
+highlighten und mit dem zweiten kann man vieleicht einen Client machen, der den
+Quelltext virtuell zusammensetzt und auch wieder auseinandernimmt (zurückmappt)
+dadurch könnte der jeweilige Language-Server unverändert arbeiten und würde gar
+nicht merken, dass der Quelltext anders zusammengesetzt wird.
+
+Traces zurückverfolgen
+^^^^^^^^^^^^^^^^^^^^^^
+Eines der größten Probleme beim Literate Programming scheint mir die
+Zurückverfolgung von Stack-Traces zu sein.
+
+Sowohl beim Kompilieren als auch beim Debuggen oder dem arbeiten in einer
+interaktiven Konsole werden immer wieder Dateinamen und Zeilennummern
+angegeben, welche erkennen helfen sollen welche Stelle im Quelltext für ein
+Programmverhalten (meistens Fehler) verantwortlich ist. Diese Angaben würden
+sich natürlich auf den generierten Quelltext beziehen und man kann nicht mehr
+erkennen, wo sie ursprünglich im asciidoc-Dokument stehen. Würde man an die
+Stelle im generierten Quellcode navigieren und dort die nötigen Änderungen
+vornehmen werden das Ursprungsdokument und der tatsächliche Quellcode immer
+stärker voneinander abweichen und die Dokumentation wird bald nicht mehr
+korrekt sein. Zudem ist es in diesem Fall schnell nicht mehr möglich das
+Programm über das eigentliche Quelldokument weiter zu entwickeln, da sich nicht
+mehr feststellen lässt, ob der frisch erzeugte oder der manuell angepasste
+Quelltext richtig ist (Merging-Problem). Entscheidet man sich andererseits
+immer erst die richtige Stelle im Ursprungsdokument zu suchen und dort zu
+ändern verlangsamt man den Entwicklungsprozess enorm. Ausserdem wird man so
+viel Energie mit suchen vergeuden, dass nur noch wenig kreative Kraft für die
+eigentliche Programmentwicklung bleibt.
+
+Daher ist es am besten direkt beim Erzeugen des Quellcodes auch ein Mapping der
+Zeilen (und eventuell ihrer Transformation) mit anzulegen. Anschließend sollte
+man die Fehlermeldungen automatisiert korrigieren. Das macht man am besten mit
+einem Filter, so dass man das (zurück-)mappen nie von Hand anstoßen muss.
+
+Alternative Lösungsansätze und veralteter Code
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Je länger ein Programm existiert desto mehr wird es verändert werden und mit
+alten Codefrakmenten zu kämpfen haben. Es müsste eine Möglichkeit geben Code als
+"deprecated" oder als "alternative" zu kennzeichnen, damit der Leser weis, dass
+dieser Code nicht relevant für die Programmausführung ist. Zudem wäre es sehr
+nützlich gleich zu Beginn des Dokumentes dieses mit einem Status zu versehen
+(Entwurf, Proof of Konzept, Beta, Stabil, Veraltet, ...) und eventuell direkt
+auf ein Nachfolgedokument zu verweisen.
+
+Beispiele
+---------
+
+Eine Präsentation als literate program
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+TODO Alles in dieser Sektion sollte später in eine eigene Datei ausgelagert
+werden. Es ist gleichzeitig ein Beispiel, wie man eine Präsentation als
+literate program verfassen kann und eine Präsentation von `lisa`. ...
+
+Präsentationen haben oft ein Problem: Sie sind langweilig, da sie lienear
+aufgebaut sind, user menschliches Denken aber mit Räumen und Assotiationen
+arbeitet. Moderne Tools wie prezi (TODO link) sollen da abhelfen und bieten die
+Möglichkeit Ideen auf eine neue Art dazustellen.  Moderne Präsentationen haben
+ein neues Problem: Der Nutzer ist so auf seine Darstellungsmöglichkeiten
+fixiert, dass der Inhalt untergeht (das gleiche war früher mit Folienübergängen
+der Fall).
+
+Um dem abzuhelfen bietet sich literate programing an. Da der Nutzer vor allem
+versucht seine Ideen als Text zu verfassen stehen sie wieder im Mittelpunkt und
+die Effekte helfen wieder die Idee klarer herauszustellen, statt als
+Selbstzweck zu dienen. Im folgenden wird gezeigt, wie man eine moderne
+Präsentation über den Einsatz von `lisa` für Präsentationen verfassen kann.
+
+Vorraussetzungen
+^^^^^^^^^^^^^^^^
+Wir wollen, dass unsere Präsentation
+
+* Auf möglichst vielen Geräten lauffähig ist (cross-plattform)
+* Unabhängig von einer Internetverbindung abgespielt werden kann
+* Interaktive elemente enthält
+
+Als Basis benutzen wir daher ein Werkzeug, welches im Browser ausgeführt werden
+kann (aber nicht zwangsläufig eine Verbindung ins Internet benötigt):
+https://github.com/impress/impress.js:[impress.js].
+
+Da wir zudem einige interaktive charts einbinden möchten benutzen wir noch
+https://d3js.org/:[d3].
+
+[[imports]]
+[source, html]
+.imports
+--------------------------------------------------------------------------------
+  <script type="text/javascript" src="js/d3.js"></script>
+  <script type="text/javascript" src="js/impress.js"></script>
+--------------------------------------------------------------------------------
+
+TODO Zeigen, wie man eine Übersicht als svg-Datei einbinden kann und
+anschließend mit jedem Schritt einen Ausschnitt davon anzeigen und beschreiben
+kann...
+
+Einen Issue-Tracker aus TODO.adoc und Changes.adoc Dokumenten erstellen
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+TODO Alles in dieser Sektion sollte später in eine eigene Datei ausgelagert
+werden. Es zeigt, wie man `asciidoctor` und `lisa` dazu nutzen kann ein
+verteiltes Issue-Tracker Programm (samt Webinterface) zu erstellen.
+
+Ähnlich wie Programme Dokumentation sind, so sind auch die Tickets in
+Issue-Trackern Dokumentation. Sie beschreiben die Fortentwicklung eines
+Programms (wichtig unter anderem für support und Kompatibilitäts-Checks), sowie
+die Ziele für die Zukunft. In den vorhandenen Programmlösungen werden diese
+Informationen vom eigentlichen Programm getrennt. Da man sie oft dennoch
+benötigt muss (redundant) eine Changes-Datei gepflegt werden um Nutzer über
+Neuerungen und deren Anwendung zu informieren. Dies bedeutet zusätzlichen
+Pflegeaufwand und eine potentielle Fehlerquelle.
+
+Zudem werden immer mehr Programme verteilt entwickelt (was viele Vorteile mit
+sich bringt TODO link zu git Buch), aber die bisherigen Issue-Programme sind
+alle zentralisiert und lassen kein verteiltes abarbeiten von Tickets zu.
+
+Ausserdem können diese Ticket-Verwaltungen ausschließlich über ein webinterface
+bedient werden. Für Entwickler wäre es wünschenswert einfach Textdateien
+bearbeiten zu können...
+
+Ein Übersetzungs-Tool für literate Programme
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Die neue Herangehensweise an das Programmieren hat bei mir eine neue Frage
+aufgeworfen: In welcher Sprache soll ich programmieren?
+
+Bisher war es für mich immer absolut klar, ein Programm in Englisch zu
+dokumentieren. Da sich nun aber der Fokus vom Quelltext auf das Darlegen von
+Ideen verschoben hat wäre es von Vorteil die Sprache zu nutzen, in welcher ich
+am leichtesten Ideen vermitteln kann. Auf einmal bekommen Dinge, die im
+normalen Quelltext normalerweise keine Rolle spielen (dürfen), wie Gefühle und
+Humor eine wichtige Bedeutung für das Projekt. Daher überlege ich das erste Mal
+ernsthaft Programme in Deutsch (meiner Muttersprache) zu veröffentlichen.
+footnote:[Bei der Programmiersprache geht es also gar nicht mehr so sehr um die
+Computersprache, sondern um die von Menschen verwendete Sprache.]
+
+Will man aber mit einem internationlen Team zusammenarbeiten (und das ist
+besonders bei open source wichtig) so kommt man um englisch nicht herum (was
+wohl Portierung in diesem Zusammenhang bedeutet). Daher ist es nützlich ein
+Werkzeug zu haben, welches einem den Ursprungstext (in meinem Fall deutsch) und
+die Übersetzung (englisch) nebeneinander zeigt. Es sollte eine Übersicht
+liefern, welche Teile des Programms wie weit und in welcher Qualität übersetzt
+sind. Hierbei ergeben sich eine ganze Reihe Probleme.
+
+. Im Gegensatz zu einem normalen Buch ist ein Programm normalerweise nicht
+  abgeschlossen (zumindest wird mit der Übersetzung begonnen während das
+  Programm noch nicht abgeschlossen ist) und beide Sprachen müssen parallel
+  gepflegt werden ohne sich ausseinander zu entwickeln.
+  Dabei sollte man die Änderungen zum aktuellen Übersetzungsstand sehen.
+. Beide Programme sollten das gleiche Ausgabeprodukt erzeugen. Es darf keine
+  verschiedenen Sprachvarianten geben, denn das würde zu einem riesen Chaos
+  führen und der Support wie auch die Wartung wären unglaublich aufwendig.
+. Da immer mindestens zwei Sprachen in einem Dokument gemixt sind (Natürliche
+  Sprache und Programmiersprache) ergeben sich ganz ähnliche Fragen, wenn man
+  eine alternative Implementierung in einer anderen Programmiersprache einfügen
+  möchte.
+. ...
+
+///////////////////////////////////////////////
+Der Zguide ist eine gute Anlaufstelle für alternative Implementierungen in
+verschiedenen Programmiersprachen.
+///////////////////////////////////////////////
+
+Implementierung
+---------------
+
+=== Codeschnipsel verarbeiten
+
+==== Eine Datenbank für Codeschnipsel anlegen
+Um die Snippets zu verarbeiten müssen wir leicht auf sie zugreifen können. Das
+Ziel der Extrackt Phase (TODO Link?) ist es alle Schnipsel in eine Datenbank
+(oder Cache je nach Sichtweise) zu überführen, wo wir wahlfrei darauf zugreifen
+können. Dafür verwenden wir eine `HashMap`.
+
+[[crate_usages]]
+[source, rust]
+----
+use std::collections::HashMap;
+----
+
+[[lisa_internal_variables]]
+[source, rust]
+----
+snippets: HashMap<String, Snippet>,
+----
+
+Natürlich muss die Datenbank zu Beginn initialisiert werden.
+
+[[lisa_init_variables]]
+[source, rust]
+----
+snippets: HashMap::default(),
+----
+
+Jeder Snippet kann einer von vier Kategorien zugewiesen werden.
+
+[[internal_structs]]
+[source, rust]
+----
+#[derive(Clone, Debug)]
+pub enum SnippetType {
+  Save(String), // <1>
+  Eval(String), // <2>
+  Pipe,         // <3>
+  Plain,        // <4>
+}
+
+----
+<1> Er kann in eine Datei abgespeichert werden (TODO link)
+<2> Oder von einem Interpreter ausgeführt werden (TODO link)
+<3> Oder zur Erzeugung von dynamischen Snippet benutzt werden (TODO link)
+<4> Oder keine besondere Funktion haben. Dann wird er meist von anderen Snippets
+    eingebunden (TODO link).
+
+Zusätzlich hat ein Snippet noch einige weitere Eigenschaften, welche die
+Verarbeitung ermöglichen.
+
+[[internal_structs]]
+[source, rust]
+----
+#[derive(Clone, Debug)]
+pub struct Snippet {
+  pub kind: SnippetType,
+  pub content: String,         // <2>
+  pub children: Vec<Snippet>,  // <1>
+  /// List of all keys the snippet depends on
+  /// before it can be processed
+  pub depends_on: Vec<String>, // <3>
+}
+----
+<1> Ein Snippet kann aus mehreren aneinandergehängten Snippets bestehen (TODO
+    link).
+<2> Dadurch muss der Text des Snippets aus allen anderen Snippets berechnet
+    werden.
+<3> Snippets haben andere Snippets, die sie einbinden (TODO link), oder man
+    möchte eine explizite Reihenfolge festlegen (TODO link). Daher werden hier
+    alle Snippets aufgelistet, die vorher verarbeitet werden müssen.
+
+==== Den AST filtern und die Datenbank füllen
+
+[[internal_functions]]
+[source, rust]
+----
+/// Gets recursively all snippets from an element
+pub fn extract(&mut self, input: &ElementSpan) {
+  match &input.element {
+    Element::TypedBlock {
+      kind: BlockType::Listing,
+    } => { // <1>
+      <<check_is_lisa_code_block>>
+      <<extract_attributes>>
+      <<find_references>>
+      <<store_snippet_in_internal_db>>
+    }
+    Element::IncludeElement(ast) => { // <2>
+      self.extract_ast(&ast.inner);
+    }
+    _ => { // <2>
+      for element in input.children.iter() {
+        self.extract(element);
+      }
+    }
+  }
+}
+
+----
+<1> Ist ein Element ein Code-Snippet wird es weiterverarbeitet.
+<2> Falls ein Element zwar kein Snippet ist aber Unterknoten hat, wird rekursiv
+    weiter nach Quellcode-Snippets gesucht.
+
+===== Nur Codeschipsel verarbeiten, die auch von Lisa verwendet werden
+Es gibt die verschiedensten Codeschnipsel. Nicht alle werden auch verwendet um
+Programme zu generieren. In Asciidoc haben Blocks mit Quellcode als ersten
+Parameter `source`. `lisa` verarbeitet nur diese Blocks.
+
+[[check_is_lisa_code_block]]
+[source, rust]
+----
+let args = &mut input.positional_attributes.iter();
+if !(args.next() == Some(&AttributeValue::Ref("source"))) {
+  return;
+}
+----
+
+Das zweite Attribut gibt den Interpreter an. Falls dieser nicht durch eine
+spezielle Anpassung überschrieben wird.
+
+[[extract_attributes]]
+[source, rust]
+----
+let mut interpreter = None;
+if let Some(value) = args.next()  {
+  match &value {
+    AttributeValue::Ref(value) => {
+      interpreter = Some(value.to_string());
+    },
+    AttributeValue::String(value) => {
+      interpreter = Some(value.clone());
+    }
+  }
+}
+----
+
+===== Dem Snippet alle wichtigen Attribute übergeben
+Es gibt einige Attribute der Codeschnipsel im AST, die für die
+Weiterverarbeitung durch `lisa` wichtig sind.
+
+Die `id` benötigen wir, damit Snippets aufeinander verweisen können. Falls sie
+im Quelldokument nicht definiert wurde verwenden wir die Anfangs- und
+Endposition des Blocks um eine eindeutige id zu bekommen.
+
+[[extract_attributes]]
+[source, rust]
+----
+let mut content = None;
+let mut path = None;
+let mut title = None;
+let mut id =
+  "_id_".to_string() + &input.start.to_string() + &"_".to_string() + &input.end.to_string(); // TODO Vielleicht Datei + Zeile?
+----
+
+Außerdem gehen wir alle Attribute durch und überschreiben unsere Standardwerte
+falls das Attribut definiert wurde.
+
+[[extract_attributes]]
+[source, rust]
+----
+for attribute in input.attributes.iter() {
+  if attribute.key == "anchor" {
+    id = match &attribute.value {
+      AttributeValue::String(value) => value.clone(),
+      AttributeValue::Ref(value) => value.to_string(),
+    };
+  }
+  if attribute.key == "path" {
+    path = match &attribute.value {
+      AttributeValue::String(value) => Some(value.clone()),
+      AttributeValue::Ref(value) => Some(value.to_string()),
+    };
+  }
+  if attribute.key == "title" {
+    title = match &attribute.value {
+      AttributeValue::String(value) => Some(value.clone()),
+      AttributeValue::Ref(value) => Some(value.to_string()),
+    };
+  }
+  if attribute.key == "content" {
+    content = match &attribute.value {
+      AttributeValue::String(value) => Some(value.clone()),
+      AttributeValue::Ref(value) => Some(value.to_string()),
+    };
+  }
+  if attribute.key == "interpreter" {
+    interpreter = match &attribute.value {
+      AttributeValue::String(value) => Some(value.clone()),
+      AttributeValue::Ref(value) => Some(value.to_string()),
+    };
+  }
+}
+----
+
+Das Pfad Attribut ist wichtig für alle `save` Snippets (TODO link). Falls es
+nicht explizit definiert wurde, gehen wir davon aus, das der Titel des
+Codeblocks den Pfad enthällt.
+
+[[extract_attributes]]
+[source, rust]
+----
+if path == None {
+  path = title;
+}
+----
+
+Ebenso benötigen wir einen Snippet Typ (TODO link). Er wird in den
+positionsabhängigen Argumenten definiert. Falls nicht vorgegeben wurde, gehen
+wir davon aus, das es ein Snippet ohne besondere Verarbeitung ist.
+
+[[extract_attributes]]
+[source, rust]
+----
+let mut kind = SnippetType::Plain;
+
+for argument in args {
+  match argument {
+    AttributeValue::Ref("save") => {
+      let path = match &path {
+        Some(path) => path.clone(),
+        None => id.clone(),
+      };
+      kind = SnippetType::Save(path);
+    }
+    AttributeValue::Ref("eval") => {
+      let interpreter = interpreter.clone().unwrap(); // TODO Fehlerbehandlung
+      kind = SnippetType::Eval(interpreter);
+    }
+    AttributeValue::Ref("pipe") => {
+      kind = SnippetType::Pipe;
+    }
+    _ => (),
+  }
+}
+----
+
+===== Snippets in der Datenbank speichern
+
+Ist ein Snippet aus dem AST herausgefilter worden, können wir es in der
+Datenbank abspeichern.
+
+[[store_snippet_in_internal_db]]
+[source, rust]
+----
+self.store(
+  id,
+  Snippet {
+    kind: kind,
+    content: content,
+    children: Vec::new(),
+    depends_on: dependencies,
+  },
+);
+----
+
+Wir rufen dazu die interne Funktion `store` auf.
+
+[[internal_functions]]
+[source, rust]
+----
+/// Stores a snippet in the internal database
+pub fn store(&mut self, name: String, snippet: Snippet) {
+  let base = self.snippets.get_mut(&name); // <1>
+  match base {
+    Some(base) => { // <2>
+      if &base.children.len() < &1 {
+        let other = base.clone();
+        &base.children.push(other);
+      }
+      base.content.push_str("\n");
+      base.content.push_str(snippet.content.as_str());
+      base.children.push(snippet);
+    }
+    None => { // <3>
+      self.snippets.insert(name, snippet);
+    }
+  }
+}
+
+----
+<1> Zunächst wird geprüft, ob bereits ein Snippet mit dieser Id gespeichert
+    wurde.
+<2> Falls ja wird es an das bestehende angehängt.
+<3> Falls nicht kann man es einfach abspeichern.
+
+=== Referenzen in einem Snippet finden
+Wir möchten, die referenzierten Snippets später einbinden. Dazu müssen sie
+verarbeitet werden können, bevor das Snippet, welches sie verwendet, verarbeitet
+wird. Aus diesem Grund parsen wir den (unverarbeiteten) Inhalt des Snippets.
+
+Beim verwenden, müssen wir zunächst einmal sichergehen, dass das Snippet
+überhaupt einen Inhalt definiert hat. Falls nicht gehen wir davon aus, dass es
+leer ist.
+
+[[extract_attributes]]
+[source, rust]
+----
+if content == None {
+  content = Some(input.content.to_string());
+}
+let content = match content {
+  Some(content) => content,
+  None => "".to_string(),
+};
+----
+
+Um die Referenzen zu finden verwenden wir die Pest (TODO link). Sie basiert auf
+Parsing Expression Grammars (TODO link) und wird bereits von asciidoctrine (TODO
+link) verwendet. Diese Art von Parsern ist (für mich) sehr leicht zu lesen und
+zu schreiben.
+
+[[required_crates]]
+[source, rust]
+--------------------------------------------------------------------------------
+extern crate pest;
+#[macro_use]
+extern crate pest_derive;
+--------------------------------------------------------------------------------
+
+[[cargo_dependencies]]
+[source, toml]
+--------------------------------------------------------------------------------
+pest = "2.1.0"
+pest_derive = "2.1.0"
+--------------------------------------------------------------------------------
+
+Wir lagern sie in ein eigenes Modul aus.
+
+[[internal_modules]]
+[source, rust]
+--------------------------------------------------------------------------------
+mod codeblock_parser;
+--------------------------------------------------------------------------------
+
+[source, rust, save]
+.src/codeblock_parser.rs
+--------------------------------------------------------------------------------
+use pest::Parser;
+use std::collections::HashMap;
+
+use crate::*;
+
+#[derive(Parser, Debug)]
+#[grammar = "codeblock.pest"]
+pub struct CodeblockParser;
+
+<<codeblock_parser_functions>>
+
+/// Extracts the ids of used snippets from a depending snippet
+pub fn get_dependencies(input: &str) -> Vec<&str> {
+  <<get_dependencies>>
+}
+
+/// Merges the snippets into the depending snippet
+pub fn merge_dependencies(input: &str, snippets: &HashMap<&str, &str>) -> String {
+  <<merge_dependencies>>
+}
+--------------------------------------------------------------------------------
+
+Sie hat zwei wichtige Funktionen:
+
+get_dependencies:: Parsed einen Snippet und gibt alle intern definierten
+  Referenzen zurück.
+merge_dependencies:: Fügt an den Stellen der Referenzen die tatsächlichen
+  Inhalte ein. Wir verwenden sie später im Abschnitt Ausgaben erzeugen (TODO
+  link).
+
+Zu Beginn bindet das Modul die Parserdatei ein. Ein Codeblock besteht aus ein
+paar wesentlichen Elementen.
+
+Code:: Dieser wird später vom Compilier oder Interpreter verarbeitet und `lisa`
+  muss ihn nicht verändern.
+Referenzen:: Enthalten Verweise auf andere Snippets.
+Eingerückte Referenzen:: Ist eine Referenz eingerückt, so wollen wir, dass jede
+  Zeile des eingefügten Snippets ebenfalls eingerückt wird. Ansonsten wäre der
+  generierte Code nicht schön formattiert.
+Kommentaren:: Diese Kommentare sind nur für die Anzeige in Asciidoc gedacht und
+  sollen später nicht im generierten Quelltext vorhanden sein.
+
+[source, pest, save]
+.src/codeblock.pest
+--------------------------------------------------------------------------------
+codeblock = _{ (code | indented_reference | reference | comment)* ~ EOI }
+
+reference = { <<reference>> }
+indented_reference = { <<indented_reference>> }
+code = { <<code_gramma>> }
+comment = { <<comment>> }
+
+<<internal_gramma_elements>>
+--------------------------------------------------------------------------------
+
+Eine Referenz wird durch eine von doppelten spitzen Klammern umrahmten id
+dargestellt.
+
+[[reference]]
+[source, pest]
+.reference
+--------------------------------------------------------------------------------
+"<<" ~ identifier ~ ">>"
+--------------------------------------------------------------------------------
+
+Wobei eine id nur aus ASCII Buchstaben, Unterstrich und Verbindungsstrich
+bestehen darf. Zudem darf sie nicht mit einem Verbindungsstrich beginnen, um
+nicht den wie eine Minus Expression zu wirken (und damit Verwirrung zu stiften).
+
+[[internal_gramma_elements]]
+[source, pest]
+.identifier
+--------------------------------------------------------------------------------
+identifier = @{ (ASCII_ALPHANUMERIC | "_") ~ (ASCII_ALPHANUMERIC | "_" | "-" )* }
+--------------------------------------------------------------------------------
+
+Bei einer eingerückten Referenz definieren wir die Einrückung seperat um sie
+später (TODO link) wirderverwenden zu können.
+
+[[indented_reference]]
+[source, pest]
+.Eingerückte Referenz
+--------------------------------------------------------------------------------
+(SOI | NEWLINE) ~ indentation ~ reference
+--------------------------------------------------------------------------------
+
+[[internal_gramma_elements]]
+[source, pest]
+--------------------------------------------------------------------------------
+whitespace = @{ (" " | "\t") }
+indentation = @{ whitespace+ }
+--------------------------------------------------------------------------------
+
+Als Quellcode betrachten wir alles, was keine Referenz und kein Kommentar ist.
+
+[[code_gramma]]
+[source, pest]
+--------------------------------------------------------------------------------
+(!indented_reference ~ !reference ~ !comment ~ ANY)+
+--------------------------------------------------------------------------------
+
+Ein Kommentar ist ein typischer Kommentarbeginn zusammen mit einem Callout (TODO
+link auf asciidoctor oder asciidoctrine Dokumentation).
+
+[[comment]]
+[source, pest]
+--------------------------------------------------------------------------------
+optspaces ~ ("//" | "#" | ";;" ) ~ optspaces ~ "<" ~ ASCII_DIGIT+ ~ ">" ~ optspaces ~ &(EOI | NEWLINE)
+--------------------------------------------------------------------------------
+
+Dabei dürfen whitespaces zwischen den Elementen vorkommen
+
+[[internal_gramma_elements]]
+[source, pest]
+--------------------------------------------------------------------------------
+optspaces = @{ whitespace* }
+--------------------------------------------------------------------------------
+
+=== Snippets zusammenfügen
+Bevor die Snippets verwendet werden, müssen alle Referenzen durch die
+tatsächlichen Inhalte ersetzt werden. Dazu benutzen wir die Funktion
+`merge_dependencies` (TODO link).
+
+[[merge_snippet_content]]
+[source, rust]
+--------------------------------------------------------------------------------
+let mut snippets = HashMap::new();
+for (key, snippet) in &self.snippets {
+  snippets.insert(key.as_str(), snippet.content.as_str());
+}
+let content = codeblock_parser::merge_dependencies(content.as_str(), &snippets);
+snippet.content = content.clone();
+self.snippets.insert(key.clone(), snippet.clone());
+--------------------------------------------------------------------------------
+
+In dieser Funktion wird ein String erzeugt, die Referenzen im Snippet durch den
+tatsächlichen Inhalt ersetzt.
+
+[[merge_dependencies]]
+[source, rust]
+--------------------------------------------------------------------------------
+let mut output = String::new();
+
+let ast = CodeblockParser::parse(Rule::codeblock, input).expect("couldn't parse input.");
+
+for element in ast {
+  match element.as_rule() {
+    Rule::reference => {
+      let identifier = extract_identifier(&element);
+      // TODO Den passenden snippet suchen
+      let snippet = snippets.get(identifier);
+      // TODO Den snippet einfügen
+      match snippet {
+        Some(snippet) => {
+          output.push_str(snippet);
+        }
+        None => {
+          // TODO Fehlermeldung? Müsste vorher bereits abgefangen sein.
+        }
+      }
+    }
+    Rule::indented_reference => {
+      let identifier = extract_identifier(&element);
+      let indentation = extract_indentation(&element);
+      // TODO Den passenden snippet suchen
+      let snippet = snippets.get(identifier);
+      // TODO Den snippet einfügen und indentation beruecksichtigen
+      match snippet {
+        Some(snippet) => {
+          for line in snippet.lines() {
+            output.push_str("\n");
+            output.push_str(indentation);
+            output.push_str(line);
+          }
+        }
+        None => {
+          // TODO Fehlermeldung? Müsste vorher bereits abgefangen sein.
+        }
+      }
+    }
+    Rule::code => {
+      output.push_str(element.as_str());
+    }
+    _ => (),
+  }
+}
+output
+--------------------------------------------------------------------------------
+
+[[codeblock_parser_functions]]
+[source, rust]
+.extract_identifier und extract_indentation
+--------------------------------------------------------------------------------
+fn extract_identifier<'a>(element: &pest::iterators::Pair<'a, codeblock_parser::Rule>) -> &'a str {
+  match element.as_rule() {
+    Rule::reference => element.clone().into_inner().next().unwrap().as_str(),
+    Rule::indented_reference => {
+      let mut output = "";
+      for element in element.clone().into_inner() {
+        match element.as_rule() {
+          Rule::reference => {
+            output = element.into_inner().next().unwrap().as_str();
+            break;
+          }
+          _ => (),
+        }
+      }
+      output
+    }
+    _ => "",
+  }
+}
+
+fn extract_indentation<'a>(element: &pest::iterators::Pair<'a, codeblock_parser::Rule>) -> &'a str {
+  let mut output = "";
+  for element in element.clone().into_inner() {
+    match element.as_rule() {
+      Rule::indentation => {
+        output = element.as_str();
+        break;
+      }
+      _ => (),
+    }
+  }
+  output
+}
+--------------------------------------------------------------------------------
+
+=== Die Verarbeitungsreihenfolge der Snippets festlegen
+Eines der wichtigsten Features von `lisa` (und das, welches, wie ich glaube, es
+am stärksten von vergleichbaren Tools unterscheidet), ist, dass man den
+Kontrollfluss bestimmen kann (TODO link). Dadurch wird es in gewissem Sinne zu
+einer Dataflow Sprache.
+
+Damit das möglich wird muss herausgefunden werden, welches Snippet verarbeitet
+werden kann, und welches von anderen abhängt, die vorher verarbeitet werden
+müssen. Dazu verwenden wir die Topoligical Sorting (TODO Wikipedia Link)
+Methode. Wir implementieren sie nicht selbst, sondern benutzen den `topological-sort`
+(TODO link) crate.
+
+[[required_crates]]
+[source, rust]
+--------------------------------------------------------------------------------
+extern crate topological_sort;
+--------------------------------------------------------------------------------
+
+[[cargo_dependencies]]
+[source, toml]
+--------------------------------------------------------------------------------
+topological-sort = "0.1.0"
+--------------------------------------------------------------------------------
+
+[[crate_usages]]
+[source, rust]
+----
+use topological_sort::TopologicalSort;
+----
+
+Die entsprechende Klasse (Trait, wieauchimmer) nehmen wir in die internen
+Variablen auf, denn es ergänzt unser Snippet Datenbank (TODO link).
+
+[[lisa_internal_variables]]
+[source, rust]
+----
+dependencies: TopologicalSort<String>,
+----
+
+Und initialisieren sie bei der Initialisierung der Lisa Struktur.
+
+[[lisa_init_variables]]
+[source, rust]
+----
+dependencies: TopologicalSort::new(),
+----
+
+Nachdem wir die Snippets in der Datenbank abgelegt haben gehen wir durch und
+füllen unsere Sortierstruktur.
+
+[[internal_functions]]
+[source, rust]
+----
+/// Builds the dependency tree for topological sorting
+pub fn check_dependencies(&mut self) {
+  for (key, snippet) in self.snippets.iter() {
+    // TODO Vielleicht sollten nur `save` und `eval` snippets
+    // unabhängig von dependencies aufgenommen werden?
+    self.dependencies.insert(key); // <1>
+
+    for child in snippet.children.iter() { // <2>
+      for dependency in child.depends_on.iter() {
+        self.dependencies.add_dependency(dependency, key);
+      }
+    }
+    for dependency in snippet.depends_on.iter() { // <2>
+      self.dependencies.add_dependency(dependency, key);
+    }
+  }
+}
+
+----
+<1> Jedes Snippet muss in die Sortierung mit eingebunden werden, auch, wenn es
+    keine Abhängigkeiten hat. Sonst könnten direkt ausgeführte Snippets ohne
+    Abhängigkeiten verloren gehen.
+<2> Zudem müssen alle Abhängigkeiten bekanntgegeben werden.
+
+Wir verwenden die `get_dependencies` Funktion um die abhängigen keys zu einem
+Snippet zu finden und zu speichern.
+
+[[find_references]]
+[source, rust]
+----
+let mut dependencies = Vec::new();
+for dependency in codeblock_parser::get_dependencies(content.as_str()).iter() {
+  dependencies.push(dependency.to_string());
+}
+----
+
+Intern ist sie folgendermaßen aufgebaut:
+
+[[get_dependencies]]
+[source, rust]
+----
+let mut depends_on_ids = Vec::new();
+
+let ast = CodeblockParser::parse(Rule::codeblock, input).expect("couldn't parse input.");
+
+for element in ast {
+  match element.as_rule() {
+    Rule::reference => {
+      depends_on_ids.push(extract_identifier(&element));
+    }
+    Rule::indented_reference => {
+      depends_on_ids.push(extract_identifier(&element));
+    }
+    _ => (),
+  }
+}
+
+depends_on_ids
+----
+
+=== Ausgaben erzeugen
+
+[[generate_outputs]]
+[source, rust]
+----
+loop {
+  let key = self.dependencies.pop(); // <1>
+  match key {
+    Some(key) => {
+      <<get_snippet>>
+
+      match snippet {
+        Some(mut snippet) => {
+          let content = snippet.content.clone();
+
+          <<merge_snippet_content>>
+
+          <<execute_snippet_action>>
+        }
+        None => { // <4>
+          // TODO Fehlermeldung im AST. Ein Snippet sollte zu
+          // diesem Zeitpunkt immer bereits erstellt sein.
+          println!("Error: Dependency `{}` nicht gefunden", key);
+        }
+      }
+    }
+    None => { // <2>
+      if !self.dependencies.is_empty() { // <3>
+        println!(
+          "Error: Es ist ein Ring in den Abhängigkeiten ({:#?})",
+          self.dependencies
+        );
+      }
+      break; // <2>
+    }
+  }
+}
+----
+<1> Die Snippets müssen in der richtigen Reihenfolge abgearbeitet werden.
+    Ansonsten könnte es passieren, dass ein Snippet verwendet werden soll bevor
+    er überhaupt generiert wurde. (TODO link vielleicht in das andere Kapitel
+    verschieben?)
+<2> Wird kein weiteres Snippet gefunden, so kann das zwei Gründe haben: Entweder
+    gibt es einen Ring in den Abhängigkeiten oder alle Snippets wurden bereits
+    verarbeitet. In beiden Fällen wird die Programmausführung beendet.
+<3> Ringe in den Abhängigkeiten sind problematisch, da Snippets, die von sich
+    selbst abhängen, nicht generiert werden können. Daher muss der Benutzer über
+    seinen Fehler unterrichtet werden.
+<4> Wird ein Snippet gefunden, aber es ist keines unter diesem Namen in der
+    Datenbank abgelegt, muss eine Fehlermeldung generiert werden. Wahrscheinlich
+    wurde dann ein Snippet referenziert aber nie definiert.
+
+Wir müssen das Snippet verändern können (z.B. um den Textinhalt anzupassen).
+Damit das möglich ist entfernen wir es erstmal aus der Datenbank. Nach der
+Veränderung werden wir es wieder abspeichern (TODO link).
+
+[[get_snippet]]
+[source, rust]
+----
+let snippet = self.snippets.remove(&key.clone());
+----
+
+Je nach Snippet Typ können wir nun die entsprechende Aktion ausführen.
+
+[[execute_snippet_action]]
+[source, rust]
+----
+match &snippet.kind {
+  SnippetType::Eval(interpreter) => {
+    self.eval(interpreter.to_string(), content);
+  }
+  SnippetType::Plain => {}
+  SnippetType::Save(path) => {
+    <<get_filepath>>
+    self.save(path, content);
+  }
+  SnippetType::Pipe => {
+    <<do_pipe>>
+  }
+}
+----
+
+==== Save: Snippet in eine Datei speichern
+
+Um eine Datei zu speichern haben wir eine eigene Funktion.
+
+[[internal_functions]]
+[source, rust]
+----
+/// Saves a Snippet to a file
+pub fn save(&self, path: String, content: String) {
+  // TODO Allow directory prefix from options
+  <<check_path_not_allready_used_by_lisa>>
+  <<add_path_to_the_list_of_outputs>>
+
+  let path = Path::new(&path);
+  if let Some(path) = path.parent() {  // <1>
+    if !path.exists() {
+      fs::create_dir_all(path).unwrap();
+    }
+  }
+
+  <<strip_all_lines_in_content>>
+
+  fs::write(path, content).expect("Unable to write file");
+}
+
+----
+<1> Wenn der Ordner, in dem sich die Datei befindet, nicht existiert, muss er
+    zuerst erzeugt werden. Sonst käme es beim schreiben der Datei zu einer
+    Fehlermeldung.
+
+Dafür müssen wir noch den `std::fs` crate einbinden.
+
+[[crate_usages]]
+[source, rust]
+----
+use std::fs;
+use std::path::Path;
+use std::str::FromStr;
+----
+
+Wir verwenden sie unter anderem bei der Snippet Verarbeitung. Hier übernehmen
+den Dateipfad und übergeben ihn an die Funktion. (TODO link oder anders
+sortieren).
+
+[[get_filepath]]
+[source, rust]
+----
+let path = String::from_str(&path).unwrap(); // TODO unwrap durch check ersetzen
+----
+
+In einer Datei kann es sehr nervig sein, Whithespaces an den Zeilenenden zu
+haben. Dies kann aber geschehen wenn in der Quelldatei Whitespaces am Ende der
+Zeilen sind. Selbst wenn das nicht der Fall ist geschieht es durch unsere
+Einrückungen mitunter automatisch (TODO link). Wir lösen das Problem, indem wir
+unmittelbar vor dem schreiben in eine Datei "aufräumen".
+
+[[strip_all_lines_in_content]]
+[source, rust]
+----
+let content = content.lines()
+                     .map(|line| { String::from(line.trim_end()) + "\n" })
+                     .collect::<String>();
+----
+
+==== Eval: Ein Snippet ausführen
+
+[[internal_functions]]
+[source, rust]
+--------------------------------------------------------------------------------
+/// Run a snippet in an interpreter
+pub fn eval(&self, interpreter: String, content: String) {
+  <<get_eval_interpreter>>
+
+  <<spawn_interpreter>>
+
+  <<run_eval_command>>
+
+  <<process_stdout_and_stderr>>
+}
+
+--------------------------------------------------------------------------------
+
+Dafür benutzen wir den `std::process` crate.
+
+[[crate_usages]]
+[source, rust]
+----
+use std::io::Write;
+use std::process::{Command, Stdio};
+----
+
+[[spawn_interpreter]]
+[source, rust]
+----
+let mut eval = Command::new(interpreter).stdin(Stdio::piped())
+  .stderr(Stdio::piped())
+  .stdout(Stdio::piped())
+  .spawn().unwrap();
+----
+
+[[run_eval_command]]
+[source, rust]
+----
+eval.stdin
+  .as_mut()
+  .ok_or("Child process stdin has not been captured!").unwrap()
+  .write_all(content.as_bytes()).unwrap(); // TODO Wie soll EOF gesendet werden?
+----
+
+[[process_stdout_and_stderr]]
+[source, rust]
+----
+let output = eval.wait_with_output().unwrap();
+
+// TODO in den Asciidoc AST einbinden
+if output.status.success() {
+  println!("{}", String::from_utf8(output.stdout).unwrap()); // TODO entfernen
+} else {
+  let err = String::from_utf8(output.stderr).unwrap();
+  println!("External command failed:\n {}", err) // TODO entfernen
+}
+----
+
+==== Pipe: Snippets dynamisch erzeugen
+Beim `pipe` Befehl werden snippets als interne Scripte ausgeführt. Wir verwenden
+lua (TODO link) als Interpreter. Dazu benutzen wir den `rlua` (TODO link) crate.
+
+[[required_crates]]
+[source, rust]
+--------------------------------------------------------------------------------
+extern crate rlua;
+--------------------------------------------------------------------------------
+
+[[crate_usages]]
+[source, rust]
+--------------------------------------------------------------------------------
+use rlua::{Lua, Result};
+--------------------------------------------------------------------------------
+
+[[cargo_dependencies]]
+[source, toml]
+----
+rlua = "0.17.0"
+----
+
+Jede `pipe` bekommt ihre eigene lua Umgebung.
+
+[[do_pipe]]
+[source, rust]
+--------------------------------------------------------------------------------
+let lua = Lua::new();
+
+lua.context(|lua| -> Result<()> {
+  <<init_lua_functions>>
+  <<init_lua_globals>>
+
+  lua.load(&content).set_name(&key)?.exec()?;
+  Ok(())
+});
+--------------------------------------------------------------------------------
+
+Installation
+------------
+
+Build
+-----
+Da das ganze eine rust Bibliothek ist brauchen wir eine `Cargo.toml` Datei damit
+das Programm (und die Bibliothek) kompiliert werden können.
+
+[source, toml, save]
+.Cargo.toml
+----
+[package]
+name = "lisa"
+version = "0.1.0"
+authors = ["Benjamin Kober <kober@optisense.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+<<cargo_dependencies>>
+----
+
