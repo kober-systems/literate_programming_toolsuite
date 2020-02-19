@@ -1,0 +1,201 @@
+asciidoc = _{ NEWLINE* ~ block ~ (NEWLINE* ~ block)*  ~ NEWLINE* ~ EOI }
+
+block = {
+  header |
+  // admonition |
+  // comment |
+  // example |
+  // fenced |
+  // listing |
+  // literal |
+  // open |
+  // passthrough |
+  // quote |
+  // sidebar |
+  // source |
+  // stem |
+  // table |
+  // verse |
+  include_macro |
+  delimited_block |
+  list |
+  attribute_entry_block |
+  // Title is nearly the last because it could prevent correct match of others
+  title_block |
+  // paragraph is the last because all others should be checked first
+  paragraph |
+  (!EOI ~ ANY)+
+}
+
+header = {
+  title ~
+  (NEWLINE ~ author_info)? ~
+  (NEWLINE ~ revision_info)? ~
+  ( (NEWLINE ~ attribute_entry) |
+    (NEWLINE ~ "//" ~ (!EOI ~ !NEWLINE ~ ANY)* ~ &NEWLINE ) // TODO Comment entfernen
+  )*
+  ~ &NEWLINE{2,}
+}
+
+title_block = { anchor* ~ title }
+title = {
+  (line ~ NEWLINE ~ setext_title_style ) |
+  (atx_title_style ~ line)
+}
+setext_title_style = { ("="{4,} | "-"{4,} | "~"{4,} | "^"{4,} ) ~ &NEWLINE }
+atx_title_style = { "="+ }
+
+revision_info = { identifier } // TODO
+
+author_info = { word+ ~ email? ~ &NEWLINE }
+
+email = { "<" ~ (LETTER | "." )+ ~ "@" ~ (LETTER | "." )+ ~ ">" }
+
+attribute_entry = { ":" ~ identifier ~ ":" ~ identifier? ~ &NEWLINE }
+attribute_entry_block = { attribute_entry ~ NEWLINE }
+
+/// Orange
+delimited_block = {
+  (anchor | attribute_list | blocktitle)* ~
+  (
+    //delimited_admonition |
+    delimited_comment |
+    //delimited_example |
+    //delimited_fenced |
+    //delimited_listing |
+    delimited_literal |
+    //delimited_open |
+    //delimited_passthrough |
+    //delimited_quote |
+    //delimited_sidebar |
+    delimited_source |
+    //delimited_stem |
+    //delimited_table |
+    delimited_verse
+  )
+}
+
+delimited_inner = @{ (!(NEWLINE ~ PEEK) ~ ANY)* }
+
+delimited_comment = {
+  PUSH("/"{4,} ~ NEWLINE) ~
+  delimited_inner ~
+  NEWLINE ~ POP
+}
+
+delimited_literal = {
+  PUSH("."{4,} ~ NEWLINE) ~
+  delimited_inner ~
+  NEWLINE ~ POP
+}
+
+delimited_source = {
+  PUSH("-"{4,} ~ NEWLINE) ~
+  delimited_inner ~
+  NEWLINE ~ POP
+}
+
+delimited_verse = { "verse" } // TODO
+
+paragraph = { (inline | other_inline)+ }
+
+list = { bullet_list | numbered_list }
+
+// Listen elemente können auch blocks enthalten
+list_element = ${ (!bullet ~ !empty_lines ~ (inline | other_list_inline))+ }
+other_list_inline = @{ (!empty_lines ~ !EOI ~ !inline ~ !(NEWLINE ~ bullet) ~ ANY)+ }
+
+bullet = { ("*"+ | "-"+) }
+bullet_list = { (bullet ~ list_element)+ }
+
+numbered_list = { "numbered_list" } // TODO
+
+//label_bullet = { (!"::" ~ linechar) ~ "::")
+//labeled_list = { (label_bullet ~ list_element)+ }
+
+include_macro = { "include::" ~ path ~ inline_attribute_list }
+
+////////////////////////////////////////////////////////////////////////////////
+// often resused elements
+
+attribute_list = { inline_attribute_list ~ NEWLINE }
+
+inline_attribute_list = {
+  "[" ~ (attribute ~ ("," ~ attribute)* )? ~ "]"
+}
+
+attribute = {
+  (identifier ~ "=" ~ attribute_value) |
+  attribute_value
+}
+attribute_value = {
+  ("\"" ~ ( "\\\"" | (!"," ~ !"]" ~ !"\"" ~ ANY))* ~ "\"") |
+  ( (!"," ~ !"]" ~ ANY)+ )
+}
+
+anchor = { inline_anchor ~ NEWLINE }
+inline_anchor = { "[[" ~ (identifier | path) ~ "]]" }
+
+blocktitle = { "." ~ line ~ NEWLINE }
+
+////////////////////////////////////////////////////////////////////////////////
+// inline elements
+
+inline = !{
+  !empty_lines ~ !EOI ~
+  ( comment |
+    link |
+    strong |
+    emphasized |
+    monospaced |
+    quoted |
+    footnote |
+    footnoteref |
+    xref |
+    continuation
+  )
+}
+other_inline = @{ (!empty_lines ~ !EOI ~ !inline ~ ANY)+ }
+
+link = ${ url ~ inline_attribute_list }
+url = ${proto ~ "://" ~ path}
+proto = ${ ("http" ~ "s"?) |
+           "mailto" |
+           "git"
+         }
+
+footnote = { "footnote:" ~ inline_attribute_list }
+footnoteref = { "footnoteref:" ~ inline_attribute_list }
+xref = { "<<" ~ identifier ~ (NEWLINE? ~ "," ~ NEWLINE? ~ word+)? ~ ">>" }
+
+strong = @{ "*" ~ (!"*" ~ linechar)+ ~ "*" }
+emphasized = @{ "_" ~ (!"_" ~ linechar)+ ~ "_" }
+monospaced = @{ ("+" ~ (!"+" ~ linechar)+ ~ "+") | ("`" ~ (!"`" ~ linechar)+ ~ "`") }
+quoted = @{ inline_attribute_list ~ "#" ~ (!"#" ~ linechar)+ ~ "#" }
+
+// TODO Damit werden keine Kommentare zu Beginn eines Paragraphen angezeigt
+comment = { NEWLINE ~ "//" ~ (!NEWLINE ~ ANY)* ~ &NEWLINE }
+
+// TODO Should accept blocks
+continuation = { NEWLINE ~ "+" ~ NEWLINE }
+
+////////////////////////////////////////////////////////////////////////////////
+// generics
+
+// TODO Should all unicode letters be matched? Instead of just ascii?
+identifier = @{ (ASCII_ALPHANUMERIC | "_") ~ (ASCII_ALPHANUMERIC | "_" | "-" | ".")* }
+
+word = @{ (LETTER | NUMBER | "_" | "-")+ }
+path = @{ (LETTER | NUMBER | "_" | "-" | "." | "/" | "~" )+ }
+
+linechar = _{ (!NEWLINE ~ ANY) }
+
+line = { linechar+ ~ ( &NEWLINE | &EOI) }
+
+empty_lines = _{ NEWLINE{2, } }
+
+////////////////////////////////////////////////////////////////////////////////
+
+// Implicit whitespace rule
+WHITESPACE = _{ " " | "\t" }
+

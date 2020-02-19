@@ -1,0 +1,289 @@
+use asciidoctrine::{self, *};
+use pretty_assertions::assert_eq;
+
+#[test]
+fn parse_basic_header() {
+  let ast = AST {
+    content: "= test\n",
+    elements: vec![ElementSpan {
+      source: None,
+      content: "= test",
+      element: Element::Title { level: 1 },
+      start: 0,
+      end: 6,
+      start_line: 1,
+      start_col: 1,
+      end_line: 1,
+      end_col: 7,
+      children: Vec::new(),
+      positional_attributes: Vec::new(),
+      attributes: vec![Attribute {
+        key: "name".to_string(),
+        value: AttributeValue::Ref("test"),
+      }],
+    }],
+    attributes: Vec::new(),
+  };
+  //assert_eq!(ast, asciidoctrine::parse_ast("= test")); // TODO
+  assert_eq!(ast, asciidoctrine::parse_ast("= test\n"));
+
+  // TODO author_info, attributes, etc
+}
+
+#[test]
+fn parse_title_with_anchor() {
+  let ast = AST {
+    content: "[[test-anchor]]\n== test\n",
+    elements: vec![ElementSpan {
+      source: None,
+      content: "[[test-anchor]]\n== test",
+      element: Element::Title { level: 2 },
+      start: 0,
+      end: 23,
+      start_line: 1,
+      start_col: 1,
+      end_line: 2,
+      end_col: 8,
+      children: Vec::new(),
+      positional_attributes: Vec::new(),
+      attributes: vec![
+        Attribute {
+          key: "anchor".to_string(),
+          value: AttributeValue::Ref("test-anchor"),
+        },
+        Attribute {
+          key: "name".to_string(),
+          value: AttributeValue::Ref("test"),
+        },
+      ],
+    }],
+    attributes: Vec::new(),
+  };
+  assert_eq!(ast, asciidoctrine::parse_ast("[[test-anchor]]\n== test\n"));
+}
+
+#[test]
+fn parse_atx_header() {
+  let ast = AST {
+    content: "== test\n",
+    elements: vec![ElementSpan {
+      source: None,
+      content: "== test",
+      element: Element::Title { level: 2 },
+      start: 0,
+      end: 7,
+      start_line: 1,
+      start_col: 1,
+      end_line: 1,
+      end_col: 8,
+      children: Vec::new(),
+      positional_attributes: Vec::new(),
+      attributes: vec![Attribute {
+        key: "name".to_string(),
+        value: AttributeValue::Ref("test"),
+      }],
+    }],
+    attributes: Vec::new(),
+  };
+  assert_eq!(ast, asciidoctrine::parse_ast("== test\n"));
+}
+
+#[test]
+fn parse_setext_header() {
+  let ast = AST {
+    content: "test\n====\n",
+    elements: vec![ElementSpan {
+      source: None,
+      content: "test\n====",
+      element: Element::Title { level: 1 },
+      start: 0,
+      end: 9,
+      start_line: 1,
+      start_col: 1,
+      end_line: 2,
+      end_col: 5,
+      children: Vec::new(),
+      positional_attributes: Vec::new(),
+      attributes: vec![Attribute {
+        key: "name".to_string(),
+        value: AttributeValue::Ref("test"),
+      }],
+    }],
+    attributes: Vec::new(),
+  };
+  assert_eq!(ast, asciidoctrine::parse_ast("test\n====\n"));
+
+  // TODO Andere Titel
+}
+
+#[test]
+fn parse_code() {
+  let input = r#"
+[source, lua]
+.this is a test snippet
+----------------------------------------
+require "mytestmodule"
+
+----------------------------------------
+"#;
+
+  let code = r#"require "mytestmodule"
+"#;
+
+  let ast = AST {
+    content: input,
+    elements: vec![ElementSpan {
+      source: None,
+      content: input.trim_start(),
+      element: Element::TypedBlock {
+        kind: BlockType::Listing,
+      },
+      start: 1,
+      end: 145,
+      start_line: 2,
+      start_col: 1,
+      end_line: 8,
+      end_col: 1,
+      children: Vec::new(),
+      positional_attributes: vec![AttributeValue::Ref("source"), AttributeValue::Ref("lua")],
+      attributes: vec![
+        Attribute {
+          key: "title".to_string(),
+          value: AttributeValue::Ref("this is a test snippet"),
+        },
+        Attribute {
+          key: "content".to_string(),
+          value: AttributeValue::Ref(code),
+        },
+      ],
+    }],
+    attributes: Vec::new(),
+  };
+  assert_eq!(ast, asciidoctrine::parse_ast(input));
+}
+
+// TODO Paragraph
+#[test]
+fn parse_basic_paragraph_with_links_and_references() {
+  let input = r#"
+This is a basic paragraph. It has a link to https://www.mytestsite.org[A test website] and
+it has an internal <<reference>>. Both should be parsed.
+
+"#;
+
+  let ast = AST {
+    content: input,
+    elements: vec![ElementSpan {
+      source: None,
+      content: input.trim(),
+      element: Element::Paragraph,
+      start: 1,
+      end: 148,
+      start_line: 2,
+      start_col: 1,
+      end_line: 3,
+      end_col: 57,
+      children: vec![
+        ElementSpan {
+          source: None,
+          content: "This is a basic paragraph. It has a link to",
+          element: Element::Text,
+          start: 1,
+          end: 44,
+          start_line: 2,
+          start_col: 1,
+          end_line: 2,
+          end_col: 44,
+          children: Vec::new(),
+          positional_attributes: Vec::new(),
+          attributes: Vec::new(),
+        },
+        ElementSpan {
+          source: None,
+          content: "https://www.mytestsite.org[A test website]",
+          element: Element::Link,
+          start: 45,
+          end: 87,
+          start_line: 2,
+          start_col: 45,
+          end_line: 2,
+          end_col: 87,
+          children: Vec::new(),
+          positional_attributes: vec![AttributeValue::Ref("A test website")],
+          attributes: vec![
+            Attribute {
+              key: "url".to_string(),
+              value: AttributeValue::Ref("https://www.mytestsite.org"),
+            },
+            Attribute {
+              key: "protocol".to_string(),
+              value: AttributeValue::Ref("https"),
+            },
+          ],
+        },
+        ElementSpan {
+          source: None,
+          content: "and\nit has an internal",
+          element: Element::Text,
+          start: 88,
+          end: 110,
+          start_line: 2,
+          start_col: 88,
+          end_line: 3,
+          end_col: 19,
+          children: Vec::new(),
+          positional_attributes: Vec::new(),
+          attributes: Vec::new(),
+        },
+        ElementSpan {
+          source: None,
+          content: "<<reference>>",
+          element: Element::XRef,
+          start: 111,
+          end: 124,
+          start_line: 3,
+          start_col: 20,
+          end_line: 3,
+          end_col: 33,
+          children: Vec::new(),
+          positional_attributes: Vec::new(),
+          attributes: vec![Attribute {
+            key: "id".to_string(),
+            value: AttributeValue::Ref("reference"),
+          }],
+        },
+        ElementSpan {
+          source: None,
+          content: ". Both should be parsed.",
+          element: Element::Text,
+          start: 124,
+          end: 148,
+          start_line: 3,
+          start_col: 33,
+          end_line: 3,
+          end_col: 57,
+          children: Vec::new(),
+          positional_attributes: Vec::new(),
+          attributes: Vec::new(),
+        },
+      ],
+      positional_attributes: Vec::new(),
+      attributes: Vec::new(),
+    }],
+    attributes: Vec::new(),
+  };
+  assert_eq!(ast, asciidoctrine::parse_ast(input));
+}
+// TODO Link, References
+// TODO Links mit Leerzeichen in der Attribut Liste (Würde ich das auch in anderen Attribut Listen zulassen?)
+// TODO bold, italian, auch ob es in einem Wort ignoriert wird
+// Attributliste oder Anchor zu Beginn eines Paragraphs
+
+// TODO Lists
+// Bullet Lists, Numbered Lists, Attribute Lists
+// List Continuation, Blocks in Lists
+
+// TODO Tables
+
+// TODO Include
+// with anchor
