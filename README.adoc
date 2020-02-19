@@ -1,0 +1,24 @@
+= Literate programming toolsuite
+This is a suite of programs to use for literate programming. They try to make
+this process as smooth as possible.
+
+== Basic design decisions
+This software is written in rust. It uses it's own tools to gererate the rust
+sourcecode.
+
+Every logical part is seperated in its own subcrate. Most of those subcrates
+define a cmdline util of the same name in this crate. In everey subcrate folder
+we have a `<name>.adoc` file which is the main source for that subcrate.
+
+The subrates are:
+
+asciidoctrine:: An extensible asciidoc interpreter. (TODO links to the file). It
+  isn't very mature right now.
+lisa:: A flexible literate programming tool for both tangle and weave. (TODO
+  link to the file). It has some basic functionality right now.
+ansicht:: A visual programming tool primerily meant to use in conjunction with
+  literate programming tools. Not started yet.
+dolmetscher:: A translation helper tool. Not started yet.
+
+I think asciidoc is superior to markdown so we use this as our basic input
+format.
