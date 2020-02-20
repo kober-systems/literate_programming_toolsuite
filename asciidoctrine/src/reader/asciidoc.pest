@@ -1,4 +1,4 @@
-asciidoc = _{ NEWLINE* ~ block ~ (NEWLINE* ~ block)*  ~ NEWLINE* ~ EOI }
+asciidoc = _{ (NEWLINE* ~ block)*  ~ NEWLINE* ~ EOI }
 
 block = {
   header |

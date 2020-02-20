@@ -2,6 +2,30 @@ use asciidoctrine::{self, *};
 use pretty_assertions::assert_eq;
 
 #[test]
+fn parse_empty_document() {
+  let ast = AST {
+    content: "",
+    elements: Vec::new(),
+    attributes: Vec::new(),
+  };
+  assert_eq!(ast, asciidoctrine::parse_ast(""));
+}
+
+#[test]
+fn parse_whitespace_only() {
+  let ast = AST {
+    content: "  ",
+    elements: Vec::new(),
+    attributes: Vec::new(),
+  };
+  assert_eq!(ast, asciidoctrine::parse_ast("  "));
+}
+
+// --------------------------------------------------------------------------
+// Headers
+// --------------------------------------------------------------------------
+
+#[test]
 fn parse_basic_header() {
   let ast = AST {
     content: "= test\n",
@@ -116,6 +140,10 @@ fn parse_setext_header() {
   // TODO Andere Titel
 }
 
+// --------------------------------------------------------------------------
+// Delimited blocks
+// --------------------------------------------------------------------------
+
 #[test]
 fn parse_code() {
   let input = r#"
@@ -162,7 +190,10 @@ require "mytestmodule"
   assert_eq!(ast, asciidoctrine::parse_ast(input));
 }
 
-// TODO Paragraph
+// --------------------------------------------------------------------------
+// Paragraphs
+// --------------------------------------------------------------------------
+
 #[test]
 fn parse_basic_paragraph_with_links_and_references() {
   let input = r#"
