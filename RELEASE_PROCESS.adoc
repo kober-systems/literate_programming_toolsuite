@@ -88,13 +88,13 @@ asciidoctor -r asciidoctor-diagram \
             -a icons=font \
             README.adoc -o index.html
 asciidoctor -r asciidoctor-diagram \
-            -D docs \
+            -D docs/lisa \
             -a source-highlighter=pygments \
             -a toc=left \
             -a icons=font \
             lisa/lisa.adoc
 asciidoctor -r asciidoctor-diagram \
-            -D docs \
+            -D docs/asciidoctrine \
             -a source-highlighter=pygments \
             -a toc=left \
             -a icons=font \
