@@ -34,7 +34,7 @@ asciidcotor-diagram::: For our diagrams.
 ditaa::: For our diagrams.
 pygments::: For source code highlighting.
 
-== Check if generated files are untouched in VCS
+== Check if files are untouched in VCS
 For a new release we expect the repo to be clean. Every time the source
 generates itself it should stay the same as well.
 
@@ -61,7 +61,6 @@ cargo run --manifest-path ../Cargo.toml -- lisa.adoc || exit 1
 cd ..
 
 echo "Generating source files done!"
-
 ----
 
 == Build and test
@@ -70,7 +69,6 @@ echo "Generating source files done!"
 [source, sh]
 ----
 cargo test || exit 1
-
 ----
 
 == Build websites for github pages

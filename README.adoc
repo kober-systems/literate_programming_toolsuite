@@ -24,4 +24,94 @@ I think asciidoc is superior to markdown so we use this as our basic input
 format.
 
 == Build
+There are a few steps to build the toolsuite.
+
+[source, sh, eval]
+----
+<<check_generated_sources_are_vcs_clean>> # <1>
+
+<<generate_sources>>
+<<build_and_test>>
+<<update_docs>>
+
+<<ask_for_vcs_check_in>> # <2>
+
+<<ask_for_local_install>> # <3>
+----
+<1> If we have edited some of the generated sources by hand we may don't want
+    them to be overwritten by our build process before we merged them back into
+    the asciidoc source.
+<2> Once our build succeds there is a good chance we want to save the changes to
+    our vcs.
+<3> If everything went good we may want to install our new version of the
+    toolsuite locally.
+
+== Check if generated files are untouched in VCS
 TODO
+
+== Generate source files
+
+[[generate_sources]]
+[source, sh]
+----
+echo "Start generating source files ..."
+
+cd lisa
+lisa lisa.adoc # <1>
+# The new generated source must be able to
+# generate itself
+cargo run --manifest-path ../Cargo.toml -- lisa.adoc || exit 1
+cd ..
+
+echo "Generating source files done!"
+----
+<1> We use a preinstalled version of `lisa` to build the sources. This helps us
+    if theres a bug in our generated sources. If we have no version of `lisa`
+    installed yet theres no problem the script will just give us a warning and
+    generate the sources in the next step.
+
+== Build and test
+
+[[build_and_test]]
+[source, sh]
+----
+cargo test || exit 1
+----
+
+== Build websites for github pages
+TODO later we want to do this with `asciidoctrine` alone.
+
+[[generate_websites]]
+[source, sh]
+----
+echo "Start generating html files ..."
+
+asciidoctor -r asciidoctor-diagram \
+            -D docs \
+            -a source-highlighter=pygments \
+            -a toc=left \
+            -a icons=font \
+            README.adoc -o index.html
+asciidoctor -r asciidoctor-diagram \
+            -D docs/lisa \
+            -a source-highlighter=pygments \
+            -a toc=left \
+            -a icons=font \
+            lisa/lisa.adoc
+asciidoctor -r asciidoctor-diagram \
+            -D docs/asciidoctrine \
+            -a source-highlighter=pygments \
+            -a toc=left \
+            -a icons=font \
+            asciidoctrine/asciidoctrine.adoc
+
+echo "Generating html files done!"
+
+----
+
+=== Ask for checkin into the VCS
+TODO
+
+=== Install the tools on our computer
+TODO
+
