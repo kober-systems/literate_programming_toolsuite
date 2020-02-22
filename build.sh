@@ -56,7 +56,7 @@ done
 while true; do
     read -p "Do you wish to install this program? [yes|no] " yn
     case $yn in
-        [Yy]* ) cargo install --force --path .; break;;
+        [Yy]* ) cargo install --force --path lisa; break;;
         [Nn]* ) exit;;
         * ) echo "Please answer yes or no.";;
     esac

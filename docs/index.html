@@ -691,7 +691,7 @@ changing the included chunks in another shell).</td>
 <pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-k">while</span> true<span class="tok-p">;</span> <span class="tok-k">do</span>
     <span class="tok-nb">read</span> -p <span class="tok-s2">&quot;Do you wish to install this program? [yes|no] &quot;</span> yn
     <span class="tok-k">case</span> <span class="tok-nv">$yn</span> in
-        <span class="tok-o">[</span>Yy<span class="tok-o">]</span>* <span class="tok-o">)</span> cargo install --force --path .<span class="tok-p">;</span> break<span class="tok-p">;;</span>
+        <span class="tok-o">[</span>Yy<span class="tok-o">]</span>* <span class="tok-o">)</span> cargo install --force --path lisa<span class="tok-p">;</span> break<span class="tok-p">;;</span>
         <span class="tok-o">[</span>Nn<span class="tok-o">]</span>* <span class="tok-o">)</span> exit<span class="tok-p">;;</span>
         * <span class="tok-o">)</span> <span class="tok-nb">echo</span> <span class="tok-s2">&quot;Please answer yes or no.&quot;</span><span class="tok-p">;;</span>
     <span class="tok-k">esac</span>
@@ -704,7 +704,7 @@ changing the included chunks in another shell).</td>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-02-22 15:58:31 +0100
+Last updated 2020-02-22 16:23:08 +0100
 </div>
 </div>
 <style>
