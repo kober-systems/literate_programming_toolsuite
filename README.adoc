@@ -61,10 +61,10 @@ cd lisa
 lisa lisa.adoc # <1>
 # The new generated source must be able to
 # generate itself
-cargo run --manifest-path ../Cargo.toml -- lisa.adoc || exit 1
+cargo run --manifest-path ../Cargo.toml --bin lisa -- lisa.adoc || exit 1
 cd ..
 
-cargo run -- README.adoc || exit 1 # <2>
+cargo run --bin lisa -- README.adoc || exit 1 # <2>
 
 echo "Generating source files done!"
 ----
@@ -86,7 +86,7 @@ cargo test || exit 1
 == Build websites for github pages
 TODO later we want to do this with `asciidoctrine` alone.
 
-[[generate_websites]]
+[[update_docs]]
 [source, sh]
 ----
 echo "Start generating html files ..."

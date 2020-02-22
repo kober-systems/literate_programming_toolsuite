@@ -6,13 +6,38 @@ cd lisa
 lisa lisa.adoc
 # The new generated source must be able to
 # generate itself
-cargo run --manifest-path ../Cargo.toml -- lisa.adoc || exit 1
+cargo run --manifest-path ../Cargo.toml --bin lisa -- lisa.adoc || exit 1
 cd ..
 
-cargo run -- README.adoc || exit 1
+cargo run --bin lisa -- README.adoc || exit 1
 
 echo "Generating source files done!"
 cargo test || exit 1
+echo "Start generating html files ..."
+
+asciidoctor \
+            -r asciidoctor-diagram \
+            -a source-highlighter=pygments \
+            -a toc=left \
+            -a icons=font \
+            -D docs \
+            README.adoc -o index.html
+asciidoctor \
+            -r asciidoctor-diagram \
+            -a source-highlighter=pygments \
+            -a toc=left \
+            -a icons=font \
+            -D docs/lisa \
+            lisa/lisa.adoc
+asciidoctor \
+            -r asciidoctor-diagram \
+            -a source-highlighter=pygments \
+            -a toc=left \
+            -a icons=font \
+            -D docs/asciidoctrine \
+            asciidoctrine/asciidoctrine.adoc
+
+echo "Generating html files done!"
 
 
 while true; do
