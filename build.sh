@@ -20,6 +20,8 @@ asciidoctor \
             -a source-highlighter=pygments \
             -a toc=left \
             -a icons=font \
+            -a toclevels=4 \
+            -a data-uri \
             -D docs \
             README.adoc -o index.html
 asciidoctor \
@@ -27,6 +29,8 @@ asciidoctor \
             -a source-highlighter=pygments \
             -a toc=left \
             -a icons=font \
+            -a toclevels=4 \
+            -a data-uri \
             -D docs/lisa \
             lisa/lisa.adoc
 asciidoctor \
@@ -34,6 +38,8 @@ asciidoctor \
             -a source-highlighter=pygments \
             -a toc=left \
             -a icons=font \
+            -a toclevels=4 \
+            -a data-uri \
             -D docs/asciidoctrine \
             asciidoctrine/asciidoctrine.adoc
 

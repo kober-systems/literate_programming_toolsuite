@@ -117,6 +117,8 @@ We have some general styles that should be equal in all of our files:
 -a source-highlighter=pygments \
 -a toc=left \
 -a icons=font \
+-a toclevels=4 \
+-a data-uri \
 ----
 
 === Ask for checkin into the VCS
