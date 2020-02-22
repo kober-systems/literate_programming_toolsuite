@@ -26,7 +26,8 @@ format.
 == Build
 There are a few steps to build the toolsuite.
 
-[source, sh, eval]
+[source, sh, save]
+.build.sh
 ----
 <<check_generated_sources_are_vcs_clean>> # <1>
 
@@ -63,12 +64,16 @@ lisa lisa.adoc # <1>
 cargo run --manifest-path ../Cargo.toml -- lisa.adoc || exit 1
 cd ..
 
+cargo run -- README.adoc || exit 1 # <2>
+
 echo "Generating source files done!"
 ----
 <1> We use a preinstalled version of `lisa` to build the sources. This helps us
     if theres a bug in our generated sources. If we have no version of `lisa`
     installed yet theres no problem the script will just give us a warning and
     generate the sources in the next step.
+<2> Since `lisa` is currently unable to evaluate scripts with user cmdline input
+    we need to refresh the build script regulary.
 
 == Build and test
 
@@ -86,32 +91,70 @@ TODO later we want to do this with `asciidoctrine` alone.
 ----
 echo "Start generating html files ..."
 
-asciidoctor -r asciidoctor-diagram \
+asciidoctor \
+            <<asciidoctor-styles>>
             -D docs \
-            -a source-highlighter=pygments \
-            -a toc=left \
-            -a icons=font \
             README.adoc -o index.html
-asciidoctor -r asciidoctor-diagram \
+asciidoctor \
+            <<asciidoctor-styles>>
             -D docs/lisa \
-            -a source-highlighter=pygments \
-            -a toc=left \
-            -a icons=font \
             lisa/lisa.adoc
-asciidoctor -r asciidoctor-diagram \
+asciidoctor \
+            <<asciidoctor-styles>>
             -D docs/asciidoctrine \
-            -a source-highlighter=pygments \
-            -a toc=left \
-            -a icons=font \
             asciidoctrine/asciidoctrine.adoc
 
 echo "Generating html files done!"
 
 ----
 
+We have some general styles that should be equal in all of our files:
+
+[[asciidoctor-styles]]
+[source, sh]
+----
+-r asciidoctor-diagram \
+-a source-highlighter=pygments \
+-a toc=left \
+-a icons=font \
+----
+
 === Ask for checkin into the VCS
-TODO
+
+[[ask_for_vcs_check_in]]
+[source, sh]
+----
+while true; do
+    read -p "Do you wish to commit your changes to git? [yes|no] " yn
+    case $yn in
+        [Yy]* )
+          git diff; # <1>
+          git add .; # <2>
+          git commit; # <2>
+          break;;
+        [Nn]* ) exit;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
+----
+<1> Before we commit everything we should do a last review.
+<2> Normally we know what we do and can just add everything and go on, but if we
+    saw something in the commit that we don't want to include we should stop
+    before we submit the commit (by letting the commit message empty or by
+    changing the included chunks in another shell).
 
 === Install the tools on our computer
-TODO
+
+[[ask_for_local_install]]
+[source, sh]
+----
+while true; do
+    read -p "Do you wish to install this program? [yes|no] " yn
+    case $yn in
+        [Yy]* ) cargo install --force --path .; break;;
+        [Nn]* ) exit;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
+----
 
