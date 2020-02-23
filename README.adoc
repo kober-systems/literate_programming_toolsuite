@@ -16,8 +16,8 @@ asciidoctrine:: An extensible asciidoc interpreter. (TODO links to the file). It
   isn't very mature right now.
 lisa:: A flexible <<lisa/lisa.adoc#,literate programming tool>> for both tangle
   and weave. It has some basic functionality right now.
-ansicht:: A visual programming tool primerily meant to use in conjunction with
-  literate programming tools. Not started yet.
+ansicht:: A <<ansicht/ansicht.adoc#,visual programming tool>> primerily meant
+  to use in conjunction with literate programming tools. Currently just a draft.
 dolmetscher:: A translation helper tool. Not started yet.
 
 I think asciidoc is superior to markdown so we use this as our basic input
@@ -103,6 +103,10 @@ asciidoctor \
             <<asciidoctor-styles>>
             -D docs/asciidoctrine \
             asciidoctrine/asciidoctrine.adoc
+asciidoctor \
+            <<asciidoctor-styles>>
+            -D docs/ansicht \
+            ansicht/ansicht.adoc
 
 echo "Generating html files done!"
 

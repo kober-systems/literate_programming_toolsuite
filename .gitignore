@@ -1,4 +1,4 @@
 *.cache
 .asciidoctor
 target
-docs/**.png
+*.png

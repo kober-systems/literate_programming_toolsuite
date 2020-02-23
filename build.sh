@@ -42,6 +42,15 @@ asciidoctor \
             -a data-uri \
             -D docs/asciidoctrine \
             asciidoctrine/asciidoctrine.adoc
+asciidoctor \
+            -r asciidoctor-diagram \
+            -a source-highlighter=pygments \
+            -a toc=left \
+            -a icons=font \
+            -a toclevels=4 \
+            -a data-uri \
+            -D docs/ansicht \
+            ansicht/ansicht.adoc
 
 echo "Generating html files done!"
 
