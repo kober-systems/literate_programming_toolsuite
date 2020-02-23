@@ -5,11 +5,20 @@ extern crate pest;
 extern crate pest_derive;
 
 pub use structopt::StructOpt;
+use thiserror::Error;
 
 mod ast;
 pub use ast::*;
 pub mod options;
 mod reader;
+
+#[derive(Error, Debug)]
+pub enum AsciidoctrineError {
+  #[error("could not parse input")]
+  Parse(String),
+}
+
+type Result<T> = std::result::Result<T, AsciidoctrineError>;
 
 pub trait Reader {
   fn parse(&self, input: &str) -> AST;
@@ -28,6 +37,6 @@ pub trait Writer {
 }
 
 // TODO Add Options
-pub fn parse_ast(input: &str) -> AST {
+pub fn parse_ast(input: &str) -> Result<AST> {
   reader::asciidoc::parse_ast(input)
 }

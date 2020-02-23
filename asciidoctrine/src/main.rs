@@ -1,25 +1,26 @@
 extern crate asciidoctrine;
 
+use anyhow::{Context, Result};
 use asciidoctrine::*;
 use std::fs;
 use std::io::{self, Read};
 
-fn main() {
+fn main() -> Result<()> {
   let opts = options::from_args();
 
   // read the input
   let input = match &opts.input {
-    Some(input) => fs::read_to_string(input).expect("Could not read in file"),
+    Some(input) => fs::read_to_string(input).context("Could not read in file")?,
     None => {
       let mut input = String::new();
       io::stdin()
         .read_to_string(&mut input)
-        .expect("Could not read stdin");
+        .context("Could not read stdin")?;
       input
     }
   };
   // TODO Den Text parsen
-  let ast = asciidoctrine::parse_ast(&input);
+  let ast = asciidoctrine::parse_ast(&input)?;
 
   // TODO Wenn Erweiterungen in den Kommandozeilenparametern angegeben sind
   // diese in einer Schleife den AST manipulieren lassen
@@ -33,4 +34,6 @@ fn main() {
   // TODO Das Ausgabeformat festlegen
   //println!("{:#?}", opts);
   //println!("\n\n{:#?}", ast);
+
+  Ok(())
 }

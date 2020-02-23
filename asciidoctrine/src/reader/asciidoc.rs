@@ -1,5 +1,6 @@
 pub use crate::ast::*;
 use crate::reader::*;
+use crate::Result;
 use pest::Parser;
 
 #[derive(Parser, Debug)]
@@ -376,7 +377,7 @@ fn process_element<'a>(
 
 // TODO Add Options
 // TODO Add Result
-pub fn parse_ast(input: &str) -> AST {
+pub fn parse_ast(input: &str) -> Result<AST> {
   // TODO Den Text parsen
   // TODO Result auswerten
   let ast = AsciidocParser::parse(Rule::asciidoc, input).expect("couldn't parse input.");
@@ -405,9 +406,9 @@ pub fn parse_ast(input: &str) -> AST {
     }
   }
 
-  AST {
+  Ok(AST {
     content: input,
     elements: elements,
     attributes: attributes,
-  }
+  })
 }
