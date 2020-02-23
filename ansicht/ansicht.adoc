@@ -1,0 +1,245 @@
+Ansicht - Ein Werkzeug zum Skizzieren von Funktionsarchitekturen
+================================================================
+
+Einführung
+----------
+Wenn ich ein neues Softwareprodukt entwerfe (oder irgendeine Art von
+Process/Projekt etc) beginne ich fast immer mit einer Art Gedankenmodell (In
+Wirklichkeit gibt es davor meistens ein Research Phase, eine Analyse des
+Problems und der Ausgangslage, aber sobald ich einen konkreten Lösungsweg
+entwerfe beginne ich meistens mit einem Gedankenmodell).
+
+Dieses lässt sich fast immer am besten als Grafik entwerfen. Im Allgemeinen
+folgt es einer Graphen-Struktur (denn fast immer werden strukturelle
+Verbindungen modelliert). Diese Vorgehensweise hilft nicht nur mir das Modell zu
+erstellen und zu verfeinern, sondern es ist meistens auch der beste Einstieg für
+andere um den grundsätzlichen Aufbau und die Funktionsweise des Projektes zu
+verstehen (Wenn ich mir ein Projekt anschaue bin ich immer dankbar solche
+Graphiken in der Dokumentation zu finden).
+
+Von dieser Grafik leite ich dann den ersten Entwurf meiner Software ab. Im Laufe
+der Zeit entstehen aber einige Probleme:
+
+* Die Anforderungen an die Software verändern sich. Die Grafik (als Teil der
+  Dokumentation) und die Software driften langsam auseinander.
+* Andere Programmierer arbeiten an dem Projekt mit. Sie verändern die
+  Architektur und die Dokumentation wird irreführend und fehlerhaft. Manchmal
+  geht auch das grundlegende Architekturprinzip kaput und die Software wird
+  komplexer und schwerer zu warten.
+* Durch Refaktoring werden Namen verändert. Diese Namen werden oft nicht (oder
+  verspätet) in der Grafik aktualisiert.
+
+Diese und weitere Problemehängen fast immer mit Projektalterung und
+Komplexitätszuwachs zusammen. Eines der hervorstehenden Symptome (oder auch der
+Ursachen. Wahrscheinlich beides.) ist ein Auseinanderdriften von Dokumentation
+und Code.
+
+=== Vorhandene Lösungsansätze
+Um diesen Schwierigkeiten Herr zu werden gab es in der Vergangenheit einige
+Lösungsansätze:
+
+Graphische Programmiersprachen:: In manchen Bereichen scheint dieser Ansatz
+  ziemlich gut zu funktionieren (z.B. Audio,Video und Bildbearbeitung) doch es
+  gibt auch Probleme.
++
+* Speziell sobald Programme komplexer werden verliert man sich oft in einem
+  völlig unübersichtlichen Kontrollfluss (wer schonmal versucht hat auch nur
+  halbwegs umfangreiche SPS Programme zu debuggen weis wovon ich rede).
+** Das https://en.wikipedia.org/wiki/Deutsch_limit[Deutsch limit] scheint eine
+   ähnliche Beobachtung zu sein.
+* Versionskontrolle und der Vergleich zweier Versionstände wird zum Albtraum
+  (damit wird auch Testen und Projektplanung schwieriger).
+UML Diagramme:: Diese werden oft verwendet um daraus Quellcode zu generieren.
++
+* Wenn man den Quellcode dauerhaft nutzen will werden die Diagramme immer
+  detailierter und damit unübersichtlicher.
+* Die Programme zum Erstellen der Diagramme sind oft selbst sehr komplex (oft
+  ist es leichter die Sache im Quelltext zu beschreiben).
+* Sobald man den generierten Quelltext editiert können die Änderungen nur schwer
+  wieder in die Diagramme eingepflegt werden.
+* Verschiedene Diagrammtypen modellieren überschneidende Teile des Codes.
+Diagramme aus Quellcode erzeugen:: Diesen Ansatz wählt z.B. doxygen.
++
+* Das dreht den Arbeitsfluss um. Aber gerade zu Beginn des Projektes hat man am
+  meisten von einem Diagramm.
+* Die generierten Diagramme helfen oft nicht beim Verstehen der
+  Programmarchitektur da sie willkürlich angeordnet sind und alles mit in ein
+  Diagramm hineinpacken (sie können wichtige nicht von unwichtigen Informationen
+  unterscheiden).
+
+Diese Probleme müssen nicht zwangsläufig mit dem Lösungsansatz zu tun haben aber
+bei den vorhandenen Tools sind sie zu beobachten.
+
+=== Mein eigener Workflow
+In meinem persönlichen Arbeitsfluss bevorzuge ich es Diagramme mit einfachen
+Werkzeugen zu erstellen (die Definition von einfach ist dabei, was ich als
+einafach und angenehm empfinde :) bei denen ich mich auf die visuellen Aspekte
+konzentrieren kann (z.B. Freihand, Inkscape -> Svg, ditaa -> ascii art, yed ->
+graphml). Auf diese Weise kann man aus der resultierenden Grafik leicht die
+Funktionsweise der Software verstehen.
+
+== Übersicht
+
+=== Ziele
+Das vorliegende Projekt versucht einen neuen Ansatz zu finden um Software zu
+entwerfen und die Softwaredokumentation aktuell zu halten Dabei geht es von
+folgenden Annahmen aus:
+
+* Die Architektur ist ein grundlegendes Merkmal einer Software und sollte zu
+  *Beginn* des Entwicklungsprozesses skizziert und dokumentiert werden.
+* Die Architektur eines Projektes darf geändert werden (und das muss man oftmals
+  um neuen Anforderungen zu genügen oder zu wachsen) aber das sollte niemals
+  unbemerkt oder aus Versehen geschehen.
+* Zu verscheidenen Zeiten (Phasen) und bei verschiedenen Aufgaben sind
+  unterschiedliche Sichtweisen auf die Implementierung erforderlich (grafisch
+  ist nicht generell besser als Text oder umgekehrt und es sind nicht immer die
+  gleichen Diagramme erforderlich).
+* Die grundlegenden Konzepte einer Software sollten einfach darstellbar und
+  erklärbar sein.
+
+=== Architektur
+Um die vorher erwähnten Probleme zu beheben und die soeben definierten Ziele
+unter Berücksichtigung der hier gestellten Constraints zu erreichen bedient sich
+`ansicht` folgender Grundiedee: Es übersetzt sowohl die Diagramme als auch den
+Quellcode in einen Graphen (mit definierten Einstiegspunkten) und vergleicht
+diese Graphen auf strukturelle Unterschiede.
+
+[ditaa]
+.Datenstrom in Ansicht
+-------------------------------------------------------------------------------
+
+                    +--------------------------------------------------------+
+                    |                                                        |
+                    |         +-=-----------------------------------------+  |
+                    v         |                                           |  |
+ /-----------------------\    |    +---------+    /-----\    +---------+  |  |
+ |                       |    |    | {io}    |    |     |    | {io}    +--|--+
+ | Diagramm              +-------->| ansicht +--->| AST +--->| ansicht |  |
+ | (asciiart/svg/graphml)|  +----->|         |    |     |    |         +--|--+
+ \-----------------------/  | |    +---------+    \-----/    +---------+  :  |
+                            | |                                           |  |
+                            | | Kann mehrere ASTs gleichzeitig vergleichen|  |
+                            | +-=-----------------------------------------+  |
+                            |                                                |
+                            |            /-------------\                     |
+                            |            | Quellcode   |                     |
+                            +------------+ (z.B. rust) |<--------------------+
+                                         |             |
+                                         \-------------/
+
+-------------------------------------------------------------------------------
+
+Damit ist `ansicht` grundlegend ein Eingabe- und Ausgabefilter von
+Strukturgraphen. Diese Architektur lässt sehr flexibele Arebitsflows zu.
+Gleichzeitig kann die Dokumentation von Projekten signifikant verbessert werden.
+
+Im folgenden werden wir die grundlegenden Komponenten und Anwendungsfälle
+behandeln:
+
+* Einlesen von Dateien (TODO link)
+* Generieren von Dateien (TODO link)
+* Vergleichen und Manipulieren von Graphen (TODO link)
+
+== Bedienung
+
+=== Kommandozeilen Interface
+TODO
+
+=== Asciidoctrine Erweiterung
+TODO
+
+=== API
+TODO link auf die API auf crates.io
+
+=== Ein konkretes Beispiel für einen Workflow
+TODO Aus dem handgeschriebenen Entwurf für Ansicht übernehmen.
+
+== Implementierung
+
+=== Das Format vom internen AST
+TODO
+
+=== Einlesen von Dateinen
+Das Programm kann verschiedene Datenströme (Datentypen) einlesen:
+
+* ASCII Diagramme. Diese müssen gewisse Konventionen einhalten, damit sie
+  richtig geparsed werden können.
+* Graphml Dateien. Wir verwenden das yed Format um auch graphische Aspekte gut
+  darstellen zu können.
+* Quelltext Dateien. Es muss ein Parser für jede unterstützte Sprache
+  geschrieben werden.
+* AST Graph. Der Graph selber kann als JSON Tree eingelesen werden.
+
+TODO links zu den entsprechenden Subüberschriften
+
+Jedes dieser Formate fügt auch eigene Zusatzinformationen zum AST hinzu. SVG,
+Graphml und ASCII z.B. Informationen zur Position/Style in der graphischen
+Darstellung. Quellcode z.B. Informationen zur Datei, Zeile etc aus der der AST
+abgeleitet wurde.
+
+==== ASCII Art
+TODO
+
+==== Graphml
+TODO
+
+==== Quelltext
+TODO
+
+==== Json AST
+TODO
+
+=== Generieren von Dateien
+Aus einem AST Graph kann das Programm verschiedene Datenströme (Datentypen)
+erzeugen. Sind in dem AST zusätzliche Informationen, zur eigentlichen Logik,
+enthalten, so werden diese (wenn möglich) mit in den Ausgabestrom eingearbeitet.
+Sind z.B. Positions- oder Styleangaben im AST vorhanden so würden sie beim
+Erzeugen einer SVG Datei, einer PNG Datei, einer Graphml Datei oder eines ASCII
+Art Bildes berücksichtigt werden (Wenn sie fehlen legt das Programm die Position
+selbst fest). Sind Informationen über die Datei, Zeile etc vorhanden in denen
+etwas implementiert wurde so würde das beim Erzeugen einer SVG-Datei als Link
+eingebaut werden.
+
+Die Ausgabeformate sind grundlegend die gleichen wie die Eingabeformate (Zwar
+muss nicht für jedes Eingabeformat auch ein Ausgabeformat implementiert werden
+(oder umgekehrt) aber prinzipiel ist das schon wünschenswert).
+
+==== ASCII Art
+TODO
+
+==== Graphml
+TODO
+
+==== Quelltext
+TODO
+
+==== Json AST
+TODO
+
+==== Bildformate SVG und PNG
+TODO
+
+=== Vergleichen & Manipulieren von Graphen
+Das Programm kann mehrere Graphen übereinanderlegen, subtrahieren, die
+Intersektion errechnen usw. Zudem kann es erkennen, ob es zu Konflikten kam.
+Wenn man mehr als zwei AST Graphen übergibt kann es erkennen, was hinzugefügt,
+entfernt oder auf mehreren Seiten editiert wurde (nach dem Prinzip wie bei git
+mit base, theirs, mine). Zudem gibt es einige Befehle um Teile des AST nach
+bestimmten Kriterien auszufiltern oder Constraints auf bestimmten Kriterien zu
+setzen (Hier helfen bestimmt Graph query Funktionen, pattern matching, etc).
+
+Da man den AST als JSON exportieren kann, diesen dann mit einem beliebigen
+Programm (in einer beliebigen Sprache) verändern kann und ihn danach wieder
+einlesen kann sind den Möglichkeiten keine Grenzen gesetzt.
+
+==== Mehere Graphen vereinigen
+TODO
+
+==== Zwei Graphen vergleichen
+TODO
+
+==== Informationen in einem Graphen filtern
+TODO
+
+== Build
+TODO
