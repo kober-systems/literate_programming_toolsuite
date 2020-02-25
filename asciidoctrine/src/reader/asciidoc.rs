@@ -3,7 +3,7 @@ use crate::reader::*;
 use crate::Result;
 use pest::Parser;
 
-#[derive(Parser, Debug)]
+#[derive(Parser, Debug, Copy, Clone)]
 #[grammar = "reader/asciidoc.pest"]
 pub struct AsciidocParser;
 
@@ -144,7 +144,7 @@ fn process_link<'a>(
         });
       }
       Rule::inline_attribute_list => {
-        base = process_inline_attribute_list(element, base.clone());
+        base = process_inline_attribute_list(element, base);
       }
       _ => {
         let mut sub = set_span(&element);
@@ -282,7 +282,7 @@ fn process_element<'a>(
       // TODO
       Some(base)
     }
-    Rule::title => process_title(element, base.clone()),
+    Rule::title => process_title(element, base),
     Rule::title_block => {
       for subelement in element.into_inner() {
         match subelement.as_rule() {
@@ -315,20 +315,20 @@ fn process_element<'a>(
       for subelement in element.into_inner() {
         match subelement.as_rule() {
           Rule::anchor => {
-            base = process_anchor(subelement, base.clone());
+            base = process_anchor(subelement, base);
           }
           Rule::attribute_list => {
-            base = process_attribute_list(subelement, base.clone());
+            base = process_attribute_list(subelement, base);
           }
           Rule::blocktitle => {
-            base = process_blocktitle(subelement, base.clone());
+            base = process_blocktitle(subelement, base);
           }
           // TODO wir müssen die anderen delimitets verarbeiten
           Rule::delimited_source => {
             base.element = Element::TypedBlock {
               kind: BlockType::Listing,
             };
-            base = process_delimited_inner(subelement, base.clone());
+            base = process_delimited_inner(subelement, base);
           }
           // We just take the attributes at the beginning
           // of the element.
