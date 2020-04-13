@@ -1,13 +1,10 @@
-Lisa - Literate Intuitive Sourcecode Analysis framework
-=======================================================
+= Lisa - Literate Intuitive Sourcecode Analysis framework
 Benjamin Kober <k.o.b.e.r@web.de>
 :toc: left
 
 Ein literate programming Werkzeug.
 
-
-Programmübersicht
------------------
+== Programmübersicht
 Programme sind festgehaltene Ideen. Die zugrunde liegenden Konzepte sind nicht
 an irgendeine Syntax sodern an Gedanken und Modelle gekoppelt. Dieses Programm
 soll dem Entwickler helfen sich wieder auf diese Konzepte konzentrieren zu
@@ -144,11 +141,9 @@ impl Extension for Lisa { // <1>
     des Quellcodes aus der Datei.
 <5> Zum Schluss können alle Dateien generiert und Scripte ausgeführt werden.
 
-Benutzung
----------
+== Benutzung
 
-Generelles
-~~~~~~~~~~
+=== Generelles
 Beim schreiben eines literate Programmes sollte man wie bei einer
 wissenschaftlichen Arbeit vorgehen:
 
@@ -181,11 +176,9 @@ Anordnung der Kapitel im endgültigen Dokument immer ähnlich. Im Laufe der
 Entwicklung wird man immer mal wieder aufräumen und umstrukturieren müssen
 (refaktoring).
 
-Quellcode generieren
-~~~~~~~~~~~~~~~~~~~~
+=== Quellcode generieren
 
-Extrahieren
-^^^^^^^^^^^
+==== Extrahieren
 Die normalen Quellcode Listings können gebraucht werden, um ein Programm zu
 erstellen.
 
@@ -225,8 +218,7 @@ for element in input.elements.iter() {
 }
 ----
 
-Zusammenfügen
-^^^^^^^^^^^^^
+==== Zusammenfügen
 Die verschiedenen Codeschnipsel kann man in anderen Codeschnipseln einbinden.
 Dafür verwendet man einfach eine `cross reference` auf den `anchor` des
 jeweiligen Schnipsels:
@@ -302,7 +294,7 @@ require "testmodule"
 print(testmodule.version)
 ----
 
-Außerdem kann man einen Codeschnipsel beliebig oft in einem oder meheren
+Außerdem kann man einen Codeschnipsel beliebig oft in einem oder mehreren
 anderen Codeschnipseln einfügen.
 
 Verwenden zwei (oder mehr) Schnipsel den gleichen `anchor`, so wird der Inhalt
@@ -318,7 +310,7 @@ Will man das vermeiden, so kann man das Stichwort `inline` angeben (TODO
 wirklich? oder soll man in diesem Fall den Schnipsel einfach anders schreiben?
 Was ist mit dem Zeilenende hinter der `cross reference`? Manchmal wäre es gut
 es jedesmal hinten anzuhängen, manchmal nur einmal zu lassen und manchmal gar
-nichteinzufügen.)
+nicht einzufügen.)
 
 Will man einen den generierten Text in eine Datei speichern, so kann man den
 Dateinamen angeben.
@@ -379,8 +371,7 @@ TODO Ignorieren von Ersetzungszeichen in einigen Snippets oder anpassen des
 Musters. z.B. mit dem Attribut `lisa-reference="<<<"`.
 
 [[transform]]
-Transformieren
-^^^^^^^^^^^^^^
+==== Transformieren
 Vorhandene Codeschnipsel können nicht nur zu einer größeren Einheit
 zusammengesetzt werden, sondern auch manipuliert werden. Auf diese Weise kann
 man eine Art Templates generieren um damit dynamisch angepasste Texte zu
@@ -389,8 +380,7 @@ Lizenz-Headers in allen Quellcode Dateien.
 
 Die zu diesem Zweck bereitgestellten Funktionen werden jetzt erklärt:
 
-save (Speichern)
-++++++++++++++++
+===== save (Speichern)
 Um überhaupt ein ausführbares Programm zu erhalten ist es unerlässlich den
 erzeugten Quellcode in ein tatsächliches Programm umwandeln zu können. Die
 wichtigste Möglichkeit dazu ist einen Schnipsel in eine Datei abspeichern zu
@@ -416,8 +406,7 @@ definiert wird. Das scheint sehr nützlich zu sein. Sollte ich so etwas auch
 implementieren?
 //////
 
-eval (Ausführen)
-++++++++++++++++
+===== eval (Ausführen)
 Eine weitere Methode das Programm zu nutzen ist es direkt auszuführen. Das wird
 mit dem Atrribut `eval` gemacht.
 
@@ -435,8 +424,7 @@ print("Hello World")
 
 Dieses Beispiel würde direkt "Hello World" auf der Konsole schreiben.
 
-pipe
-++++
+===== pipe
 Manchmal möchte man einen Codeschnipsel in leicht modifizierter Form vielfach
 verwenden. In diesem Fall ist `pipe` ein sehr mächtiges Werkzeug.
 
@@ -696,8 +684,7 @@ nützlich gleich zu Beginn des Dokumentes dieses mit einem Status zu versehen
 (Entwurf, Proof of Konzept, Beta, Stabil, Veraltet, ...) und eventuell direkt
 auf ein Nachfolgedokument zu verweisen.
 
-Beispiele
----------
+== Beispiele
 
 Eine Präsentation als literate program
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1809,7 +1796,7 @@ das Programm (und die Bibliothek) kompiliert werden können.
 [package]
 name = "lisa"
 version = "0.1.0"
-authors = ["Benjamin Kober <kober@optisense.com>"]
+authors = ["Benjamin Kober <k.o.b.e.r@web.de>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
