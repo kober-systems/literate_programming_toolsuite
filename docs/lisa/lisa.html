@@ -2493,13 +2493,11 @@ Veränderung werden wir es wieder abspeichern (TODO link).</p>
 
 <span class="tok-w">  </span><span class="tok-o">&lt;&lt;</span><span class="tok-n">strip_all_lines_in_content</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
 
-<span class="tok-w">  </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">old_content</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">fs</span>::<span class="tok-n">read_to_string</span><span class="tok-p">(</span><span class="tok-n">path</span><span class="tok-p">)</span><span class="tok-o">?</span><span class="tok-p">;</span><span class="tok-w"></span>
+<span class="tok-w">  </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">old_content</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">fs</span>::<span class="tok-n">read_to_string</span><span class="tok-p">(</span><span class="tok-n">path</span><span class="tok-p">)</span><span class="tok-o">?</span><span class="tok-p">;</span><span class="tok-w"> </span><i class="conum" data-value="2"></i><b>(2)</b>
 <span class="tok-w">  </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-n">old_content</span><span class="tok-w"> </span><span class="tok-o">==</span><span class="tok-w"> </span><span class="tok-n">content</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-nb">Ok</span><span class="tok-p">(());</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-p">}</span><span class="tok-w"></span>
-<span class="tok-w">  </span><span class="tok-c1">// TODO Dateien sollten nur dann geschrieben werden, wenn sich der Inhalt</span>
-<span class="tok-w">  </span><span class="tok-c1">//      vom zu schreibenden Inhalt unterscheidet. Das kann Kompile Zeiten</span>
-<span class="tok-w">  </span><span class="tok-c1">//      in nachfolgenden Prozressen stark verkürzen.</span>
+
 <span class="tok-w">  </span><span class="tok-n">fs</span>::<span class="tok-n">write</span><span class="tok-p">(</span><span class="tok-n">path</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">content</span><span class="tok-p">)</span><span class="tok-o">?</span><span class="tok-p">;</span><span class="tok-w"></span>
 
 <span class="tok-w">  </span><span class="tok-nb">Ok</span><span class="tok-p">(())</span><span class="tok-w"></span>
@@ -2513,6 +2511,12 @@ Veränderung werden wir es wieder abspeichern (TODO link).</p>
 <td>Wenn der Ordner, in dem sich die Datei befindet, nicht existiert, muss er
 zuerst erzeugt werden. Sonst käme es beim schreiben der Datei zu einer
 Fehlermeldung.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Dateien sollten nur dann geschrieben werden, wenn sich der Inhalt
+vom zu schreibenden Inhalt unterscheidet. Das kann Kompile Zeiten
+in nachfolgenden Prozressen stark verkürzen.</td>
 </tr>
 </table>
 </div>
@@ -2745,7 +2749,7 @@ das Programm (und die Bibliothek) kompiliert werden können.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-04-13 21:49:47 +0200
+Last updated 2020-04-13 22:19:03 +0200
 </div>
 </div>
 <style>

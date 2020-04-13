@@ -1593,6 +1593,11 @@ pub fn save(&self, path: String, content: String) -> Result<(), Error> {
 
   <<strip_all_lines_in_content>>
 
+  let old_content = fs::read_to_string(path)?; // <2>
+  if old_content == content {
+    return Ok(());
+  }
+
   fs::write(path, content)?;
 
   Ok(())
@@ -1602,6 +1607,9 @@ pub fn save(&self, path: String, content: String) -> Result<(), Error> {
 <1> Wenn der Ordner, in dem sich die Datei befindet, nicht existiert, muss er
     zuerst erzeugt werden. Sonst käme es beim schreiben der Datei zu einer
     Fehlermeldung.
+<2> Dateien sollten nur dann geschrieben werden, wenn sich der Inhalt
+    vom zu schreibenden Inhalt unterscheidet. Das kann Kompile Zeiten
+    in nachfolgenden Prozressen stark verkürzen.
 
 Dafür müssen wir noch den `std::fs` crate einbinden.
 
