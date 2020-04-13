@@ -15,7 +15,7 @@ use std::path::Path;
 use std::str::FromStr;
 use std::io::Write;
 use std::process::{Command, Stdio};
-use rlua::{Lua, Result};
+use rlua::Lua;
 
 #[derive(Clone, Debug)]
 pub enum SnippetType {
@@ -34,6 +34,16 @@ pub struct Snippet {
   /// before it can be processed
   pub depends_on: Vec<String>,
 }
+#[derive(thiserror::Error, Debug)]
+pub enum Error {
+  #[error("a nessessary attribute is missing")]
+  Missing,
+  #[error("io problem")]
+  Io(#[from] std::io::Error),
+  #[error("Child process stdin has not been captured!")]
+  Childprocess,
+}
+
 
 pub struct Lisa {
   snippets: HashMap<String, Snippet>,
@@ -49,14 +59,14 @@ impl Lisa {
   }
 
   /// Gets recursively all snippets from an element
-  pub fn extract(&mut self, input: &ElementSpan) {
+  pub fn extract(&mut self, input: &ElementSpan) -> Result<(), Error> {
     match &input.element {
       Element::TypedBlock {
         kind: BlockType::Listing,
       } => {
         let args = &mut input.positional_attributes.iter();
         if !(args.next() == Some(&AttributeValue::Ref("source"))) {
-          return;
+          return Ok(());
         }
         let mut interpreter = None;
         if let Some(value) = args.next()  {
@@ -121,7 +131,7 @@ impl Lisa {
               kind = SnippetType::Save(path);
             }
             AttributeValue::Ref("eval") => {
-              let interpreter = interpreter.clone().unwrap(); // TODO Fehlerbehandlung
+              let interpreter = interpreter.clone().ok_or(Error::Missing)?;
               kind = SnippetType::Eval(interpreter);
             }
             AttributeValue::Ref("pipe") => {
@@ -160,6 +170,8 @@ impl Lisa {
         }
       }
     }
+
+    Ok(())
   }
 
   /// Stores a snippet in the internal database
@@ -200,13 +212,13 @@ impl Lisa {
   }
 
   /// Saves a Snippet to a file
-  pub fn save(&self, path: String, content: String) {
+  pub fn save(&self, path: String, content: String) -> Result<(), Error> {
     // TODO Allow directory prefix from options
 
     let path = Path::new(&path);
     if let Some(path) = path.parent() {
       if !path.exists() {
-        fs::create_dir_all(path).unwrap();
+        fs::create_dir_all(path)?;
       }
     }
 
@@ -214,43 +226,56 @@ impl Lisa {
                          .map(|line| { String::from(line.trim_end()) + "\n" })
                          .collect::<String>();
 
-    fs::write(path, content).expect("Unable to write file");
+    fs::write(path, content)?;
+
+    Ok(())
   }
 
   /// Run a snippet in an interpreter
-  pub fn eval(&self, interpreter: String, content: String) {
+  pub fn eval(&self, interpreter: String, content: String) -> Result<(), Error> {
 
     let mut eval = Command::new(interpreter).stdin(Stdio::piped())
       .stderr(Stdio::piped())
       .stdout(Stdio::piped())
-      .spawn().unwrap();
+      .spawn()?;
 
     eval.stdin
       .as_mut()
-      .ok_or("Child process stdin has not been captured!").unwrap()
-      .write_all(content.as_bytes()).unwrap(); // TODO Wie soll EOF gesendet werden?
+      .ok_or(Error::Childprocess)?
+      .write_all(content.as_bytes())?; // TODO Wie soll EOF gesendet werden?
 
-    let output = eval.wait_with_output().unwrap();
+    let output = eval.wait_with_output()?;
 
     // TODO in den Asciidoc AST einbinden
     if output.status.success() {
-      println!("{}", String::from_utf8(output.stdout).unwrap()); // TODO entfernen
+      let out = match String::from_utf8(output.stdout) {
+        Ok(out) => out,
+        Err(_) => "Error: Couldn't decode stdout".to_string(),
+      };
+      println!("{}", out); // TODO entfernen
     } else {
-      let err = String::from_utf8(output.stderr).unwrap();
+      let err = match String::from_utf8(output.stderr) {
+        Ok(out) => out,
+        Err(_) => "Error: Couldn't decode stderr".to_string(),
+      };
       println!("External command failed:\n {}", err) // TODO entfernen
     }
+
+    Ok(())
   }
 
   /// Gets all snippets from the ast
-  pub fn extract_ast(&mut self, input: &AST) {
+  pub fn extract_ast(&mut self, input: &AST) -> Result<(), Error> {
     // extract snippets from all inner elements
     for element in input.elements.iter() {
       self.extract(element);
     }
+
+    Ok(())
   }
 
   /// Build all snippets (Runs the vm)
-  pub fn generate_outputs(&mut self, mut ast: &AST) {
+  pub fn generate_outputs(&mut self, mut ast: &AST) -> Result<(), Error> {
     loop {
       let key = self.dependencies.pop();
       match key {
@@ -271,17 +296,17 @@ impl Lisa {
 
               match &snippet.kind {
                 SnippetType::Eval(interpreter) => {
-                  self.eval(interpreter.to_string(), content);
+                  self.eval(interpreter.to_string(), content)?;
                 }
                 SnippetType::Plain => {}
                 SnippetType::Save(path) => {
-                  let path = String::from_str(&path).unwrap(); // TODO unwrap durch check ersetzen
-                  self.save(path, content);
+                  let path = String::from_str(&path).unwrap();
+                  self.save(path, content)?;
                 }
                 SnippetType::Pipe => {
                   let lua = Lua::new();
 
-                  lua.context(|lua| -> Result<()> {
+                  lua.context(|lua| -> rlua::Result<()> {
 
                     lua.load(&content).set_name(&key)?.exec()?;
                     Ok(())
@@ -307,6 +332,8 @@ impl Lisa {
         }
       }
     }
+
+    Ok(())
   }
 }
 

@@ -516,6 +516,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_pipe_snippets_dynamisch_erzeugen">Pipe: Snippets dynamisch erzeugen</a></li>
 </ul>
 </li>
+<li><a href="#_fehlerbehandlung">Fehlerbehandlung</a></li>
 </ul>
 </li>
 <li><a href="#_installation">Installation</a></li>
@@ -655,7 +656,11 @@ auch weitere Dateien). Im AST fügt es einige zusätzliche Informationen hinzu
 41
 42
 43
-44</pre></div></td><td class="code"><pre><span></span><span class="tok-o">&lt;&lt;</span><span class="tok-n">required_crates</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
+44
+45
+46
+47
+48</pre></div></td><td class="code"><pre><span></span><span class="tok-o">&lt;&lt;</span><span class="tok-n">required_crates</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
 
 <span class="tok-o">&lt;&lt;</span><span class="tok-n">internal_modules</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
 
@@ -677,13 +682,17 @@ auch weitere Dateien). Im AST fügt es einige zusätzliche Informationen hinzu
 <span class="tok-w">  </span><span class="tok-o">&lt;&lt;</span><span class="tok-n">internal_functions</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
 
 <span class="tok-w">  </span><span class="tok-sd">/// Gets all snippets from the ast</span>
-<span class="tok-w">  </span><span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">fn</span> <span class="tok-nf">extract_ast</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">input</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">AST</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><i class="conum" data-value="3"></i><b>(3)</b>
+<span class="tok-w">  </span><span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">fn</span> <span class="tok-nf">extract_ast</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">input</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">AST</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nb">Result</span><span class="tok-o">&lt;</span><span class="tok-p">(),</span><span class="tok-w"> </span><span class="tok-n">Error</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><i class="conum" data-value="3"></i><b>(3)</b>
 <span class="tok-w">    </span><span class="tok-o">&lt;&lt;</span><span class="tok-n">extract_ast</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
+
+<span class="tok-w">    </span><span class="tok-nb">Ok</span><span class="tok-p">(())</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-p">}</span><span class="tok-w"></span>
 
 <span class="tok-w">  </span><span class="tok-sd">/// Build all snippets (Runs the vm)</span>
-<span class="tok-w">  </span><span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">fn</span> <span class="tok-nf">generate_outputs</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">ast</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">AST</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><i class="conum" data-value="5"></i><b>(5)</b>
+<span class="tok-w">  </span><span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">fn</span> <span class="tok-nf">generate_outputs</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">ast</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">AST</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nb">Result</span><span class="tok-o">&lt;</span><span class="tok-p">(),</span><span class="tok-w"> </span><span class="tok-n">Error</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><i class="conum" data-value="5"></i><b>(5)</b>
 <span class="tok-w">    </span><span class="tok-o">&lt;&lt;</span><span class="tok-n">generate_outputs</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
+
+<span class="tok-w">    </span><span class="tok-nb">Ok</span><span class="tok-p">(())</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span>
 
@@ -1661,7 +1670,7 @@ alle Snippets aufgelistet, die vorher verarbeitet werden müssen.</td>
 <div id="internal_functions" class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-sd">/// Gets recursively all snippets from an element</span>
-<span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">fn</span> <span class="tok-nf">extract</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">input</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">ElementSpan</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">fn</span> <span class="tok-nf">extract</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">input</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">ElementSpan</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nb">Result</span><span class="tok-o">&lt;</span><span class="tok-p">(),</span><span class="tok-w"> </span><span class="tok-n">Error</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-n">input</span><span class="tok-p">.</span><span class="tok-n">element</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">Element</span>::<span class="tok-n">TypedBlock</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">      </span><span class="tok-n">kind</span>: <span class="tok-nc">BlockType</span>::<span class="tok-n">Listing</span><span class="tok-p">,</span><span class="tok-w"></span>
@@ -1680,6 +1689,8 @@ alle Snippets aufgelistet, die vorher verarbeitet werden müssen.</td>
 <span class="tok-w">      </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-p">}</span><span class="tok-w"></span>
+
+<span class="tok-w">  </span><span class="tok-nb">Ok</span><span class="tok-p">(())</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
@@ -1707,7 +1718,7 @@ Parameter <code>source</code>. <code>lisa</code> verarbeitet nur diese Blocks.</
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">args</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">input</span><span class="tok-p">.</span><span class="tok-n">positional_attributes</span><span class="tok-p">.</span><span class="tok-n">iter</span><span class="tok-p">();</span><span class="tok-w"></span>
 <span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-n">args</span><span class="tok-p">.</span><span class="tok-n">next</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-o">==</span><span class="tok-w"> </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">AttributeValue</span>::<span class="tok-n">Ref</span><span class="tok-p">(</span><span class="tok-s">&quot;source&quot;</span><span class="tok-p">)))</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">  </span><span class="tok-k">return</span><span class="tok-p">;</span><span class="tok-w"></span>
+<span class="tok-w">  </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-nb">Ok</span><span class="tok-p">(());</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
@@ -1822,7 +1833,7 @@ wir davon aus, das es ein Snippet ohne besondere Verarbeitung ist.</p>
 <span class="tok-w">      </span><span class="tok-n">kind</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">SnippetType</span>::<span class="tok-n">Save</span><span class="tok-p">(</span><span class="tok-n">path</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">AttributeValue</span>::<span class="tok-n">Ref</span><span class="tok-p">(</span><span class="tok-s">&quot;eval&quot;</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">      </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">interpreter</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">interpreter</span><span class="tok-p">.</span><span class="tok-n">clone</span><span class="tok-p">().</span><span class="tok-n">unwrap</span><span class="tok-p">();</span><span class="tok-w"> </span><span class="tok-c1">// TODO Fehlerbehandlung</span>
+<span class="tok-w">      </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">interpreter</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">interpreter</span><span class="tok-p">.</span><span class="tok-n">clone</span><span class="tok-p">().</span><span class="tok-n">ok_or</span><span class="tok-p">(</span><span class="tok-n">Error</span>::<span class="tok-n">Missing</span><span class="tok-p">)</span><span class="tok-o">?</span><span class="tok-p">;</span><span class="tok-w"></span>
 <span class="tok-w">      </span><span class="tok-n">kind</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">SnippetType</span>::<span class="tok-n">Eval</span><span class="tok-p">(</span><span class="tok-n">interpreter</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">AttributeValue</span>::<span class="tok-n">Ref</span><span class="tok-p">(</span><span class="tok-s">&quot;pipe&quot;</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
@@ -1831,6 +1842,12 @@ wir davon aus, das es ein Snippet ohne besondere Verarbeitung ist.</p>
 <span class="tok-w">    </span><span class="tok-n">_</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">(),</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
+</div>
+</div>
+<div id="errors" class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-cp">#[error(</span><span class="tok-s">&quot;a nessessary attribute is missing&quot;</span><span class="tok-cp">)]</span><span class="tok-w"></span>
+<span class="tok-n">Missing</span><span class="tok-p">,</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
 </div>
@@ -2441,12 +2458,12 @@ Veränderung werden wir es wieder abspeichern (TODO link).</p>
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-n">snippet</span><span class="tok-p">.</span><span class="tok-n">kind</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-n">SnippetType</span>::<span class="tok-n">Eval</span><span class="tok-p">(</span><span class="tok-n">interpreter</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">eval</span><span class="tok-p">(</span><span class="tok-n">interpreter</span><span class="tok-p">.</span><span class="tok-n">to_string</span><span class="tok-p">(),</span><span class="tok-w"> </span><span class="tok-n">content</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">eval</span><span class="tok-p">(</span><span class="tok-n">interpreter</span><span class="tok-p">.</span><span class="tok-n">to_string</span><span class="tok-p">(),</span><span class="tok-w"> </span><span class="tok-n">content</span><span class="tok-p">)</span><span class="tok-o">?</span><span class="tok-p">;</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-n">SnippetType</span>::<span class="tok-n">Plain</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{}</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-n">SnippetType</span>::<span class="tok-n">Save</span><span class="tok-p">(</span><span class="tok-n">path</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-o">&lt;&lt;</span><span class="tok-n">get_filepath</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">save</span><span class="tok-p">(</span><span class="tok-n">path</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">content</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">save</span><span class="tok-p">(</span><span class="tok-n">path</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">content</span><span class="tok-p">)</span><span class="tok-o">?</span><span class="tok-p">;</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-n">SnippetType</span>::<span class="tok-n">Pipe</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-o">&lt;&lt;</span><span class="tok-n">do_pipe</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
@@ -2462,7 +2479,7 @@ Veränderung werden wir es wieder abspeichern (TODO link).</p>
 <div id="internal_functions" class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-sd">/// Saves a Snippet to a file</span>
-<span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">fn</span> <span class="tok-nf">save</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">path</span>: <span class="tok-nb">String</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">content</span>: <span class="tok-nb">String</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">fn</span> <span class="tok-nf">save</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">path</span>: <span class="tok-nb">String</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">content</span>: <span class="tok-nb">String</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nb">Result</span><span class="tok-o">&lt;</span><span class="tok-p">(),</span><span class="tok-w"> </span><span class="tok-n">Error</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-c1">// TODO Allow directory prefix from options</span>
 <span class="tok-w">  </span><span class="tok-o">&lt;&lt;</span><span class="tok-n">check_path_not_allready_used_by_lisa</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-o">&lt;&lt;</span><span class="tok-n">add_path_to_the_list_of_outputs</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
@@ -2470,13 +2487,22 @@ Veränderung werden wir es wieder abspeichern (TODO link).</p>
 <span class="tok-w">  </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">path</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Path</span>::<span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">path</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">path</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">path</span><span class="tok-p">.</span><span class="tok-n">parent</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w">  </span><i class="conum" data-value="1"></i><b>(1)</b>
 <span class="tok-w">    </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-o">!</span><span class="tok-n">path</span><span class="tok-p">.</span><span class="tok-n">exists</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">      </span><span class="tok-n">fs</span>::<span class="tok-n">create_dir_all</span><span class="tok-p">(</span><span class="tok-n">path</span><span class="tok-p">).</span><span class="tok-n">unwrap</span><span class="tok-p">();</span><span class="tok-w"></span>
+<span class="tok-w">      </span><span class="tok-n">fs</span>::<span class="tok-n">create_dir_all</span><span class="tok-p">(</span><span class="tok-n">path</span><span class="tok-p">)</span><span class="tok-o">?</span><span class="tok-p">;</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-p">}</span><span class="tok-w"></span>
 
 <span class="tok-w">  </span><span class="tok-o">&lt;&lt;</span><span class="tok-n">strip_all_lines_in_content</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
 
-<span class="tok-w">  </span><span class="tok-n">fs</span>::<span class="tok-n">write</span><span class="tok-p">(</span><span class="tok-n">path</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">content</span><span class="tok-p">).</span><span class="tok-n">expect</span><span class="tok-p">(</span><span class="tok-s">&quot;Unable to write file&quot;</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">  </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">old_content</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">fs</span>::<span class="tok-n">read_to_string</span><span class="tok-p">(</span><span class="tok-n">path</span><span class="tok-p">)</span><span class="tok-o">?</span><span class="tok-p">;</span><span class="tok-w"></span>
+<span class="tok-w">  </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-n">old_content</span><span class="tok-w"> </span><span class="tok-o">==</span><span class="tok-w"> </span><span class="tok-n">content</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-nb">Ok</span><span class="tok-p">(());</span><span class="tok-w"></span>
+<span class="tok-w">  </span><span class="tok-p">}</span><span class="tok-w"></span>
+<span class="tok-w">  </span><span class="tok-c1">// TODO Dateien sollten nur dann geschrieben werden, wenn sich der Inhalt</span>
+<span class="tok-w">  </span><span class="tok-c1">//      vom zu schreibenden Inhalt unterscheidet. Das kann Kompile Zeiten</span>
+<span class="tok-w">  </span><span class="tok-c1">//      in nachfolgenden Prozressen stark verkürzen.</span>
+<span class="tok-w">  </span><span class="tok-n">fs</span>::<span class="tok-n">write</span><span class="tok-p">(</span><span class="tok-n">path</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">content</span><span class="tok-p">)</span><span class="tok-o">?</span><span class="tok-p">;</span><span class="tok-w"></span>
+
+<span class="tok-w">  </span><span class="tok-nb">Ok</span><span class="tok-p">(())</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
@@ -2501,13 +2527,22 @@ Fehlermeldung.</td>
 </div>
 </div>
 <div class="paragraph">
+<p>Dabei können natürlich einige IO Fehler auftreten.</p>
+</div>
+<div id="errors" class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-cp">#[error(</span><span class="tok-s">&quot;io problem&quot;</span><span class="tok-cp">)]</span><span class="tok-w"></span>
+<span class="tok-n">Io</span><span class="tok-p">(</span><span class="tok-cp">#[from]</span><span class="tok-w"> </span><span class="tok-n">std</span>::<span class="tok-n">io</span>::<span class="tok-n">Error</span><span class="tok-p">),</span><span class="tok-w"></span></code></pre>
+</div>
+</div>
+<div class="paragraph">
 <p>Wir verwenden sie unter anderem bei der Snippet Verarbeitung. Hier übernehmen
 den Dateipfad und übergeben ihn an die Funktion. (TODO link oder anders
 sortieren).</p>
 </div>
 <div id="get_filepath" class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">path</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nb">String</span>::<span class="tok-n">from_str</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">path</span><span class="tok-p">).</span><span class="tok-n">unwrap</span><span class="tok-p">();</span><span class="tok-w"> </span><span class="tok-c1">// TODO unwrap durch check ersetzen</span></code></pre>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">path</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nb">String</span>::<span class="tok-n">from_str</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">path</span><span class="tok-p">).</span><span class="tok-n">unwrap</span><span class="tok-p">();</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -2530,7 +2565,7 @@ unmittelbar vor dem schreiben in eine Datei "aufräumen".</p>
 <div id="internal_functions" class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-sd">/// Run a snippet in an interpreter</span>
-<span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">fn</span> <span class="tok-nf">eval</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">interpreter</span>: <span class="tok-nb">String</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">content</span>: <span class="tok-nb">String</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">fn</span> <span class="tok-nf">eval</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">interpreter</span>: <span class="tok-nb">String</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">content</span>: <span class="tok-nb">String</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nb">Result</span><span class="tok-o">&lt;</span><span class="tok-p">(),</span><span class="tok-w"> </span><span class="tok-n">Error</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-o">&lt;&lt;</span><span class="tok-n">get_eval_interpreter</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
 
 <span class="tok-w">  </span><span class="tok-o">&lt;&lt;</span><span class="tok-n">spawn_interpreter</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
@@ -2538,6 +2573,8 @@ unmittelbar vor dem schreiben in eine Datei "aufräumen".</p>
 <span class="tok-w">  </span><span class="tok-o">&lt;&lt;</span><span class="tok-n">run_eval_command</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
 
 <span class="tok-w">  </span><span class="tok-o">&lt;&lt;</span><span class="tok-n">process_stdout_and_stderr</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
+
+<span class="tok-w">  </span><span class="tok-nb">Ok</span><span class="tok-p">(())</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
@@ -2555,26 +2592,39 @@ unmittelbar vor dem schreiben in eine Datei "aufräumen".</p>
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">eval</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Command</span>::<span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-n">interpreter</span><span class="tok-p">).</span><span class="tok-n">stdin</span><span class="tok-p">(</span><span class="tok-n">Stdio</span>::<span class="tok-n">piped</span><span class="tok-p">())</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-p">.</span><span class="tok-n">stderr</span><span class="tok-p">(</span><span class="tok-n">Stdio</span>::<span class="tok-n">piped</span><span class="tok-p">())</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-p">.</span><span class="tok-n">stdout</span><span class="tok-p">(</span><span class="tok-n">Stdio</span>::<span class="tok-n">piped</span><span class="tok-p">())</span><span class="tok-w"></span>
-<span class="tok-w">  </span><span class="tok-p">.</span><span class="tok-n">spawn</span><span class="tok-p">().</span><span class="tok-n">unwrap</span><span class="tok-p">();</span><span class="tok-w"></span></code></pre>
+<span class="tok-w">  </span><span class="tok-p">.</span><span class="tok-n">spawn</span><span class="tok-p">()</span><span class="tok-o">?</span><span class="tok-p">;</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
 <div id="run_eval_command" class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-n">eval</span><span class="tok-p">.</span><span class="tok-n">stdin</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-p">.</span><span class="tok-n">as_mut</span><span class="tok-p">()</span><span class="tok-w"></span>
-<span class="tok-w">  </span><span class="tok-p">.</span><span class="tok-n">ok_or</span><span class="tok-p">(</span><span class="tok-s">&quot;Child process stdin has not been captured!&quot;</span><span class="tok-p">).</span><span class="tok-n">unwrap</span><span class="tok-p">()</span><span class="tok-w"></span>
-<span class="tok-w">  </span><span class="tok-p">.</span><span class="tok-n">write_all</span><span class="tok-p">(</span><span class="tok-n">content</span><span class="tok-p">.</span><span class="tok-n">as_bytes</span><span class="tok-p">()).</span><span class="tok-n">unwrap</span><span class="tok-p">();</span><span class="tok-w"> </span><span class="tok-c1">// TODO Wie soll EOF gesendet werden?</span></code></pre>
+<span class="tok-w">  </span><span class="tok-p">.</span><span class="tok-n">ok_or</span><span class="tok-p">(</span><span class="tok-n">Error</span>::<span class="tok-n">Childprocess</span><span class="tok-p">)</span><span class="tok-o">?</span><span class="tok-w"></span>
+<span class="tok-w">  </span><span class="tok-p">.</span><span class="tok-n">write_all</span><span class="tok-p">(</span><span class="tok-n">content</span><span class="tok-p">.</span><span class="tok-n">as_bytes</span><span class="tok-p">())</span><span class="tok-o">?</span><span class="tok-p">;</span><span class="tok-w"> </span><span class="tok-c1">// TODO Wie soll EOF gesendet werden?</span></code></pre>
+</div>
+</div>
+<div id="errors" class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-cp">#[error(</span><span class="tok-s">&quot;Child process stdin has not been captured!&quot;</span><span class="tok-cp">)]</span><span class="tok-w"></span>
+<span class="tok-n">Childprocess</span><span class="tok-p">,</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
 <div id="process_stdout_and_stderr" class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">output</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">eval</span><span class="tok-p">.</span><span class="tok-n">wait_with_output</span><span class="tok-p">().</span><span class="tok-n">unwrap</span><span class="tok-p">();</span><span class="tok-w"></span>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">output</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">eval</span><span class="tok-p">.</span><span class="tok-n">wait_with_output</span><span class="tok-p">()</span><span class="tok-o">?</span><span class="tok-p">;</span><span class="tok-w"></span>
 
 <span class="tok-c1">// TODO in den Asciidoc AST einbinden</span>
 <span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-n">output</span><span class="tok-p">.</span><span class="tok-n">status</span><span class="tok-p">.</span><span class="tok-n">success</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">  </span><span class="tok-n">println</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-s">&quot;{}&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-nb">String</span>::<span class="tok-n">from_utf8</span><span class="tok-p">(</span><span class="tok-n">output</span><span class="tok-p">.</span><span class="tok-n">stdout</span><span class="tok-p">).</span><span class="tok-n">unwrap</span><span class="tok-p">());</span><span class="tok-w"> </span><span class="tok-c1">// TODO entfernen</span>
+<span class="tok-w">  </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">out</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-nb">String</span>::<span class="tok-n">from_utf8</span><span class="tok-p">(</span><span class="tok-n">output</span><span class="tok-p">.</span><span class="tok-n">stdout</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-nb">Ok</span><span class="tok-p">(</span><span class="tok-n">out</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">out</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-nb">Err</span><span class="tok-p">(</span><span class="tok-n">_</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-s">&quot;Error: Couldn&#39;t decode stdout&quot;</span><span class="tok-p">.</span><span class="tok-n">to_string</span><span class="tok-p">(),</span><span class="tok-w"></span>
+<span class="tok-w">  </span><span class="tok-p">};</span><span class="tok-w"></span>
+<span class="tok-w">  </span><span class="tok-n">println</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-s">&quot;{}&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">out</span><span class="tok-p">);</span><span class="tok-w"> </span><span class="tok-c1">// TODO entfernen</span>
 <span class="tok-p">}</span><span class="tok-w"> </span><span class="tok-k">else</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">  </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">err</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nb">String</span>::<span class="tok-n">from_utf8</span><span class="tok-p">(</span><span class="tok-n">output</span><span class="tok-p">.</span><span class="tok-n">stderr</span><span class="tok-p">).</span><span class="tok-n">unwrap</span><span class="tok-p">();</span><span class="tok-w"></span>
+<span class="tok-w">  </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">err</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-nb">String</span>::<span class="tok-n">from_utf8</span><span class="tok-p">(</span><span class="tok-n">output</span><span class="tok-p">.</span><span class="tok-n">stderr</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-nb">Ok</span><span class="tok-p">(</span><span class="tok-n">out</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">out</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-nb">Err</span><span class="tok-p">(</span><span class="tok-n">_</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-s">&quot;Error: Couldn&#39;t decode stderr&quot;</span><span class="tok-p">.</span><span class="tok-n">to_string</span><span class="tok-p">(),</span><span class="tok-w"></span>
+<span class="tok-w">  </span><span class="tok-p">};</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-n">println</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-s">&quot;External command failed:</span><span class="tok-se">\n</span><span class="tok-s"> {}&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">err</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-c1">// TODO entfernen</span>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
 </div>
@@ -2593,7 +2643,7 @@ lua (TODO link) als Interpreter. Dazu benutzen wir den <code>rlua</code> (TODO l
 </div>
 <div id="crate_usages" class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">rlua</span>::<span class="tok-p">{</span><span class="tok-n">Lua</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-nb">Result</span><span class="tok-p">};</span><span class="tok-w"></span></code></pre>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">rlua</span>::<span class="tok-n">Lua</span><span class="tok-p">;</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
 <div id="cargo_dependencies" class="listingblock">
@@ -2608,7 +2658,7 @@ lua (TODO link) als Interpreter. Dazu benutzen wir den <code>rlua</code> (TODO l
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">lua</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Lua</span>::<span class="tok-n">new</span><span class="tok-p">();</span><span class="tok-w"></span>
 
-<span class="tok-n">lua</span><span class="tok-p">.</span><span class="tok-n">context</span><span class="tok-p">(</span><span class="tok-o">|</span><span class="tok-n">lua</span><span class="tok-o">|</span><span class="tok-w"> </span>-&gt; <span class="tok-nb">Result</span><span class="tok-o">&lt;</span><span class="tok-p">()</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-n">lua</span><span class="tok-p">.</span><span class="tok-n">context</span><span class="tok-p">(</span><span class="tok-o">|</span><span class="tok-n">lua</span><span class="tok-o">|</span><span class="tok-w"> </span>-&gt; <span class="tok-nc">rlua</span>::<span class="tok-nb">Result</span><span class="tok-o">&lt;</span><span class="tok-p">()</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-o">&lt;&lt;</span><span class="tok-n">init_lua_functions</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-o">&lt;&lt;</span><span class="tok-n">init_lua_globals</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
 
@@ -2617,6 +2667,31 @@ lua (TODO link) als Interpreter. Dazu benutzen wir den <code>rlua</code> (TODO l
 <span class="tok-p">});</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_fehlerbehandlung">Fehlerbehandlung</h3>
+<div class="paragraph">
+<p>Um Fehler abfangen zu können benutzen wir das <code>thiserror</code> crate.</p>
+</div>
+<div id="cargo_dependencies" class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="toml"><span></span><span class="tok-n">thiserror</span> <span class="tok-o">=</span> <span class="tok-s">&quot;1.0&quot;</span></code></pre>
+</div>
+</div>
+<div id="internal_structs" class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-cp">#[derive(thiserror::Error, Debug)]</span><span class="tok-w"></span>
+<span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">enum</span> <span class="tok-nc">Error</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">  </span><span class="tok-o">&lt;&lt;</span><span class="tok-n">errors</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
+<span class="tok-p">}</span><span class="tok-w"></span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Das betrifft alles Fehler, welche so von der Bibliothek nicht abgefangen werden. Es gibt allerdings auch Fehler, welche erst zur Laufzeit vom Programm abgefangen werden. Für diese benötigen wir einen Logging Mechanismus.</p>
+</div>
+<div class="paragraph">
+<p>TODO Logging</p>
 </div>
 </div>
 </div>
@@ -2670,7 +2745,7 @@ das Programm (und die Bibliothek) kompiliert werden können.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-02-19 16:06:11 +0100
+Last updated 2020-04-13 21:49:47 +0200
 </div>
 </div>
 <style>

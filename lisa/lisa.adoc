@@ -106,13 +106,17 @@ impl Lisa {
   <<internal_functions>>
 
   /// Gets all snippets from the ast
-  pub fn extract_ast(&mut self, input: &AST) { // <3>
+  pub fn extract_ast(&mut self, input: &AST) -> Result<(), Error> { // <3>
     <<extract_ast>>
+
+    Ok(())
   }
 
   /// Build all snippets (Runs the vm)
-  pub fn generate_outputs(&mut self, mut ast: &AST) { // <5>
+  pub fn generate_outputs(&mut self, mut ast: &AST) -> Result<(), Error> { // <5>
     <<generate_outputs>>
+
+    Ok(())
   }
 }
 
@@ -888,7 +892,7 @@ pub struct Snippet {
 [source, rust]
 ----
 /// Gets recursively all snippets from an element
-pub fn extract(&mut self, input: &ElementSpan) {
+pub fn extract(&mut self, input: &ElementSpan) -> Result<(), Error> {
   match &input.element {
     Element::TypedBlock {
       kind: BlockType::Listing,
@@ -907,6 +911,8 @@ pub fn extract(&mut self, input: &ElementSpan) {
       }
     }
   }
+
+  Ok(())
 }
 
 ----
@@ -924,7 +930,7 @@ Parameter `source`. `lisa` verarbeitet nur diese Blocks.
 ----
 let args = &mut input.positional_attributes.iter();
 if !(args.next() == Some(&AttributeValue::Ref("source"))) {
-  return;
+  return Ok(());
 }
 ----
 
@@ -1036,7 +1042,7 @@ for argument in args {
       kind = SnippetType::Save(path);
     }
     AttributeValue::Ref("eval") => {
-      let interpreter = interpreter.clone().unwrap(); // TODO Fehlerbehandlung
+      let interpreter = interpreter.clone().ok_or(Error::Missing)?;
       kind = SnippetType::Eval(interpreter);
     }
     AttributeValue::Ref("pipe") => {
@@ -1045,6 +1051,13 @@ for argument in args {
     _ => (),
   }
 }
+----
+
+[[errors]]
+[source, rust]
+----
+#[error("a nessessary attribute is missing")]
+Missing,
 ----
 
 ===== Snippets in der Datenbank speichern
@@ -1558,12 +1571,12 @@ Je nach Snippet Typ können wir nun die entsprechende Aktion ausführen.
 ----
 match &snippet.kind {
   SnippetType::Eval(interpreter) => {
-    self.eval(interpreter.to_string(), content);
+    self.eval(interpreter.to_string(), content)?;
   }
   SnippetType::Plain => {}
   SnippetType::Save(path) => {
     <<get_filepath>>
-    self.save(path, content);
+    self.save(path, content)?;
   }
   SnippetType::Pipe => {
     <<do_pipe>>
@@ -1579,7 +1592,7 @@ Um eine Datei zu speichern haben wir eine eigene Funktion.
 [source, rust]
 ----
 /// Saves a Snippet to a file
-pub fn save(&self, path: String, content: String) {
+pub fn save(&self, path: String, content: String) -> Result<(), Error> {
   // TODO Allow directory prefix from options
   <<check_path_not_allready_used_by_lisa>>
   <<add_path_to_the_list_of_outputs>>
@@ -1587,13 +1600,15 @@ pub fn save(&self, path: String, content: String) {
   let path = Path::new(&path);
   if let Some(path) = path.parent() {  // <1>
     if !path.exists() {
-      fs::create_dir_all(path).unwrap();
+      fs::create_dir_all(path)?;
     }
   }
 
   <<strip_all_lines_in_content>>
 
-  fs::write(path, content).expect("Unable to write file");
+  fs::write(path, content)?;
+
+  Ok(())
 }
 
 ----
@@ -1609,6 +1624,15 @@ Dafür müssen wir noch den `std::fs` crate einbinden.
 use std::fs;
 use std::path::Path;
 use std::str::FromStr;
+----
+
+Dabei können natürlich einige IO Fehler auftreten.
+
+[[errors]]
+[source, rust]
+----
+#[error("io problem")]
+Io(#[from] std::io::Error),
 ----
 
 Wir verwenden sie unter anderem bei der Snippet Verarbeitung. Hier übernehmen
@@ -1641,7 +1665,7 @@ let content = content.lines()
 [source, rust]
 --------------------------------------------------------------------------------
 /// Run a snippet in an interpreter
-pub fn eval(&self, interpreter: String, content: String) {
+pub fn eval(&self, interpreter: String, content: String) -> Result<(), Error> {
   <<get_eval_interpreter>>
 
   <<spawn_interpreter>>
@@ -1649,6 +1673,8 @@ pub fn eval(&self, interpreter: String, content: String) {
   <<run_eval_command>>
 
   <<process_stdout_and_stderr>>
+
+  Ok(())
 }
 
 --------------------------------------------------------------------------------
@@ -1668,7 +1694,7 @@ use std::process::{Command, Stdio};
 let mut eval = Command::new(interpreter).stdin(Stdio::piped())
   .stderr(Stdio::piped())
   .stdout(Stdio::piped())
-  .spawn().unwrap();
+  .spawn()?;
 ----
 
 [[run_eval_command]]
@@ -1676,20 +1702,34 @@ let mut eval = Command::new(interpreter).stdin(Stdio::piped())
 ----
 eval.stdin
   .as_mut()
-  .ok_or("Child process stdin has not been captured!").unwrap()
-  .write_all(content.as_bytes()).unwrap(); // TODO Wie soll EOF gesendet werden?
+  .ok_or(Error::Childprocess)?
+  .write_all(content.as_bytes())?; // TODO Wie soll EOF gesendet werden?
+----
+
+[[errors]]
+[source, rust]
+----
+#[error("Child process stdin has not been captured!")]
+Childprocess,
 ----
 
 [[process_stdout_and_stderr]]
 [source, rust]
 ----
-let output = eval.wait_with_output().unwrap();
+let output = eval.wait_with_output()?;
 
 // TODO in den Asciidoc AST einbinden
 if output.status.success() {
-  println!("{}", String::from_utf8(output.stdout).unwrap()); // TODO entfernen
+  let out = match String::from_utf8(output.stdout) {
+    Ok(out) => out,
+    Err(_) => "Error: Couldn't decode stdout".to_string(),
+  };
+  println!("{}", out); // TODO entfernen
 } else {
-  let err = String::from_utf8(output.stderr).unwrap();
+  let err = match String::from_utf8(output.stderr) {
+    Ok(out) => out,
+    Err(_) => "Error: Couldn't decode stderr".to_string(),
+  };
   println!("External command failed:\n {}", err) // TODO entfernen
 }
 ----
@@ -1707,7 +1747,7 @@ extern crate rlua;
 [[crate_usages]]
 [source, rust]
 --------------------------------------------------------------------------------
-use rlua::{Lua, Result};
+use rlua::Lua;
 --------------------------------------------------------------------------------
 
 [[cargo_dependencies]]
@@ -1723,7 +1763,7 @@ Jede `pipe` bekommt ihre eigene lua Umgebung.
 --------------------------------------------------------------------------------
 let lua = Lua::new();
 
-lua.context(|lua| -> Result<()> {
+lua.context(|lua| -> rlua::Result<()> {
   <<init_lua_functions>>
   <<init_lua_globals>>
 
@@ -1731,6 +1771,29 @@ lua.context(|lua| -> Result<()> {
   Ok(())
 });
 --------------------------------------------------------------------------------
+
+=== Fehlerbehandlung
+Um Fehler abfangen zu können benutzen wir das `thiserror` crate.
+
+[[cargo_dependencies]]
+[source, toml]
+----
+thiserror = "1.0"
+----
+
+[[internal_structs]]
+[source, rust]
+----
+#[derive(thiserror::Error, Debug)]
+pub enum Error {
+  <<errors>>
+}
+
+----
+
+Das betrifft alles Fehler, welche so von der Bibliothek nicht abgefangen werden. Es gibt allerdings auch Fehler, welche erst zur Laufzeit vom Programm abgefangen werden. Für diese benötigen wir einen Logging Mechanismus.
+
+TODO Logging
 
 Installation
 ------------
