@@ -1,24 +1,27 @@
+use anyhow::Result;
 use asciidoctrine::{self, *};
 use pretty_assertions::assert_eq;
 
 #[test]
-fn parse_empty_document() {
+fn parse_empty_document() -> Result<()> {
   let ast = AST {
     content: "",
     elements: Vec::new(),
     attributes: Vec::new(),
   };
-  assert_eq!(ast, asciidoctrine::parse_ast(""));
+  assert_eq!(ast, asciidoctrine::parse_ast("")?);
+  Ok(())
 }
 
 #[test]
-fn parse_whitespace_only() {
+fn parse_whitespace_only() -> Result<()> {
   let ast = AST {
     content: "  ",
     elements: Vec::new(),
     attributes: Vec::new(),
   };
-  assert_eq!(ast, asciidoctrine::parse_ast("  "));
+  assert_eq!(ast, asciidoctrine::parse_ast("  ")?);
+  Ok(())
 }
 
 // --------------------------------------------------------------------------
@@ -26,7 +29,7 @@ fn parse_whitespace_only() {
 // --------------------------------------------------------------------------
 
 #[test]
-fn parse_basic_header() {
+fn parse_basic_header() -> Result<()> {
   let ast = AST {
     content: "= test\n",
     elements: vec![ElementSpan {
@@ -49,13 +52,14 @@ fn parse_basic_header() {
     attributes: Vec::new(),
   };
   //assert_eq!(ast, asciidoctrine::parse_ast("= test")); // TODO
-  assert_eq!(ast, asciidoctrine::parse_ast("= test\n"));
+  assert_eq!(ast, asciidoctrine::parse_ast("= test\n")?);
 
   // TODO author_info, attributes, etc
+  Ok(())
 }
 
 #[test]
-fn parse_title_with_anchor() {
+fn parse_title_with_anchor() -> Result<()> {
   let ast = AST {
     content: "[[test-anchor]]\n== test\n",
     elements: vec![ElementSpan {
@@ -83,11 +87,12 @@ fn parse_title_with_anchor() {
     }],
     attributes: Vec::new(),
   };
-  assert_eq!(ast, asciidoctrine::parse_ast("[[test-anchor]]\n== test\n"));
+  assert_eq!(ast, asciidoctrine::parse_ast("[[test-anchor]]\n== test\n")?);
+  Ok(())
 }
 
 #[test]
-fn parse_atx_header() {
+fn parse_atx_header() -> Result<()> {
   let ast = AST {
     content: "== test\n",
     elements: vec![ElementSpan {
@@ -109,11 +114,12 @@ fn parse_atx_header() {
     }],
     attributes: Vec::new(),
   };
-  assert_eq!(ast, asciidoctrine::parse_ast("== test\n"));
+  assert_eq!(ast, asciidoctrine::parse_ast("== test\n")?);
+  Ok(())
 }
 
 #[test]
-fn parse_setext_header() {
+fn parse_setext_header() -> Result<()> {
   let ast = AST {
     content: "test\n====\n",
     elements: vec![ElementSpan {
@@ -135,9 +141,10 @@ fn parse_setext_header() {
     }],
     attributes: Vec::new(),
   };
-  assert_eq!(ast, asciidoctrine::parse_ast("test\n====\n"));
+  assert_eq!(ast, asciidoctrine::parse_ast("test\n====\n")?);
 
   // TODO Andere Titel
+  Ok(())
 }
 
 // --------------------------------------------------------------------------
@@ -145,7 +152,7 @@ fn parse_setext_header() {
 // --------------------------------------------------------------------------
 
 #[test]
-fn parse_code() {
+fn parse_code() -> Result<()> {
   let input = r#"
 [source, lua]
 .this is a test snippet
@@ -187,7 +194,8 @@ require "mytestmodule"
     }],
     attributes: Vec::new(),
   };
-  assert_eq!(ast, asciidoctrine::parse_ast(input));
+  assert_eq!(ast, asciidoctrine::parse_ast(input)?);
+  Ok(())
 }
 
 // --------------------------------------------------------------------------
@@ -195,7 +203,7 @@ require "mytestmodule"
 // --------------------------------------------------------------------------
 
 #[test]
-fn parse_basic_paragraph_with_links_and_references() {
+fn parse_basic_paragraph_with_links_and_references() -> Result<()> {
   let input = r#"
 This is a basic paragraph. It has a link to https://www.mytestsite.org[A test website] and
 it has an internal <<reference>>. Both should be parsed.
@@ -303,7 +311,8 @@ it has an internal <<reference>>. Both should be parsed.
     }],
     attributes: Vec::new(),
   };
-  assert_eq!(ast, asciidoctrine::parse_ast(input));
+  assert_eq!(ast, asciidoctrine::parse_ast(input)?);
+  Ok(())
 }
 // TODO Link, References
 // TODO Links mit Leerzeichen in der Attribut Liste (Würde ich das auch in anderen Attribut Listen zulassen?)
