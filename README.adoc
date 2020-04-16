@@ -47,10 +47,10 @@ There are a few steps to build the toolsuite.
 <3> If everything went good we may want to install our new version of the
     toolsuite locally.
 
-== Check if generated files are untouched in VCS
+=== Check if generated files are untouched in VCS
 TODO
 
-== Generate source files
+=== Generate source files
 
 [[generate_sources]]
 [source, sh]
@@ -75,7 +75,7 @@ echo "Generating source files done!"
 <2> Since `lisa` is currently unable to evaluate scripts with user cmdline input
     we need to refresh the build script regulary.
 
-== Build and test
+=== Build and test
 
 [[build_and_test]]
 [source, sh]
@@ -83,7 +83,7 @@ echo "Generating source files done!"
 cargo test || exit 1
 ----
 
-== Build websites for github pages
+=== Build websites for github pages
 TODO later we want to do this with `asciidoctrine` alone.
 
 [[update_docs]]
