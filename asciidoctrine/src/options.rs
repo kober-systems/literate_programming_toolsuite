@@ -22,9 +22,7 @@ where
 arg_enum! {
   #[derive(StructOpt, Debug)]
   pub enum Reader {
-    //#[structopt(name = "asciidoc")]
     Asciidoc,
-    //#[structopt(name = "json")]
     Json,
   }
 }
@@ -47,8 +45,10 @@ arg_enum! {
 #[structopt(name = "asciidoctrine")]
 pub struct Opts {
   #[structopt(short = "r", long = "reader-format", default_value = "asciidoc")]
+  #[structopt(possible_values = &Reader::variants(), case_insensitive = true)]
   pub readerfmt: Reader,
   #[structopt(short = "w", long = "writer-format", default_value = "html5")]
+  #[structopt(possible_values = &Writer::variants(), case_insensitive = true)]
   pub writerfmt: Writer,
   #[structopt(short = "e", long = "extension")]
   pub extensions: Vec<String>,
