@@ -1,27 +1,28 @@
 extern crate asciidoctrine;
 extern crate lisa;
 
+use anyhow::{Context, Result};
 use asciidoctrine::*;
 use lisa::*;
 use std::fs;
 use std::io::{self, Read};
 
-fn main() {
+fn main() -> Result<()> {
   let mut opts = options::from_args();
 
   // read the input
   let input = match &opts.input {
-    Some(input) => fs::read_to_string(input).expect("Could not read in file"),
+    Some(input) => fs::read_to_string(input).context("Could not read in file")?,
     None => {
       let mut input = String::new();
       io::stdin()
         .read_to_string(&mut input)
-        .expect("Could not read stdin");
+        .context("Could not read stdin")?;
       input
     }
   };
 
-  let mut ast = asciidoctrine::parse_ast(&input);
+  let mut ast = asciidoctrine::parse_ast(&input)?;
 
   // TODO bei diesem Programm gehen wir davon aus,
   // das lisa gewünscht ist.
@@ -52,4 +53,6 @@ fn main() {
   //   einen AST zurückgeben.
 
   // TODO Das Ausgabeformat festlegen
+
+  Ok(())
 }

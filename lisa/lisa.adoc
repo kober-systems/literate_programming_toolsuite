@@ -1790,6 +1790,14 @@ Das betrifft alles Fehler, welche so von der Bibliothek nicht abgefangen werden.
 
 TODO Logging
 
+Das resultierende `lisa` executable soll allerdings alle Arten von Fehlern abfangen, deshalb verwenden wir hier den `anyhow` crate.
+
+[[cargo_dependencies]]
+[source, toml]
+----
+anyhow = "1.0"
+----
+
 Installation
 ------------
 
