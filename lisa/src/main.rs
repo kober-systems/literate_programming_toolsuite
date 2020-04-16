@@ -10,6 +10,11 @@ use std::io::{self, Read};
 fn main() -> Result<()> {
   let mut opts = options::from_args();
 
+  let reader: Box<dyn Reader> = match opts.readerfmt {
+    options::Reader::Asciidoc => Box::new(AsciidocReader::new()),
+    options::Reader::Json => Box::new(JsonReader::new()),
+  };
+
   // read the input
   let input = match &opts.input {
     Some(input) => fs::read_to_string(input).context("Could not read in file")?,
@@ -22,7 +27,7 @@ fn main() -> Result<()> {
     }
   };
 
-  let mut ast = asciidoctrine::parse_ast(&input)?;
+  let mut ast = reader.parse(&input)?;
 
   // TODO bei diesem Programm gehen wir davon aus,
   // das lisa gewünscht ist.
