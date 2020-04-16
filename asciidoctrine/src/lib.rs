@@ -1,4 +1,6 @@
 extern crate clap;
+extern crate serde;
+extern crate serde_json;
 
 extern crate pest;
 #[macro_use]
@@ -12,11 +14,14 @@ pub use ast::*;
 pub mod options;
 mod reader;
 pub use reader::asciidoc::AsciidocReader;
+pub use reader::json::JsonReader;
 
 #[derive(Error, Debug)]
 pub enum AsciidoctrineError {
   #[error("could not parse input")]
   Parse(String),
+  #[error("json parsing error")]
+  Json(#[from] serde_json::Error),
 }
 
 type Result<T> = std::result::Result<T, AsciidoctrineError>;

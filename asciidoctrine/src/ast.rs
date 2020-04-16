@@ -1,4 +1,6 @@
-#[derive(Debug, Clone, PartialEq)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct AST<'a> {
   pub content: &'a str,
   pub elements: Vec<ElementSpan<'a>>,
@@ -10,7 +12,7 @@ pub struct AST<'a> {
 /// This is meant to form a tree of document element.
 /// Every element holds references to its source, it
 /// subelements and the attributes defined on it.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct ElementSpan<'a> {
   // The source document. Could be empty if
   // e.g. it's the same as the source of it's
@@ -38,7 +40,7 @@ pub struct ElementSpan<'a> {
   pub attributes: Vec<Attribute<'a>>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub enum Element<'a> {
   Attribute(Attribute<'a>),
   /// A section of ignored text
@@ -91,7 +93,7 @@ pub enum Element<'a> {
   Error(String),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub enum BlockType {
   Comment,
   Passtrough,
@@ -102,19 +104,21 @@ pub enum BlockType {
   Example,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub enum AttributeValue<'a> {
   String(String),
   Ref(&'a str),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct Attribute<'a> {
   pub key: String,
+  #[serde(borrow)]
   pub value: AttributeValue<'a>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct IncludeElement<'a> {
+  #[serde(borrow)]
   pub inner: AST<'a>,
 }
