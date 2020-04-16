@@ -15,6 +15,9 @@ pub mod options;
 mod reader;
 pub use reader::asciidoc::AsciidocReader;
 pub use reader::json::JsonReader;
+mod writer;
+pub use writer::html::HtmlWriter;
+pub use writer::json::JsonWriter;
 
 #[derive(Error, Debug)]
 pub enum AsciidoctrineError {
@@ -39,7 +42,9 @@ pub trait Extension {
 pub trait Writer {
   // TODO Result zurückgeben mit Fehler oder Liste der Geschriebenen Dateien
   // TODO Options
-  fn write(&self, ast: AST);
+  // TODO Vielleicht sollten wir einen Buffer zurückgeben um Seiteneffekte
+  //      abzubilden.
+  fn write<'a>(&self, ast: AST) -> Result<()>;
 }
 
 // TODO Add Options
