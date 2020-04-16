@@ -226,6 +226,11 @@ impl Lisa {
                          .map(|line| { String::from(line.trim_end()) + "\n" })
                          .collect::<String>();
 
+    let old_content = fs::read_to_string(path)?;
+    if old_content == content {
+      return Ok(());
+    }
+
     fs::write(path, content)?;
 
     Ok(())
