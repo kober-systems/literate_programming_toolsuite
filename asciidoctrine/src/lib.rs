@@ -11,6 +11,7 @@ mod ast;
 pub use ast::*;
 pub mod options;
 mod reader;
+pub use reader::asciidoc::AsciidocReader;
 
 #[derive(Error, Debug)]
 pub enum AsciidoctrineError {
@@ -21,7 +22,7 @@ pub enum AsciidoctrineError {
 type Result<T> = std::result::Result<T, AsciidoctrineError>;
 
 pub trait Reader {
-  fn parse(&self, input: &str) -> AST;
+  fn parse<'a>(&self, input: &'a str) -> Result<AST<'a>>;
 }
 
 pub trait Extension {

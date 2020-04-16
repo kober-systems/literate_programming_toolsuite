@@ -3,6 +3,20 @@ use crate::reader::*;
 use crate::Result;
 use pest::Parser;
 
+pub struct AsciidocReader {}
+
+impl AsciidocReader {
+  pub fn new() -> Self {
+    AsciidocReader {}
+  }
+}
+
+impl crate::Reader for AsciidocReader {
+  fn parse<'a>(&self, input: &'a str) -> Result<AST<'a>> {
+    parse_ast(input)
+  }
+}
+
 #[derive(Parser, Debug, Copy, Clone)]
 #[grammar = "reader/asciidoc.pest"]
 pub struct AsciidocParser;
