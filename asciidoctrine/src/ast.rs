@@ -42,7 +42,7 @@ pub struct ElementSpan<'a> {
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub enum Element<'a> {
-  Attribute(Attribute<'a>),
+  Attribute(#[serde(borrow)] Attribute<'a>),
   /// A section of ignored text
   Comment,
   /// A text paragraph
