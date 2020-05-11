@@ -1117,37 +1117,34 @@ let content = match content {
 };
 ----
 
-Um die Referenzen zu finden verwenden wir die Pest (TODO link). Sie basiert auf
-Parsing Expression Grammars (TODO link) und wird bereits von asciidoctrine (TODO
-link) verwendet. Diese Art von Parsern ist (für mich) sehr leicht zu lesen und
-zu schreiben.
+Um die Referenzen zu finden verwenden wir die https://pest.rs/[Pest] Bibliothek. Sie basiert auf https://en.wikipedia.org/wiki/Parsing_expression_grammar[Parsing Expression Grammars] und wird bereits von asciidoctrine (TODO link) verwendet. Diese Art von Parsern ist (für mich) sehr leicht zu lesen und zu schreiben.
 
 [[required_crates]]
 [source, rust]
---------------------------------------------------------------------------------
+----
 extern crate pest;
 #[macro_use]
 extern crate pest_derive;
---------------------------------------------------------------------------------
+----
 
 [[cargo_dependencies]]
 [source, toml]
---------------------------------------------------------------------------------
+----
 pest = "2.1.0"
 pest_derive = "2.1.0"
---------------------------------------------------------------------------------
+----
 
 Wir lagern sie in ein eigenes Modul aus.
 
 [[internal_modules]]
 [source, rust]
---------------------------------------------------------------------------------
+----
 mod codeblock_parser;
---------------------------------------------------------------------------------
+----
 
 [source, rust, save]
 .src/codeblock_parser.rs
---------------------------------------------------------------------------------
+----
 use pest::Parser;
 use std::collections::HashMap;
 
@@ -1168,7 +1165,7 @@ pub fn get_dependencies(input: &str) -> Vec<&str> {
 pub fn merge_dependencies(input: &str, snippets: &HashMap<&str, &str>) -> String {
   <<merge_dependencies>>
 }
---------------------------------------------------------------------------------
+----
 
 Sie hat zwei wichtige Funktionen:
 
@@ -1192,7 +1189,7 @@ Kommentaren:: Diese Kommentare sind nur für die Anzeige in Asciidoc gedacht und
 
 [source, pest, save]
 .src/codeblock.pest
---------------------------------------------------------------------------------
+----
 codeblock = _{ (code | indented_reference | reference | comment)* ~ EOI }
 
 reference = { <<reference>> }
@@ -1201,7 +1198,7 @@ code = { <<code_gramma>> }
 comment = { <<comment>> }
 
 <<internal_gramma_elements>>
---------------------------------------------------------------------------------
+----
 
 Eine Referenz wird durch eine von doppelten spitzen Klammern umrahmten id
 dargestellt.
@@ -1209,9 +1206,9 @@ dargestellt.
 [[reference]]
 [source, pest]
 .reference
---------------------------------------------------------------------------------
+----
 "<<" ~ identifier ~ ">>"
---------------------------------------------------------------------------------
+----
 
 Wobei eine id nur aus ASCII Buchstaben, Unterstrich und Verbindungsstrich
 bestehen darf. Zudem darf sie nicht mit einem Verbindungsstrich beginnen, um
@@ -1220,9 +1217,9 @@ nicht den wie eine Minus Expression zu wirken (und damit Verwirrung zu stiften).
 [[internal_gramma_elements]]
 [source, pest]
 .identifier
---------------------------------------------------------------------------------
+----
 identifier = @{ (ASCII_ALPHANUMERIC | "_") ~ (ASCII_ALPHANUMERIC | "_" | "-" )* }
---------------------------------------------------------------------------------
+----
 
 Bei einer eingerückten Referenz definieren wir die Einrückung seperat um sie
 später (TODO link) wirderverwenden zu können.
@@ -1230,41 +1227,41 @@ später (TODO link) wirderverwenden zu können.
 [[indented_reference]]
 [source, pest]
 .Eingerückte Referenz
---------------------------------------------------------------------------------
+----
 (SOI | NEWLINE) ~ indentation ~ reference
---------------------------------------------------------------------------------
+----
 
 [[internal_gramma_elements]]
 [source, pest]
---------------------------------------------------------------------------------
+----
 whitespace = @{ (" " | "\t") }
 indentation = @{ whitespace+ }
---------------------------------------------------------------------------------
+----
 
 Als Quellcode betrachten wir alles, was keine Referenz und kein Kommentar ist.
 
 [[code_gramma]]
 [source, pest]
---------------------------------------------------------------------------------
+----
 (!indented_reference ~ !reference ~ !comment ~ ANY)+
---------------------------------------------------------------------------------
+----
 
 Ein Kommentar ist ein typischer Kommentarbeginn zusammen mit einem Callout (TODO
 link auf asciidoctor oder asciidoctrine Dokumentation).
 
 [[comment]]
 [source, pest]
---------------------------------------------------------------------------------
+----
 optspaces ~ ("//" | "#" | ";;" ) ~ optspaces ~ "<" ~ ASCII_DIGIT+ ~ ">" ~ optspaces ~ &(EOI | NEWLINE)
---------------------------------------------------------------------------------
+----
 
 Dabei dürfen whitespaces zwischen den Elementen vorkommen
 
 [[internal_gramma_elements]]
 [source, pest]
---------------------------------------------------------------------------------
+----
 optspaces = @{ whitespace* }
---------------------------------------------------------------------------------
+----
 
 === Snippets zusammenfügen
 Bevor die Snippets verwendet werden, müssen alle Referenzen durch die
@@ -1273,7 +1270,7 @@ tatsächlichen Inhalte ersetzt werden. Dazu benutzen wir die Funktion
 
 [[merge_snippet_content]]
 [source, rust]
---------------------------------------------------------------------------------
+----
 let mut snippets = HashMap::new();
 for (key, snippet) in &self.snippets {
   snippets.insert(key.as_str(), snippet.content.as_str());
@@ -1281,14 +1278,14 @@ for (key, snippet) in &self.snippets {
 let content = codeblock_parser::merge_dependencies(content.as_str(), &snippets);
 snippet.content = content.clone();
 self.snippets.insert(key.clone(), snippet.clone());
---------------------------------------------------------------------------------
+----
 
 In dieser Funktion wird ein String erzeugt, die Referenzen im Snippet durch den
 tatsächlichen Inhalt ersetzt.
 
 [[merge_dependencies]]
 [source, rust]
---------------------------------------------------------------------------------
+----
 let mut output = String::new();
 
 let ast = CodeblockParser::parse(Rule::codeblock, input).expect("couldn't parse input.");
@@ -1335,12 +1332,12 @@ for element in ast {
   }
 }
 output
---------------------------------------------------------------------------------
+----
 
 [[codeblock_parser_functions]]
 [source, rust]
 .extract_identifier und extract_indentation
---------------------------------------------------------------------------------
+----
 fn extract_identifier<'a>(element: &pest::iterators::Pair<'a, codeblock_parser::Rule>) -> &'a str {
   match element.as_rule() {
     Rule::reference => element.clone().into_inner().next().unwrap().as_str(),
@@ -1374,7 +1371,7 @@ fn extract_indentation<'a>(element: &pest::iterators::Pair<'a, codeblock_parser:
   }
   output
 }
---------------------------------------------------------------------------------
+----
 
 === Die Verarbeitungsreihenfolge der Snippets festlegen
 Eines der wichtigsten Features von `lisa` (und das, welches, wie ich glaube, es
@@ -1382,23 +1379,19 @@ am stärksten von vergleichbaren Tools unterscheidet), ist, dass man den
 Kontrollfluss bestimmen kann (TODO link). Dadurch wird es in gewissem Sinne zu
 einer Dataflow Sprache.
 
-Damit das möglich wird muss herausgefunden werden, welches Snippet verarbeitet
-werden kann, und welches von anderen abhängt, die vorher verarbeitet werden
-müssen. Dazu verwenden wir die Topoligical Sorting (TODO Wikipedia Link)
-Methode. Wir implementieren sie nicht selbst, sondern benutzen den `topological-sort`
-(TODO link) crate.
+Damit das möglich wird muss herausgefunden werden, welches Snippet verarbeitet werden kann, und welches von anderen abhängt, die vorher verarbeitet werden müssen. Dazu verwenden wir die https://en.wikipedia.org/wiki/Topological_sorting[Topoligical Sorting] Methode. Wir implementieren sie nicht selbst, sondern benutzen den `topological-sort` (TODO link) crate.
 
 [[required_crates]]
 [source, rust]
---------------------------------------------------------------------------------
+----
 extern crate topological_sort;
---------------------------------------------------------------------------------
+----
 
 [[cargo_dependencies]]
 [source, toml]
---------------------------------------------------------------------------------
+----
 topological-sort = "0.1.0"
---------------------------------------------------------------------------------
+----
 
 [[crate_usages]]
 [source, rust]
@@ -1658,7 +1651,7 @@ let content = content.lines()
 
 [[internal_functions]]
 [source, rust]
---------------------------------------------------------------------------------
+----
 /// Run a snippet in an interpreter
 pub fn eval(&self, interpreter: String, content: String) -> Result<(), Error> {
   <<get_eval_interpreter>>
@@ -1672,7 +1665,7 @@ pub fn eval(&self, interpreter: String, content: String) -> Result<(), Error> {
   Ok(())
 }
 
---------------------------------------------------------------------------------
+----
 
 Dafür benutzen wir den `std::process` crate.
 
@@ -1735,15 +1728,15 @@ lua (TODO link) als Interpreter. Dazu benutzen wir den `rlua` (TODO link) crate.
 
 [[required_crates]]
 [source, rust]
---------------------------------------------------------------------------------
+----
 extern crate rlua;
---------------------------------------------------------------------------------
+----
 
 [[crate_usages]]
 [source, rust]
---------------------------------------------------------------------------------
+----
 use rlua::Lua;
---------------------------------------------------------------------------------
+----
 
 [[cargo_dependencies]]
 [source, toml]
@@ -1755,7 +1748,7 @@ Jede `pipe` bekommt ihre eigene lua Umgebung.
 
 [[do_pipe]]
 [source, rust]
---------------------------------------------------------------------------------
+----
 let lua = Lua::new();
 
 lua.context(|lua| -> rlua::Result<()> {
@@ -1765,7 +1758,7 @@ lua.context(|lua| -> rlua::Result<()> {
   lua.load(&content).set_name(&key)?.exec()?;
   Ok(())
 });
---------------------------------------------------------------------------------
+----
 
 === Fehlerbehandlung
 Um Fehler abfangen zu können benutzen wir das `thiserror` crate.
