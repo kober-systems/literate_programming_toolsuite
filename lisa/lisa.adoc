@@ -425,21 +425,17 @@ Dieses Beispiel würde direkt "Hello World" auf der Konsole schreiben.
 Manchmal möchte man einen Codeschnipsel in leicht modifizierter Form vielfach
 verwenden. In diesem Fall ist `pipe` ein sehr mächtiges Werkzeug.
 
-Wird `pipe` als Attribut an einen Code Block angehangen, wird der darin
-befindliche Code ausgeführt und das alle Argumente der Funktion `store` als
-Schnipsel, unter dem Namen des ersten Argumentes, abgelegt. Es werden alle im
-Domument definierten Parameter und das Dokument selbst als Variablen übergeben
-(das Verhalten lässt sich durch Parameter beeinflussen).
+Wird `pipe` als Attribut an einen Code Block angehangen, wird der darin befindliche Code, wie bei `eval`, ausgeführt. Im Gegensatz zu `eval` hat `pipe` die Möglichkeit die Code-Schnipsel selbst zu manipulieren. Dazu bekommt es eine Variable `lisa` zu Verfügung gestellt, welche Zugriff auf die Code-Generierung erhält.
 
-[listing]
+Die Sprache des `pipe` Interpreters ist https://github.com/jonathandturner/rhai[rhai].
+
 [source,asciidoc]
 ....
 Print out the doctument header when running the program.
 
-[source, lua, pipe]
-.hello-title.lua
+[source, rhai, pipe]
 ---
-store("print_header", [[=[print("${doc.header}")]]=])
+lisa.store("print_header", [[=[print("${doc.header}")]]=])
 ---
 ....
 
@@ -449,11 +445,7 @@ Transformieren und Zusammenfügen lassen sich auch mit `pipe` verwenden, so dass
 man sogar mit `pipe` erzeugte Codeschnipsel verwenden könnte um neue `pipe`
 Codeschnipsel zu erzeugen.
 
-Auch, wenn man beliebige Funktionen in einem `pipe` Block erst definieren und
-dann nutzen oder auch importieren kann (Man könnte z.B. eine SQL-Bibliothek
-importieren und aktuelle Daten aus einer Datenbank in seinen Quelltext
-einbauen) gibt es einige, häufig gebrauchte Funktionen, welche einem immer zur
-Verfügung stehen:
+Folgende Funktionen werden von der `lisa` Variable zur Verfügung gestellt:
 
 store(name, schnipsel):: Speichert einen String unter einem Namen als Schnipsel
   ab.
@@ -1454,10 +1446,14 @@ depends_on_ids
 [[generate_outputs]]
 [source, rust]
 ----
+let db = Rc::new(RefCell::new(snippets));
+let mut snippets = Rc::clone(&db);
+
 loop {
   let key = self.dependencies.pop(); // <1>
-  match key {
+  let snippet = match key {
     Some(key) => {
+      let mut snippets = snippets.borrow_mut();
       let snippet = snippets.pop(&key.clone());
 
       match snippet {
@@ -1466,12 +1462,13 @@ loop {
 
           <<merge_snippet_content>>
 
-          <<execute_snippet_action>>
+          Some(snippet)
         }
         None => { // <4>
           // TODO Fehlermeldung im AST. Ein Snippet sollte zu
           // diesem Zeitpunkt immer bereits erstellt sein.
           println!("Error: Dependency `{}` nicht gefunden", key);
+          None
         }
       }
     }
@@ -1484,6 +1481,10 @@ loop {
       }
       break; // <2>
     }
+  };
+
+  if let Some(snippet) = snippet {
+    <<execute_snippet_action>>
   }
 }
 ----
@@ -1680,41 +1681,87 @@ if output.status.success() {
 ----
 
 ==== Pipe: Snippets dynamisch erzeugen
-Beim `pipe` Befehl werden snippets als interne Scripte ausgeführt. Wir verwenden
-lua (TODO link) als Interpreter. Dazu benutzen wir den `rlua` (TODO link) crate.
+Beim `pipe` Befehl werden snippets als interne Scripte ausgeführt. Wir verwenden https://github.com/jonathandturner/rhai[rhai] als Interpreter.
 
 [[required_crates]]
 [source, rust]
 ----
-extern crate rlua;
+extern crate rhai;
 ----
 
 [[crate_usages]]
 [source, rust]
 ----
-use rlua::Lua;
+use rhai::RegisterFn;
 ----
 
 [[cargo_dependencies]]
 [source, toml]
 ----
-rlua = "0.17.0"
+rhai = "0.13.0"
 ----
 
-Jede `pipe` bekommt ihre eigene lua Umgebung.
+Jede `pipe` bekommt ihre eigene Script Umgebung.
 
 [[do_pipe]]
 [source, rust]
 ----
-let lua = Lua::new();
+let mut engine = rhai::Engine::new();
 
-lua.context(|lua| -> rlua::Result<()> {
-  <<init_lua_functions>>
-  <<init_lua_globals>>
+let mut scope = rhai::Scope::new();
 
-  lua.load(&snippet.content).set_name(&key)?.exec()?;
-  Ok(())
-});
+let wrapper = LisaWrapper { snippets: Rc::clone(&db) };
+scope.push_constant("lisa", wrapper);
+
+engine.register_type_with_name::<LisaWrapper>("LisaType");
+engine.register_fn("store", LisaWrapper::store);
+engine.register_fn("get_snippet", LisaWrapper::get_snippet);
+
+engine.eval_with_scope::<()>(&mut scope, &snippet.content);
+----
+
+Wir übergeben dem Interpreter eine Funktionsumgebung, welche die grundlegenden Funktionen zulässt.
+
+[[internal_structs]]
+[source, rust]
+----
+#[derive(Clone)]
+struct LisaWrapper {
+  pub snippets: Rc<RefCell<SnippetDB>>,
+}
+
+impl LisaWrapper {
+  pub fn store(&mut self, name: String, content: String) {
+    let mut snippets = self.snippets.borrow_mut();
+
+    snippets.pop(&name); // <1>
+
+    snippets.store(name, Snippet {
+      kind: SnippetType::Plain,
+      content: content,
+      children: Vec::new(),
+      depends_on: Vec::new(),
+    });
+  }
+
+  pub fn get_snippet(&mut self, name: String) -> String {
+    let mut snippets = self.snippets.borrow_mut();
+
+    match snippets.get(&name) {
+      Some(snippet) => snippet.content.clone(),
+      None => "".to_string(),
+    }
+  }
+}
+
+----
+<1> Eine wichtige Anwendung von Pipe-Snippets ist sich selbst dynamisch zu schreiben (TODO link). Damit das klappt muss der bestehende Inhalt ersetzt werden (Und nicht angehängt).
+
+[[crate_usages]]
+[source, rust]
+----
+use core::cell::RefCell;
+use std::rc::Rc;
 ----
 
 === Fehlerbehandlung
@@ -1761,7 +1808,7 @@ das Programm (und die Bibliothek) kompiliert werden können.
 ----
 [package]
 name = "lisa"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Benjamin Kober <k.o.b.e.r@web.de>"]
 edition = "2018"
 

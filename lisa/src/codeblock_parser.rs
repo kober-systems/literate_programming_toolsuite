@@ -1,5 +1,4 @@
 use pest::Parser;
-use std::collections::HashMap;
 
 use crate::*;
 
@@ -63,7 +62,7 @@ pub fn get_dependencies(input: &str) -> Vec<&str> {
 }
 
 /// Merges the snippets into the depending snippet
-pub fn merge_dependencies(input: &str, snippets: &HashMap<&str, &str>) -> String {
+pub fn merge_dependencies(input: &str, snippets: &SnippetDB) -> String {
   let mut output = String::new();
 
   let ast = CodeblockParser::parse(Rule::codeblock, input).expect("couldn't parse input.");
@@ -77,7 +76,7 @@ pub fn merge_dependencies(input: &str, snippets: &HashMap<&str, &str>) -> String
         // TODO Den snippet einfügen
         match snippet {
           Some(snippet) => {
-            output.push_str(snippet);
+            output.push_str(&snippet.content);
           }
           None => {
             // TODO Fehlermeldung? Müsste vorher bereits abgefangen sein.
@@ -92,7 +91,7 @@ pub fn merge_dependencies(input: &str, snippets: &HashMap<&str, &str>) -> String
         // TODO Den snippet einfügen und indentation beruecksichtigen
         match snippet {
           Some(snippet) => {
-            for line in snippet.lines() {
+            for line in snippet.content.lines() {
               output.push_str("\n");
               output.push_str(indentation);
               output.push_str(line);

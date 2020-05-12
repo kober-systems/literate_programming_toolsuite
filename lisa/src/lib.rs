@@ -3,19 +3,65 @@ extern crate pest;
 #[macro_use]
 extern crate pest_derive;
 extern crate topological_sort;
-extern crate rlua;
+extern crate rhai;
 
 mod codeblock_parser;
 
 use asciidoctrine::*;
 use std::collections::HashMap;
+use std::collections::hash_map;
 use topological_sort::TopologicalSort;
 use std::fs;
 use std::path::Path;
 use std::str::FromStr;
 use std::io::Write;
 use std::process::{Command, Stdio};
-use rlua::Lua;
+use rhai::RegisterFn;
+use core::cell::RefCell;
+use std::rc::Rc;
+
+pub struct SnippetDB {
+  snippets: HashMap<String, Snippet>,
+}
+
+impl SnippetDB {
+  pub fn new() -> Self {
+    SnippetDB {
+      snippets: HashMap::default(),
+    }
+  }
+
+  /// Stores a snippet in the internal database
+  pub fn store(&mut self, name: String, snippet: Snippet) {
+    let base = self.snippets.get_mut(&name);
+    match base {
+      Some(base) => {
+        if &base.children.len() < &1 {
+          let other = base.clone();
+          &base.children.push(other);
+        }
+        base.content.push_str("\n");
+        base.content.push_str(snippet.content.as_str());
+        base.children.push(snippet);
+      }
+      None => {
+        self.snippets.insert(name, snippet);
+      }
+    }
+  }
+
+  pub fn get(&self, name: &str) -> Option<&Snippet> {
+    self.snippets.get(name)
+  }
+
+  pub fn pop(&mut self, name: &str) -> Option<Snippet> {
+    self.snippets.remove(name)
+  }
+
+  pub fn iter(&self) -> hash_map::Iter<String, Snippet> {
+    self.snippets.iter()
+  }
+}
 
 #[derive(Clone, Debug)]
 pub enum SnippetType {
@@ -34,6 +80,36 @@ pub struct Snippet {
   /// before it can be processed
   pub depends_on: Vec<String>,
 }
+
+#[derive(Clone)]
+struct LisaWrapper {
+  pub snippets: Rc<RefCell<SnippetDB>>,
+}
+
+impl LisaWrapper {
+  pub fn store(&mut self, name: String, content: String) {
+    let mut snippets = self.snippets.borrow_mut();
+
+    snippets.pop(&name);
+
+    snippets.store(name, Snippet {
+      kind: SnippetType::Plain,
+      content: content,
+      children: Vec::new(),
+      depends_on: Vec::new(),
+    });
+  }
+
+  pub fn get_snippet(&mut self, name: String) -> String {
+    let mut snippets = self.snippets.borrow_mut();
+
+    match snippets.get(&name) {
+      Some(snippet) => snippet.content.clone(),
+      None => "".to_string(),
+    }
+  }
+}
+
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
   #[error("a nessessary attribute is missing")]
@@ -46,27 +122,25 @@ pub enum Error {
 
 
 pub struct Lisa {
-  snippets: HashMap<String, Snippet>,
   dependencies: TopologicalSort<String>,
 }
 
 impl Lisa {
   pub fn new() -> Self {
     Lisa {
-      snippets: HashMap::default(),
       dependencies: TopologicalSort::new(),
     }
   }
 
   /// Gets recursively all snippets from an element
-  pub fn extract(&mut self, input: &ElementSpan) -> Result<(), Error> {
+  pub fn extract(&mut self, mut snippets: SnippetDB, input: &ElementSpan) -> SnippetDB {
     match &input.element {
       Element::TypedBlock {
         kind: BlockType::Listing,
       } => {
         let args = &mut input.positional_attributes.iter();
         if !(args.next() == Some(&AttributeValue::Ref("source"))) {
-          return Ok(());
+          return snippets;
         }
         let mut interpreter = None;
         if let Some(value) = args.next()  {
@@ -131,7 +205,7 @@ impl Lisa {
               kind = SnippetType::Save(path);
             }
             AttributeValue::Ref("eval") => {
-              let interpreter = interpreter.clone().ok_or(Error::Missing)?;
+              let interpreter = interpreter.clone().unwrap_or("interpreter_missing".to_string());
               kind = SnippetType::Eval(interpreter);
             }
             AttributeValue::Ref("pipe") => {
@@ -151,7 +225,7 @@ impl Lisa {
         for dependency in codeblock_parser::get_dependencies(content.as_str()).iter() {
           dependencies.push(dependency.to_string());
         }
-        self.store(
+        snippets.store(
           id,
           Snippet {
             kind: kind,
@@ -160,42 +234,25 @@ impl Lisa {
             depends_on: dependencies,
           },
         );
+
+        snippets
       }
       Element::IncludeElement(ast) => {
-        self.extract_ast(&ast.inner);
+        ast.inner.elements.iter().fold(snippets, |snippets, element| {
+          self.extract(snippets, element)
+        })
       }
       _ => {
-        for element in input.children.iter() {
-          self.extract(element);
-        }
-      }
-    }
-
-    Ok(())
-  }
-
-  /// Stores a snippet in the internal database
-  pub fn store(&mut self, name: String, snippet: Snippet) {
-    let base = self.snippets.get_mut(&name);
-    match base {
-      Some(base) => {
-        if &base.children.len() < &1 {
-          let other = base.clone();
-          &base.children.push(other);
-        }
-        base.content.push_str("\n");
-        base.content.push_str(snippet.content.as_str());
-        base.children.push(snippet);
-      }
-      None => {
-        self.snippets.insert(name, snippet);
+        input.children.iter().fold(snippets, |snippets, element| {
+          self.extract(snippets, element)
+        })
       }
     }
   }
 
   /// Builds the dependency tree for topological sorting
-  pub fn check_dependencies(&mut self) {
-    for (key, snippet) in self.snippets.iter() {
+  pub fn check_dependencies(&mut self, snippets: &SnippetDB) {
+    for (key, snippet) in snippets.iter() {
       // TODO Vielleicht sollten nur `save` und `eval` snippets
       // unabhängig von dependencies aufgenommen werden?
       self.dependencies.insert(key);
@@ -270,59 +327,44 @@ impl Lisa {
   }
 
   /// Gets all snippets from the ast
-  pub fn extract_ast(&mut self, input: &AST) -> Result<(), Error> {
-    // extract snippets from all inner elements
-    for element in input.elements.iter() {
-      self.extract(element);
-    }
+  pub fn extract_ast(&mut self, input: &AST) -> Result<SnippetDB, Error> {
+    let mut snippets = SnippetDB::new();
 
-    Ok(())
+    // extract snippets from all inner elements
+    let snippets = input.elements.iter().fold(snippets, |snippets, element| {
+      self.extract(snippets, element)
+    });
+
+    Ok(snippets)
   }
 
   /// Build all snippets (Runs the vm)
-  pub fn generate_outputs(&mut self, mut ast: &AST) -> Result<(), Error> {
+  pub fn generate_outputs(&mut self, snippets: SnippetDB, mut ast: &AST) -> Result<(), Error> {
+    let db = Rc::new(RefCell::new(snippets));
+    let mut snippets = Rc::clone(&db);
+
     loop {
       let key = self.dependencies.pop();
-      match key {
+      let snippet = match key {
         Some(key) => {
-          let snippet = self.snippets.remove(&key.clone());
+          let mut snippets = snippets.borrow_mut();
+          let snippet = snippets.pop(&key.clone());
 
           match snippet {
             Some(mut snippet) => {
               let content = snippet.content.clone();
 
-              let mut snippets = HashMap::new();
-              for (key, snippet) in &self.snippets {
-                snippets.insert(key.as_str(), snippet.content.as_str());
-              }
               let content = codeblock_parser::merge_dependencies(content.as_str(), &snippets);
               snippet.content = content.clone();
-              self.snippets.insert(key.clone(), snippet.clone());
+              snippets.store(key, snippet.clone());
 
-              match &snippet.kind {
-                SnippetType::Eval(interpreter) => {
-                  self.eval(interpreter.to_string(), content)?;
-                }
-                SnippetType::Plain => {}
-                SnippetType::Save(path) => {
-                  let path = String::from_str(&path).unwrap();
-                  self.save(path, content)?;
-                }
-                SnippetType::Pipe => {
-                  let lua = Lua::new();
-
-                  lua.context(|lua| -> rlua::Result<()> {
-
-                    lua.load(&content).set_name(&key)?.exec()?;
-                    Ok(())
-                  });
-                }
-              }
+              Some(snippet)
             }
             None => {
               // TODO Fehlermeldung im AST. Ein Snippet sollte zu
               // diesem Zeitpunkt immer bereits erstellt sein.
               println!("Error: Dependency `{}` nicht gefunden", key);
+              None
             }
           }
         }
@@ -335,6 +377,33 @@ impl Lisa {
           }
           break;
         }
+      };
+
+      if let Some(snippet) = snippet {
+        match &snippet.kind {
+          SnippetType::Eval(interpreter) => {
+            self.eval(interpreter.to_string(), snippet.content)?;
+          }
+          SnippetType::Plain => {}
+          SnippetType::Save(path) => {
+            let path = String::from_str(&path).unwrap();
+            self.save(path, snippet.content)?;
+          }
+          SnippetType::Pipe => {
+            let mut engine = rhai::Engine::new();
+
+            let mut scope = rhai::Scope::new();
+
+            let wrapper = LisaWrapper { snippets: Rc::clone(&db) };
+            scope.push_constant("lisa", wrapper);
+
+            engine.register_type_with_name::<LisaWrapper>("LisaType");
+            engine.register_fn("store", LisaWrapper::store);
+            engine.register_fn("get_snippet", LisaWrapper::get_snippet);
+
+            engine.eval_with_scope::<()>(&mut scope, &snippet.content);
+          }
+        }
       }
     }
 
@@ -344,12 +413,11 @@ impl Lisa {
 
 impl Extension for Lisa {
   fn transform<'a>(&mut self, mut input: AST<'a>) -> AST<'a> {
-    self.extract_ast(&input);
+    let mut snippets = self.extract_ast(&input).unwrap();
 
-    // TODO Das Snippet Stack Program vorbereiten.
-    self.check_dependencies();
+    self.check_dependencies(&snippets);
 
-    self.generate_outputs(&input);
+    self.generate_outputs(snippets, &input);
 
     input
   }
