@@ -103,14 +103,19 @@ impl Lisa {
   <<internal_functions>>
 
   /// Gets all snippets from the ast
-  pub fn extract_ast(&mut self, input: &AST) -> Result<(), Error> { // <3>
-    <<extract_ast>>
+  pub fn extract_ast(&mut self, input: &AST) -> Result<SnippetDB, Error> { // <3>
+    let mut snippets = SnippetDB::new();
 
-    Ok(())
+    // extract snippets from all inner elements
+    let snippets = input.elements.iter().fold(snippets, |snippets, element| {
+      self.extract(snippets, element)
+    });
+
+    Ok(snippets)
   }
 
   /// Build all snippets (Runs the vm)
-  pub fn generate_outputs(&mut self, mut ast: &AST) -> Result<(), Error> { // <5>
+  pub fn generate_outputs(&mut self, snippets: SnippetDB, mut ast: &AST) -> Result<(), Error> { // <5>
     <<generate_outputs>>
 
     Ok(())
@@ -119,12 +124,12 @@ impl Lisa {
 
 impl Extension for Lisa { // <1>
   fn transform<'a>(&mut self, mut input: AST<'a>) -> AST<'a> { // <2>
-    self.extract_ast(&input); // <3>
+    let mut snippets = self.extract_ast(&input).unwrap(); // <3>
 
     // TODO Das Snippet Stack Program vorbereiten.
-    self.check_dependencies();
+    self.check_dependencies(&snippets);
 
-    self.generate_outputs(&input); // <5>
+    self.generate_outputs(snippets, &input); // <5>
 
     input
   }
@@ -206,17 +211,6 @@ einzubinden. Der `filename` kann dazu benutzt werden, um den Dateinamen einer
 Ausgabedatei festzulegen und der `Quelltext` kann als Inhalt dieser Dateien
 dienen.
 ////////////////////////////////////////////////////////////////////////////////
-
-Die Code-Snippets werden jeweils einer Funktion übergeben:
-
-[[extract_ast]]
-[source, rust]
-----
-// extract snippets from all inner elements
-for element in input.elements.iter() {
-  self.extract(element);
-}
-----
 
 ==== Zusammenfügen
 Die verschiedenen Codeschnipsel kann man in anderen Codeschnipseln einbinden.
@@ -813,20 +807,37 @@ können. Dafür verwenden wir eine `HashMap`.
 [source, rust]
 ----
 use std::collections::HashMap;
+use std::collections::hash_map;
 ----
 
-[[lisa_internal_variables]]
+[[internal_structs]]
 [source, rust]
 ----
-snippets: HashMap<String, Snippet>,
-----
+pub struct SnippetDB {
+  snippets: HashMap<String, Snippet>,
+}
 
-Natürlich muss die Datenbank zu Beginn initialisiert werden.
+impl SnippetDB {
+  pub fn new() -> Self {
+    SnippetDB {
+      snippets: HashMap::default(),
+    }
+  }
 
-[[lisa_init_variables]]
-[source, rust]
-----
-snippets: HashMap::default(),
+  <<snippet_db_functions>>
+
+  pub fn get(&self, name: &str) -> Option<&Snippet> {
+    self.snippets.get(name)
+  }
+
+  pub fn pop(&mut self, name: &str) -> Option<Snippet> {
+    self.snippets.remove(name)
+  }
+
+  pub fn iter(&self) -> hash_map::Iter<String, Snippet> {
+    self.snippets.iter()
+  }
+}
 ----
 
 Jeder Snippet kann einer von vier Kategorien zugewiesen werden.
@@ -879,7 +890,7 @@ pub struct Snippet {
 [source, rust]
 ----
 /// Gets recursively all snippets from an element
-pub fn extract(&mut self, input: &ElementSpan) -> Result<(), Error> {
+pub fn extract(&mut self, mut snippets: SnippetDB, input: &ElementSpan) -> SnippetDB {
   match &input.element {
     Element::TypedBlock {
       kind: BlockType::Listing,
@@ -888,18 +899,20 @@ pub fn extract(&mut self, input: &ElementSpan) -> Result<(), Error> {
       <<extract_attributes>>
       <<find_references>>
       <<store_snippet_in_internal_db>>
+
+      snippets
     }
     Element::IncludeElement(ast) => { // <2>
-      self.extract_ast(&ast.inner);
+      ast.inner.elements.iter().fold(snippets, |snippets, element| {
+        self.extract(snippets, element)
+      })
     }
     _ => { // <2>
-      for element in input.children.iter() {
-        self.extract(element);
-      }
+      input.children.iter().fold(snippets, |snippets, element| {
+        self.extract(snippets, element)
+      })
     }
   }
-
-  Ok(())
 }
 
 ----
@@ -917,7 +930,7 @@ Parameter `source`. `lisa` verarbeitet nur diese Blocks.
 ----
 let args = &mut input.positional_attributes.iter();
 if !(args.next() == Some(&AttributeValue::Ref("source"))) {
-  return Ok(());
+  return snippets;
 }
 ----
 
@@ -1055,7 +1068,7 @@ Datenbank abspeichern.
 [[store_snippet_in_internal_db]]
 [source, rust]
 ----
-self.store(
+snippets.store(
   id,
   Snippet {
     kind: kind,
@@ -1068,7 +1081,7 @@ self.store(
 
 Wir rufen dazu die interne Funktion `store` auf.
 
-[[internal_functions]]
+[[snippet_db_functions]]
 [source, rust]
 ----
 /// Stores a snippet in the internal database
@@ -1146,7 +1159,6 @@ mod codeblock_parser;
 .src/codeblock_parser.rs
 ----
 use pest::Parser;
-use std::collections::HashMap;
 
 use crate::*;
 
@@ -1162,7 +1174,7 @@ pub fn get_dependencies(input: &str) -> Vec<&str> {
 }
 
 /// Merges the snippets into the depending snippet
-pub fn merge_dependencies(input: &str, snippets: &HashMap<&str, &str>) -> String {
+pub fn merge_dependencies(input: &str, snippets: &SnippetDB) -> String {
   <<merge_dependencies>>
 }
 ----
@@ -1271,13 +1283,9 @@ tatsächlichen Inhalte ersetzt werden. Dazu benutzen wir die Funktion
 [[merge_snippet_content]]
 [source, rust]
 ----
-let mut snippets = HashMap::new();
-for (key, snippet) in &self.snippets {
-  snippets.insert(key.as_str(), snippet.content.as_str());
-}
 let content = codeblock_parser::merge_dependencies(content.as_str(), &snippets);
 snippet.content = content.clone();
-self.snippets.insert(key.clone(), snippet.clone());
+snippets.store(key, snippet.clone());
 ----
 
 In dieser Funktion wird ein String erzeugt, die Referenzen im Snippet durch den
@@ -1299,7 +1307,7 @@ for element in ast {
       // TODO Den snippet einfügen
       match snippet {
         Some(snippet) => {
-          output.push_str(snippet);
+          output.push_str(&snippet.content);
         }
         None => {
           // TODO Fehlermeldung? Müsste vorher bereits abgefangen sein.
@@ -1314,7 +1322,7 @@ for element in ast {
       // TODO Den snippet einfügen und indentation beruecksichtigen
       match snippet {
         Some(snippet) => {
-          for line in snippet.lines() {
+          for line in snippet.content.lines() {
             output.push_str("\n");
             output.push_str(indentation);
             output.push_str(line);
@@ -1423,8 +1431,8 @@ füllen unsere Sortierstruktur.
 [source, rust]
 ----
 /// Builds the dependency tree for topological sorting
-pub fn check_dependencies(&mut self) {
-  for (key, snippet) in self.snippets.iter() {
+pub fn check_dependencies(&mut self, snippets: &SnippetDB) {
+  for (key, snippet) in snippets.iter() {
     // TODO Vielleicht sollten nur `save` und `eval` snippets
     // unabhängig von dependencies aufgenommen werden?
     self.dependencies.insert(key); // <1>
@@ -1491,7 +1499,7 @@ loop {
   let key = self.dependencies.pop(); // <1>
   match key {
     Some(key) => {
-      <<get_snippet>>
+      let snippet = snippets.pop(&key.clone());
 
       match snippet {
         Some(mut snippet) => {
@@ -1534,16 +1542,6 @@ loop {
     Datenbank abgelegt, muss eine Fehlermeldung generiert werden. Wahrscheinlich
     wurde dann ein Snippet referenziert aber nie definiert.
 
-Wir müssen das Snippet verändern können (z.B. um den Textinhalt anzupassen).
-Damit das möglich ist entfernen wir es erstmal aus der Datenbank. Nach der
-Veränderung werden wir es wieder abspeichern (TODO link).
-
-[[get_snippet]]
-[source, rust]
-----
-let snippet = self.snippets.remove(&key.clone());
-----
-
 Je nach Snippet Typ können wir nun die entsprechende Aktion ausführen.
 
 [[execute_snippet_action]]
@@ -1551,12 +1549,12 @@ Je nach Snippet Typ können wir nun die entsprechende Aktion ausführen.
 ----
 match &snippet.kind {
   SnippetType::Eval(interpreter) => {
-    self.eval(interpreter.to_string(), content)?;
+    self.eval(interpreter.to_string(), snippet.content)?;
   }
   SnippetType::Plain => {}
   SnippetType::Save(path) => {
     <<get_filepath>>
-    self.save(path, content)?;
+    self.save(path, snippet.content)?;
   }
   SnippetType::Pipe => {
     <<do_pipe>>
@@ -1755,7 +1753,7 @@ lua.context(|lua| -> rlua::Result<()> {
   <<init_lua_functions>>
   <<init_lua_globals>>
 
-  lua.load(&content).set_name(&key)?.exec()?;
+  lua.load(&snippet.content).set_name(&key)?.exec()?;
   Ok(())
 });
 ----
