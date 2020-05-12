@@ -146,6 +146,7 @@ impl Extension for Lisa { // <1>
     des Quellcodes aus der Datei.
 <5> Zum Schluss können alle Dateien generiert und Scripte ausgeführt werden.
 
+[[usage]]
 == Benutzung
 
 === Generelles
@@ -183,6 +184,7 @@ Entwicklung wird man immer mal wieder aufräumen und umstrukturieren müssen
 
 === Quellcode generieren
 
+[[usage_extract]]
 ==== Extrahieren
 Die normalen Quellcode Listings können gebraucht werden, um ein Programm zu
 erstellen.
@@ -212,6 +214,7 @@ Ausgabedatei festzulegen und der `Quelltext` kann als Inhalt dieser Dateien
 dienen.
 ////////////////////////////////////////////////////////////////////////////////
 
+[[usage_import_snippets]]
 ==== Zusammenfügen
 Die verschiedenen Codeschnipsel kann man in anderen Codeschnipseln einbinden.
 Dafür verwendet man einfach eine `cross reference` auf den `anchor` des
@@ -750,48 +753,6 @@ Ausserdem können diese Ticket-Verwaltungen ausschließlich über ein webinterfa
 bedient werden. Für Entwickler wäre es wünschenswert einfach Textdateien
 bearbeiten zu können...
 
-Ein Übersetzungs-Tool für literate Programme
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Die neue Herangehensweise an das Programmieren hat bei mir eine neue Frage
-aufgeworfen: In welcher Sprache soll ich programmieren?
-
-Bisher war es für mich immer absolut klar, ein Programm in Englisch zu
-dokumentieren. Da sich nun aber der Fokus vom Quelltext auf das Darlegen von
-Ideen verschoben hat wäre es von Vorteil die Sprache zu nutzen, in welcher ich
-am leichtesten Ideen vermitteln kann. Auf einmal bekommen Dinge, die im
-normalen Quelltext normalerweise keine Rolle spielen (dürfen), wie Gefühle und
-Humor eine wichtige Bedeutung für das Projekt. Daher überlege ich das erste Mal
-ernsthaft Programme in Deutsch (meiner Muttersprache) zu veröffentlichen.
-footnote:[Bei der Programmiersprache geht es also gar nicht mehr so sehr um die
-Computersprache, sondern um die von Menschen verwendete Sprache.]
-
-Will man aber mit einem internationlen Team zusammenarbeiten (und das ist
-besonders bei open source wichtig) so kommt man um englisch nicht herum (was
-wohl Portierung in diesem Zusammenhang bedeutet). Daher ist es nützlich ein
-Werkzeug zu haben, welches einem den Ursprungstext (in meinem Fall deutsch) und
-die Übersetzung (englisch) nebeneinander zeigt. Es sollte eine Übersicht
-liefern, welche Teile des Programms wie weit und in welcher Qualität übersetzt
-sind. Hierbei ergeben sich eine ganze Reihe Probleme.
-
-. Im Gegensatz zu einem normalen Buch ist ein Programm normalerweise nicht
-  abgeschlossen (zumindest wird mit der Übersetzung begonnen während das
-  Programm noch nicht abgeschlossen ist) und beide Sprachen müssen parallel
-  gepflegt werden ohne sich ausseinander zu entwickeln.
-  Dabei sollte man die Änderungen zum aktuellen Übersetzungsstand sehen.
-. Beide Programme sollten das gleiche Ausgabeprodukt erzeugen. Es darf keine
-  verschiedenen Sprachvarianten geben, denn das würde zu einem riesen Chaos
-  führen und der Support wie auch die Wartung wären unglaublich aufwendig.
-. Da immer mindestens zwei Sprachen in einem Dokument gemixt sind (Natürliche
-  Sprache und Programmiersprache) ergeben sich ganz ähnliche Fragen, wenn man
-  eine alternative Implementierung in einer anderen Programmiersprache einfügen
-  möchte.
-. ...
-
-///////////////////////////////////////////////
-Der Zguide ist eine gute Anlaufstelle für alternative Implementierungen in
-verschiedenen Programmiersprachen.
-///////////////////////////////////////////////
-
 Implementierung
 ---------------
 
@@ -880,9 +841,7 @@ pub struct Snippet {
     link).
 <2> Dadurch muss der Text des Snippets aus allen anderen Snippets berechnet
     werden.
-<3> Snippets haben andere Snippets, die sie einbinden (TODO link), oder man
-    möchte eine explizite Reihenfolge festlegen (TODO link). Daher werden hier
-    alle Snippets aufgelistet, die vorher verarbeitet werden müssen.
+<3> Snippets haben <<usage_import_snippets,andere Snippets, die sie einbinden>>, oder man möchte eine explizite Reihenfolge festlegen (TODO link). Daher werden hier alle Snippets aufgelistet, die vorher verarbeitet werden müssen.
 
 ==== Den AST filtern und die Datenbank füllen
 
