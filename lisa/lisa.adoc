@@ -5,6 +5,8 @@ Benjamin Kober <k.o.b.e.r@web.de>
 Ein literate programming Werkzeug.
 
 == Programmübersicht
+
+=== Motivation
 Programme sind festgehaltene Ideen. Die zugrunde liegenden Konzepte sind nicht
 an irgendeine Syntax sodern an Gedanken und Modelle gekoppelt. Dieses Programm
 soll dem Entwickler helfen sich wieder auf diese Konzepte konzentrieren zu
@@ -23,8 +25,7 @@ Gleichzeitig gibt es auch eine ganze Menge Probleme mit diesem
 Programmierkonzept. Diese behandle ich in einem <<literate-problems,späteren Abschnitt>> und versuche
 Lösungsansätze dafür zu finden.
 
-Das Ziel dieses Programmes ist es
-
+=== Architektur
 Dieses Programm existiert nicht unabhängig von seinem Kontext. Es ist dazu
 gedacht asciidoc Texte in Programmcode und in Programmdokumentation
 umzuwandeln. Letzteres ist nicht schwer, denn das ist ja ohnehin die
@@ -71,10 +72,7 @@ asciidoctrine = { path = "../asciidoctrine" }
 
 --------------------------------------------------------------------------------
 
-`lisa` arbeitet direkt auf einem asciidoc AST und erzeugt aus den darin
-enthaltenen Quelltext-Snippets (TODO link) Sourcecode Dateien (und manchmal
-auch weitere Dateien). Im AST fügt es einige zusätzliche Informationen hinzu
-(vor allem Referenzen, wo Code-Snippets verwendet werden TODO interner link).
+`lisa` arbeitet direkt auf einem asciidoc https://en.wikipedia.org/wiki/Abstract_syntax_tree[AST] und erzeugt aus den darin enthaltenen Quelltext-Snippets (TODO link) Sourcecode Dateien (und manchmal auch weitere Dateien). Im AST fügt es einige zusätzliche Informationen hinzu (vor allem Referenzen, wo Code-Snippets verwendet werden TODO interner link).
 
 Die Hauptdatei hat dabei folgendes Gerüst:
 
@@ -115,7 +113,7 @@ impl Lisa {
   }
 
   /// Build all snippets (Runs the vm)
-  pub fn generate_outputs(&mut self, snippets: SnippetDB, mut ast: &AST) -> Result<(), Error> { // <5>
+  pub fn generate_outputs(&mut self, snippets: SnippetDB, mut ast: &AST) -> Result<(), Error> { // <4>
     <<generate_outputs>>
 
     Ok(())
@@ -126,10 +124,9 @@ impl Extension for Lisa { // <1>
   fn transform<'a>(&mut self, mut input: AST<'a>) -> AST<'a> { // <2>
     let mut snippets = self.extract_ast(&input).unwrap(); // <3>
 
-    // TODO Das Snippet Stack Program vorbereiten.
-    self.check_dependencies(&snippets);
+    self.check_dependencies(&snippets); // <5>
 
-    self.generate_outputs(snippets, &input); // <5>
+    self.generate_outputs(snippets, &input); // <4>
 
     input
   }
@@ -144,12 +141,13 @@ impl Extension for Lisa { // <1>
     weiterverarbeitet werden kann).
 <3> Die grundlegende Aufgabe zu Beginn der Transformation ist das Extrahieren
     des Quellcodes aus der Datei.
-<5> Zum Schluss können alle Dateien generiert und Scripte ausgeführt werden.
+<4> Zum Schluss können alle Dateien generiert und Scripte ausgeführt werden.
+<5> Oftmals ist die Reihenfolge der Abarbeitung der Code-Schnipsel entscheidend (TODO link). Diese wird vor der Abarbeitung festgelegt.
 
 [[usage]]
 == Benutzung
 
-=== Generelles
+=== Generelle Herangehensweise
 Beim schreiben eines literate Programmes sollte man wie bei einer
 wissenschaftlichen Arbeit vorgehen:
 
@@ -174,13 +172,15 @@ wissenschaftlichen Arbeit vorgehen:
 
 Zu Beginn kann man mit einem einzigen Dokument starten aber im Laufe der Zeit
 wird es bei größeren Projekten gut sein, sie in Kapitel (Module) zu gliedern und
-diese in ein Hauptdokument zu inkludieren.
+diese in ein Hauptdokument einzubinden.
 
 Die Reihenfolge des Schreibens kann sich überlagern (obwohl es gut ist mit der
 Übersicht und den grundlegenden Fragen zu beginnen) aber wahrscheinlich ist die
 Anordnung der Kapitel im endgültigen Dokument immer ähnlich. Im Laufe der
 Entwicklung wird man immer mal wieder aufräumen und umstrukturieren müssen
 (refaktoring).
+
+Es ist wichtig eine Begründung für alle Designentscheidungen aufzuschreiben damit man bei der späteren Pflege des Programmes weiß, ob diese noch gültig oder obsolet sind. Das ermöglicht auch bei der gemeinsamen Arbeit mit einem Team an einem Projekt, eine Argumentationsgrundlage für Designentscheidungen/Änderungen zu haben.
 
 === Quellcode generieren
 
@@ -220,8 +220,7 @@ Die verschiedenen Codeschnipsel kann man in anderen Codeschnipseln einbinden.
 Dafür verwendet man einfach eine `cross reference` auf den `anchor` des
 jeweiligen Schnipsels:
 
-[listing]
-[source,asciidoc]
+[source, asciidoc]
 ....
 We need the testmodule for this project.
 
@@ -377,13 +376,13 @@ Lizenz-Headers in allen Quellcode Dateien.
 
 Die zu diesem Zweck bereitgestellten Funktionen werden jetzt erklärt:
 
+[[usage_save]]
 ===== save (Speichern)
 Um überhaupt ein ausführbares Programm zu erhalten ist es unerlässlich den
 erzeugten Quellcode in ein tatsächliches Programm umwandeln zu können. Die
 wichtigste Möglichkeit dazu ist einen Schnipsel in eine Datei abspeichern zu
 können. Dazu wird das Attribut `save` verwendet:
 
-[listing]
 [source,asciidoc]
 ....
 Lets create a "hello world" program.
@@ -403,11 +402,10 @@ definiert wird. Das scheint sehr nützlich zu sein. Sollte ich so etwas auch
 implementieren?
 //////
 
+[[usage_eval]]
 ===== eval (Ausführen)
-Eine weitere Methode das Programm zu nutzen ist es direkt auszuführen. Das wird
-mit dem Atrribut `eval` gemacht.
+Eine weitere Methode das Programm zu nutzen ist es direkt auszuführen. Das wird mit dem Atrribut `eval` gemacht.
 
-[listing]
 [source,asciidoc]
 ....
 Lets run a "hello world" program.
@@ -421,6 +419,9 @@ print("Hello World")
 
 Dieses Beispiel würde direkt "Hello World" auf der Konsole schreiben.
 
+Als Interpreter verwendet `lisa` standardmäßig die angegebende Scriptsprache (in den meisten Fällen stimmen der Name der Sprache und der Name des Interpreter-Executables überein).
+
+[[usage_pipe]]
 ===== pipe
 Manchmal möchte man einen Codeschnipsel in leicht modifizierter Form vielfach
 verwenden. In diesem Fall ist `pipe` ein sehr mächtiges Werkzeug.
@@ -467,29 +468,9 @@ rawsnippets:: Die Codeschnipsel, wie sie aus dem AST extrahiert wurden, bevor
 snippets:: Die Codeschnipsel mit bereits eingesetzten Schnipseln an den
   Referenzen.
 
-////////////////////////////////////////////////////////////////////////////////
-TODO man könnte sie z.B. als `Labeled List` anlegen:
+Die Anwendungsmöglichkeiten von `pipe` sind extrem vielfältig und mächtig. Deshalb werden wir in den nächsten Abschnitten einige Anwendungsfälle besprechen, die sich mit `pipe` elegant lösen lassen.
 
-map::
-  ..............................................................................
-  Erklärung ...
-  [[map]]
-  [source, ruby]
-  ------------------------------
-  Implementierung ...
-  ------------------------------
-  ..............................................................................
-etc:: ...
-
-Sowohl `save` als auch `eval` könnten auf diese Weise implementiert werden und
-dadurch die üblichen Anwendungsfälle für literate Programming abdecken. Es
-sollten Werkzeuge zur Verfügung stehen, um die Reihenfolge der Ausführung
-festzulegen (vielleicht mit Abhänigkeiten, wie bei einem Makefile. Dabei
-sollten alle includierten Schnipsel rekursiv zu den Abhängigkeiten hinzugefügt
-werden. Es sollte aber auch möglich sein explizit Abhännigkeiten als Attribut
-zu definieren).
-////////////////////////////////////////////////////////////////////////////////
-
+[[usage_control_flow]]
 Den Ausführungsfluss steuern
 ++++++++++++++++++++++++++++
 Manchmal ist es wichtig, die Reihenfolge, in der die Funktionen ausgeführt
@@ -751,10 +732,7 @@ Implementierung
 === Codeschnipsel verarbeiten
 
 ==== Eine Datenbank für Codeschnipsel anlegen
-Um die Snippets zu verarbeiten müssen wir leicht auf sie zugreifen können. Das
-Ziel der Extrackt Phase (TODO Link?) ist es alle Schnipsel in eine Datenbank
-(oder Cache je nach Sichtweise) zu überführen, wo wir wahlfrei darauf zugreifen
-können. Dafür verwenden wir eine `HashMap`.
+Um die Snippets zu verarbeiten müssen wir leicht auf sie zugreifen können. Das Ziel der <<usage_extract,Extrakt Phase>> ist es alle Schnipsel in eine Datenbank (oder Cache je nach Sichtweise) zu überführen, wo wir wahlfrei darauf zugreifen können. Dafür verwenden wir eine `HashMap`.
 
 [[crate_usages]]
 [source, rust]
@@ -1333,10 +1311,7 @@ fn extract_indentation<'a>(element: &pest::iterators::Pair<'a, codeblock_parser:
 ----
 
 === Die Verarbeitungsreihenfolge der Snippets festlegen
-Eines der wichtigsten Features von `lisa` (und das, welches, wie ich glaube, es
-am stärksten von vergleichbaren Tools unterscheidet), ist, dass man den
-Kontrollfluss bestimmen kann (TODO link). Dadurch wird es in gewissem Sinne zu
-einer Dataflow Sprache.
+Eines der wichtigsten Features von `lisa` (und das, welches, wie ich glaube, es am stärksten von vergleichbaren Tools unterscheidet), ist, dass man den <<usage_control_flow,Kontrollfluss bestimmen kann>>. Dadurch wird es in gewissem Sinne zu einer https://en.wikipedia.org/wiki/Dataflow_programming[Dataflow Sprache].
 
 Damit das möglich wird muss herausgefunden werden, welches Snippet verarbeitet werden kann, und welches von anderen abhängt, die vorher verarbeitet werden müssen. Dazu verwenden wir die https://en.wikipedia.org/wiki/Topological_sorting[Topoligical Sorting] Methode. Wir implementieren sie nicht selbst, sondern benutzen den `topological-sort` (TODO link) crate.
 
