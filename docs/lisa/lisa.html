@@ -448,20 +448,25 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
 <ul class="sectlevel1">
-<li><a href="#_programmübersicht">Programmübersicht</a></li>
-<li><a href="#_benutzung">Benutzung</a>
+<li><a href="#_programmübersicht">Programmübersicht</a>
 <ul class="sectlevel2">
-<li><a href="#_generelles">Generelles</a></li>
+<li><a href="#_motivation">Motivation</a></li>
+<li><a href="#_architektur">Architektur</a></li>
+</ul>
+</li>
+<li><a href="#usage">Benutzung</a>
+<ul class="sectlevel2">
+<li><a href="#_generelle_herangehensweise">Generelle Herangehensweise</a></li>
 <li><a href="#_quellcode_generieren">Quellcode generieren</a>
 <ul class="sectlevel3">
-<li><a href="#_extrahieren">Extrahieren</a></li>
-<li><a href="#_zusammenfügen">Zusammenfügen</a></li>
+<li><a href="#usage_extract">Extrahieren</a></li>
+<li><a href="#usage_import_snippets">Zusammenfügen</a></li>
 <li><a href="#transform">Transformieren</a>
 <ul class="sectlevel4">
-<li><a href="#_save_speichern">save (Speichern)</a></li>
-<li><a href="#_eval_ausführen">eval (Ausführen)</a></li>
-<li><a href="#_pipe">pipe</a></li>
-<li><a href="#_den_ausführungsfluss_steuern">Den Ausführungsfluss steuern</a></li>
+<li><a href="#usage_save">save (Speichern)</a></li>
+<li><a href="#usage_eval">eval (Ausführen)</a></li>
+<li><a href="#usage_pipe">pipe</a></li>
+<li><a href="#usage_control_flow">Den Ausführungsfluss steuern</a></li>
 </ul>
 </li>
 </ul>
@@ -489,7 +494,6 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </ul>
 </li>
 <li><a href="#_einen_issue_tracker_aus_todo_adoc_und_changes_adoc_dokumenten_erstellen">Einen Issue-Tracker aus TODO.adoc und Changes.adoc Dokumenten erstellen</a></li>
-<li><a href="#_ein_übersetzungs_tool_für_literate_programme">Ein Übersetzungs-Tool für literate Programme</a></li>
 </ul>
 </li>
 <li><a href="#_implementierung">Implementierung</a>
@@ -535,6 +539,8 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div class="sect1">
 <h2 id="_programmübersicht">Programmübersicht</h2>
 <div class="sectionbody">
+<div class="sect2">
+<h3 id="_motivation">Motivation</h3>
 <div class="paragraph">
 <p>Programme sind festgehaltene Ideen. Die zugrunde liegenden Konzepte sind nicht
 an irgendeine Syntax sodern an Gedanken und Modelle gekoppelt. Dieses Programm
@@ -567,9 +573,9 @@ die Dokumentation deutlich besser.</p>
 Programmierkonzept. Diese behandle ich in einem <a href="#literate-problems">späteren Abschnitt</a> und versuche
 Lösungsansätze dafür zu finden.</p>
 </div>
-<div class="paragraph">
-<p>Das Ziel dieses Programmes ist es</p>
 </div>
+<div class="sect2">
+<h3 id="_architektur">Architektur</h3>
 <div class="paragraph">
 <p>Dieses Programm existiert nicht unabhängig von seinem Kontext. Es ist dazu
 gedacht asciidoc Texte in Programmcode und in Programmdokumentation
@@ -602,10 +608,7 @@ entschlossen <code>lisa</code> als asciidoctrine-extension zu implementieren.</p
 <div class="title">Figure 1. Aufbau von lisa</div>
 </div>
 <div class="paragraph">
-<p><code>lisa</code> arbeitet direkt auf einem asciidoc AST und erzeugt aus den darin
-enthaltenen Quelltext-Snippets (TODO link) Sourcecode Dateien (und manchmal
-auch weitere Dateien). Im AST fügt es einige zusätzliche Informationen hinzu
-(vor allem Referenzen, wo Code-Snippets verwendet werden TODO interner link).</p>
+<p><code>lisa</code> arbeitet direkt auf einem asciidoc <a href="https://en.wikipedia.org/wiki/Abstract_syntax_tree">AST</a> und erzeugt aus den darin enthaltenen Quelltext-Snippets (TODO link) Sourcecode Dateien (und manchmal auch weitere Dateien). Im AST fügt es einige zusätzliche Informationen hinzu (vor allem Referenzen, wo Code-Snippets verwendet werden TODO interner link).</p>
 </div>
 <div class="paragraph">
 <p>Die Hauptdatei hat dabei folgendes Gerüst:</p>
@@ -660,7 +663,11 @@ auch weitere Dateien). Im AST fügt es einige zusätzliche Informationen hinzu
 45
 46
 47
-48</pre></div></td><td class="code"><pre><span></span><span class="tok-o">&lt;&lt;</span><span class="tok-n">required_crates</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
+48
+49
+50
+51
+52</pre></div></td><td class="code"><pre><span></span><span class="tok-o">&lt;&lt;</span><span class="tok-n">required_crates</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
 
 <span class="tok-o">&lt;&lt;</span><span class="tok-n">internal_modules</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
 
@@ -682,14 +689,19 @@ auch weitere Dateien). Im AST fügt es einige zusätzliche Informationen hinzu
 <span class="tok-w">  </span><span class="tok-o">&lt;&lt;</span><span class="tok-n">internal_functions</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
 
 <span class="tok-w">  </span><span class="tok-sd">/// Gets all snippets from the ast</span>
-<span class="tok-w">  </span><span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">fn</span> <span class="tok-nf">extract_ast</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">input</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">AST</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nb">Result</span><span class="tok-o">&lt;</span><span class="tok-p">(),</span><span class="tok-w"> </span><span class="tok-n">Error</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><i class="conum" data-value="3"></i><b>(3)</b>
-<span class="tok-w">    </span><span class="tok-o">&lt;&lt;</span><span class="tok-n">extract_ast</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
+<span class="tok-w">  </span><span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">fn</span> <span class="tok-nf">extract_ast</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">input</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">AST</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nb">Result</span><span class="tok-o">&lt;</span><span class="tok-n">SnippetDB</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">Error</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><i class="conum" data-value="3"></i><b>(3)</b>
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">snippets</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">SnippetDB</span>::<span class="tok-n">new</span><span class="tok-p">();</span><span class="tok-w"></span>
 
-<span class="tok-w">    </span><span class="tok-nb">Ok</span><span class="tok-p">(())</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-c1">// extract snippets from all inner elements</span>
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">snippets</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">input</span><span class="tok-p">.</span><span class="tok-n">elements</span><span class="tok-p">.</span><span class="tok-n">iter</span><span class="tok-p">().</span><span class="tok-n">fold</span><span class="tok-p">(</span><span class="tok-n">snippets</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">|</span><span class="tok-n">snippets</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">element</span><span class="tok-o">|</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">      </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">extract</span><span class="tok-p">(</span><span class="tok-n">snippets</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">element</span><span class="tok-p">)</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-p">});</span><span class="tok-w"></span>
+
+<span class="tok-w">    </span><span class="tok-nb">Ok</span><span class="tok-p">(</span><span class="tok-n">snippets</span><span class="tok-p">)</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-p">}</span><span class="tok-w"></span>
 
 <span class="tok-w">  </span><span class="tok-sd">/// Build all snippets (Runs the vm)</span>
-<span class="tok-w">  </span><span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">fn</span> <span class="tok-nf">generate_outputs</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">ast</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">AST</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nb">Result</span><span class="tok-o">&lt;</span><span class="tok-p">(),</span><span class="tok-w"> </span><span class="tok-n">Error</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><i class="conum" data-value="5"></i><b>(5)</b>
+<span class="tok-w">  </span><span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">fn</span> <span class="tok-nf">generate_outputs</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">snippets</span>: <span class="tok-nc">SnippetDB</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">ast</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">AST</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nb">Result</span><span class="tok-o">&lt;</span><span class="tok-p">(),</span><span class="tok-w"> </span><span class="tok-n">Error</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><i class="conum" data-value="4"></i><b>(4)</b>
 <span class="tok-w">    </span><span class="tok-o">&lt;&lt;</span><span class="tok-n">generate_outputs</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
 
 <span class="tok-w">    </span><span class="tok-nb">Ok</span><span class="tok-p">(())</span><span class="tok-w"></span>
@@ -698,12 +710,11 @@ auch weitere Dateien). Im AST fügt es einige zusätzliche Informationen hinzu
 
 <span class="tok-k">impl</span><span class="tok-w"> </span><span class="tok-n">Extension</span><span class="tok-w"> </span><span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-n">Lisa</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><i class="conum" data-value="1"></i><b>(1)</b>
 <span class="tok-w">  </span><span class="tok-k">fn</span> <span class="tok-nf">transform</span><span class="tok-o">&lt;</span><span class="tok-na">&#39;a</span><span class="tok-o">&gt;</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">input</span>: <span class="tok-nc">AST</span><span class="tok-o">&lt;</span><span class="tok-na">&#39;a</span><span class="tok-o">&gt;</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nc">AST</span><span class="tok-o">&lt;</span><span class="tok-na">&#39;a</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><i class="conum" data-value="2"></i><b>(2)</b>
-<span class="tok-w">    </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">extract_ast</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">input</span><span class="tok-p">);</span><span class="tok-w"> </span><i class="conum" data-value="3"></i><b>(3)</b>
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">snippets</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">extract_ast</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">input</span><span class="tok-p">).</span><span class="tok-n">unwrap</span><span class="tok-p">();</span><span class="tok-w"> </span><i class="conum" data-value="3"></i><b>(3)</b>
 
-<span class="tok-w">    </span><span class="tok-c1">// TODO Das Snippet Stack Program vorbereiten.</span>
-<span class="tok-w">    </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">check_dependencies</span><span class="tok-p">();</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">check_dependencies</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">snippets</span><span class="tok-p">);</span><span class="tok-w"> </span><i class="conum" data-value="5"></i><b>(5)</b>
 
-<span class="tok-w">    </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">generate_outputs</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">input</span><span class="tok-p">);</span><span class="tok-w"> </span><i class="conum" data-value="5"></i><b>(5)</b>
+<span class="tok-w">    </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">generate_outputs</span><span class="tok-p">(</span><span class="tok-n">snippets</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-n">input</span><span class="tok-p">);</span><span class="tok-w"> </span><i class="conum" data-value="4"></i><b>(4)</b>
 
 <span class="tok-w">    </span><span class="tok-n">input</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-p">}</span><span class="tok-w"></span>
@@ -735,15 +746,20 @@ des Quellcodes aus der Datei.</td>
 <td><i class="conum" data-value="4"></i><b>4</b></td>
 <td>Zum Schluss können alle Dateien generiert und Scripte ausgeführt werden.</td>
 </tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>Oftmals ist die Reihenfolge der Abarbeitung der Code-Schnipsel entscheidend (TODO link). Diese wird vor der Abarbeitung festgelegt.</td>
+</tr>
 </table>
 </div>
 </div>
 </div>
+</div>
 <div class="sect1">
-<h2 id="_benutzung">Benutzung</h2>
+<h2 id="usage">Benutzung</h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_generelles">Generelles</h3>
+<h3 id="_generelle_herangehensweise">Generelle Herangehensweise</h3>
 <div class="paragraph">
 <p>Beim schreiben eines literate Programmes sollte man wie bei einer
 wissenschaftlichen Arbeit vorgehen:</p>
@@ -795,7 +811,7 @@ bereitzustellen.</p>
 <div class="paragraph">
 <p>Zu Beginn kann man mit einem einzigen Dokument starten aber im Laufe der Zeit
 wird es bei größeren Projekten gut sein, sie in Kapitel (Module) zu gliedern und
-diese in ein Hauptdokument zu inkludieren.</p>
+diese in ein Hauptdokument einzubinden.</p>
 </div>
 <div class="paragraph">
 <p>Die Reihenfolge des Schreibens kann sich überlagern (obwohl es gut ist mit der
@@ -804,11 +820,14 @@ Anordnung der Kapitel im endgültigen Dokument immer ähnlich. Im Laufe der
 Entwicklung wird man immer mal wieder aufräumen und umstrukturieren müssen
 (refaktoring).</p>
 </div>
+<div class="paragraph">
+<p>Es ist wichtig eine Begründung für alle Designentscheidungen aufzuschreiben damit man bei der späteren Pflege des Programmes weiß, ob diese noch gültig oder obsolet sind. Das ermöglicht auch bei der gemeinsamen Arbeit mit einem Team an einem Projekt, eine Argumentationsgrundlage für Designentscheidungen/Änderungen zu haben.</p>
+</div>
 </div>
 <div class="sect2">
 <h3 id="_quellcode_generieren">Quellcode generieren</h3>
 <div class="sect3">
-<h4 id="_extrahieren">Extrahieren</h4>
+<h4 id="usage_extract">Extrahieren</h4>
 <div class="paragraph">
 <p>Die normalen Quellcode Listings können gebraucht werden, um ein Programm zu
 erstellen.</p>
@@ -843,20 +862,9 @@ Fliestext ... <i class="conum" data-value="3"></i><b>(3)</b></code></pre>
 </tr>
 </table>
 </div>
-<div class="paragraph">
-<p>Die Code-Snippets werden jeweils einer Funktion übergeben:</p>
-</div>
-<div id="extract_ast" class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-c1">// extract snippets from all inner elements</span>
-<span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-n">element</span><span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span><span class="tok-n">input</span><span class="tok-p">.</span><span class="tok-n">elements</span><span class="tok-p">.</span><span class="tok-n">iter</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">  </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">extract</span><span class="tok-p">(</span><span class="tok-n">element</span><span class="tok-p">);</span><span class="tok-w"></span>
-<span class="tok-p">}</span><span class="tok-w"></span></code></pre>
-</div>
-</div>
 </div>
 <div class="sect3">
-<h4 id="_zusammenfügen">Zusammenfügen</h4>
+<h4 id="usage_import_snippets">Zusammenfügen</h4>
 <div class="paragraph">
 <p>Die verschiedenen Codeschnipsel kann man in anderen Codeschnipseln einbinden.
 Dafür verwendet man einfach eine <code>cross reference</code> auf den <code>anchor</code> des
@@ -956,6 +964,13 @@ Quelltext einfügen oder an verschiedenen Stellen Ergänzungen zu einem
 Codebereich hinzufügen (z.B. die Imports erweitern).</p>
 </div>
 <div class="paragraph">
+<p>TODO Bei der Benutzung hat sich herausgestellt, dass es fast immer gut ist eine
+Leerzeile einzufügen. An anderen Stellen ist es gut keinen Zeilenumbruch
+(sondern vielleicht ein Leerzeichen oder ein Komma) einzufügen. Wahrscheinlich
+wäre es gut einen sinnvollen Standard zu verwenden und diesen, durch ein
+konfigurierbares Attribut, überschreibbar zu machen.</p>
+</div>
+<div class="paragraph">
 <p>Wird eine <code>cross reference</code> im Quelltext eingerückt, so wird der ganze
 importierte Quelltext ebenfalls um die gleiche Höhe eingerückt (im Grunde wird
 vor jedem Zeilenbeginn der Text vor der <code>cross reference</code> wieder eingefügt).
@@ -973,6 +988,156 @@ Dateinamen angeben.</p>
 <div class="content">
 <pre>TODO Quellcodebeispiele zwischen jedem Absatz</pre>
 </div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="transform">Transformieren</h4>
+<div class="paragraph">
+<p>Vorhandene Codeschnipsel können nicht nur zu einer größeren Einheit
+zusammengesetzt werden, sondern auch manipuliert werden. Auf diese Weise kann
+man eine Art Templates generieren um damit dynamisch angepasste Texte zu
+erzeugen. Anwendungen wären z.B. Serienbriefe oder die Ergänzung eines
+Lizenz-Headers in allen Quellcode Dateien.</p>
+</div>
+<div class="paragraph">
+<p>Die zu diesem Zweck bereitgestellten Funktionen werden jetzt erklärt:</p>
+</div>
+<div class="sect4">
+<h5 id="usage_save">save (Speichern)</h5>
+<div class="paragraph">
+<p>Um überhaupt ein ausführbares Programm zu erhalten ist es unerlässlich den
+erzeugten Quellcode in ein tatsächliches Programm umwandeln zu können. Die
+wichtigste Möglichkeit dazu ist einen Schnipsel in eine Datei abspeichern zu
+können. Dazu wird das Attribut <code>save</code> verwendet:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="asciidoc"><span></span>Lets create a &quot;hello world&quot; program.
+
+[source, lua, save]
+.hello.lua
+---
+print(&quot;Hello World&quot;)
+---</code></pre>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="usage_eval">eval (Ausführen)</h5>
+<div class="paragraph">
+<p>Eine weitere Methode das Programm zu nutzen ist es direkt auszuführen. Das wird mit dem Atrribut <code>eval</code> gemacht.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="asciidoc"><span></span>Lets run a &quot;hello world&quot; program.
+
+[source, lua, eval]
+.hello.lua
+---
+print(&quot;Hello World&quot;)
+---</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Dieses Beispiel würde direkt "Hello World" auf der Konsole schreiben.</p>
+</div>
+<div class="paragraph">
+<p>Als Interpreter verwendet <code>lisa</code> standardmäßig die angegebende Scriptsprache (in den meisten Fällen stimmen der Name der Sprache und der Name des Interpreter-Executables überein).</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="usage_pipe">pipe</h5>
+<div class="paragraph">
+<p>Manchmal möchte man einen Codeschnipsel in leicht modifizierter Form vielfach
+verwenden. In diesem Fall ist <code>pipe</code> ein sehr mächtiges Werkzeug.</p>
+</div>
+<div class="paragraph">
+<p>Wird <code>pipe</code> als Attribut an einen Code Block angehangen, wird der darin befindliche Code, wie bei <code>eval</code>, ausgeführt. Im Gegensatz zu <code>eval</code> hat <code>pipe</code> die Möglichkeit die Code-Schnipsel selbst zu manipulieren. Dazu bekommt es eine Variable <code>lisa</code> zu Verfügung gestellt, welche Zugriff auf die Code-Generierung erhält.</p>
+</div>
+<div class="paragraph">
+<p>Die Sprache des <code>pipe</code> Interpreters ist <a href="https://github.com/jonathandturner/rhai">rhai</a>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="asciidoc"><span></span>Print out the doctument header when running the program.
+
+[source, rhai, pipe]
+---
+lisa.store(&quot;print_header&quot;, [[=[print(&quot;${doc.header}&quot;)]]=])
+---</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Damit ist <code>pipe</code> ein äußerst mächtiges Werkzeug da man beliebig komplexe
+Programme benutzen kann um Code Schnipsel zu erzeugen. Alle Methoden zum
+Transformieren und Zusammenfügen lassen sich auch mit <code>pipe</code> verwenden, so dass
+man sogar mit <code>pipe</code> erzeugte Codeschnipsel verwenden könnte um neue <code>pipe</code>
+Codeschnipsel zu erzeugen.</p>
+</div>
+<div class="paragraph">
+<p>Folgende Funktionen werden von der <code>lisa</code> Variable zur Verfügung gestellt:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">store(name, schnipsel)</dt>
+<dd>
+<p>Speichert einen String unter einem Namen als Schnipsel
+ab.</p>
+</dd>
+<dt class="hdlist1">map(liste, function)</dt>
+<dd>
+<p>Führt eine Funktion über eine Liste von Objekten aus.</p>
+</dd>
+<dt class="hdlist1">save(path, schnipsel)</dt>
+<dd>
+<p>Führt den <code>save</code> Befehl auf einem String aus. Dieser
+wird unter dem Pfad <code>path</code> abgespeichert.</p>
+</dd>
+<dt class="hdlist1">eval(schnipsel, interpreter)</dt>
+<dd>
+<p>Führt den <code>eval</code> Befehl auf einem String aus.
+Der String wird von dem übergebenen <code>interpreter</code> ausgeführt (Standard ist
+<code>lua</code>).</p>
+</dd>
+<dt class="hdlist1">pipe(schnipsel_name, parameter)</dt>
+<dd>
+<p>Führt einen <code>pipe</code> Befehl auf einem anderen
+Schnipsel aus.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>Einige Variablen sind immer stehen ebenfalls immer zur Verfügung:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">doc</dt>
+<dd>
+<p>Der ursprüngliche AST, welcher an die Erweiterung übergeben wird.</p>
+</dd>
+<dt class="hdlist1">args</dt>
+<dd>
+<p>Die Kommandozeilenparameter, die beim Aufruf zur Verfügung standen.</p>
+</dd>
+<dt class="hdlist1">rawsnippets</dt>
+<dd>
+<p>Die Codeschnipsel, wie sie aus dem AST extrahiert wurden, bevor
+die inneren Referenzen durch Schnipsel ersetzt wurden.</p>
+</dd>
+<dt class="hdlist1">snippets</dt>
+<dd>
+<p>Die Codeschnipsel mit bereits eingesetzten Schnipseln an den
+Referenzen.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>Die Anwendungsmöglichkeiten von <code>pipe</code> sind extrem vielfältig und mächtig. Deshalb werden wir in den nächsten Abschnitten einige Anwendungsfälle besprechen, die sich mit <code>pipe</code> elegant lösen lassen.</p>
+</div>
+<div class="sect5">
+<h6 id="_parameterierte_snippets_mit_pipe">Parameterierte Snippets mit pipe</h6>
+<div class="paragraph">
+<p>TODO</p>
 </div>
 <div class="paragraph">
 <p>TODO Es wäre zielich cool, wenn man einem Schnipsel Parameter übergeben könnte.
@@ -1032,154 +1197,60 @@ wurde, oder wenn ein bestimmtes OS vorhanden ist).</p>
 Musters. z.B. mit dem Attribut <code>lisa-reference="&lt;&lt;&lt;"</code>.</p>
 </div>
 </div>
-<div class="sect3">
-<h4 id="transform">Transformieren</h4>
+<div class="sect5">
+<h6 id="_unit_tests_mit_pipe">Unit Tests mit pipe</h6>
 <div class="paragraph">
-<p>Vorhandene Codeschnipsel können nicht nur zu einer größeren Einheit
-zusammengesetzt werden, sondern auch manipuliert werden. Auf diese Weise kann
-man eine Art Templates generieren um damit dynamisch angepasste Texte zu
-erzeugen. Anwendungen wären z.B. Serienbriefe oder die Ergänzung eines
-Lizenz-Headers in allen Quellcode Dateien.</p>
+<p>TODO</p>
+</div>
+</div>
+<div class="sect5">
+<h6 id="_aspect_oriented_programming_mit_pipe">Aspect oriented Programming mit pipe</h6>
+<div class="paragraph">
+<p><a href="https://en.wikipedia.org/wiki/Aspect-oriented_programming">Aspect oriented Programming</a> ist ein Programmieransatz welcher die Modifikation von bestehenden Modulen erlaubt. Das ist oftmals sehr problematisch und führt (meiner Meinung nach) bei breitem Einsatz zu schlecht wartbarem und undurchschaubaren Quellcode. Wird es allerdings sparsam eingesetzt kann es manchmal sehr schwierige Probleme einfach lösen.</p>
 </div>
 <div class="paragraph">
-<p>Die zu diesem Zweck bereitgestellten Funktionen werden jetzt erklärt:</p>
+<p>Ein Beispiel sind Bedingungen an einen Typ welche zur Einführung des Typs noch nicht klar sind. In <a href="https://www.rust-lang.org/">Rust</a> möchte man z.B. oft Typen mit einem <code>derive</code> Macro automatisch Funktionen implementieren lassen (z.B. serde). Zum Zeitpunkt der Definition des Typs ist diese Notwendigkeit aber noch gar nicht klar oder nicht offensichtlich. Dies führt zu Problemen in der Erklärung (welche bei einem Literate Programm ja immer das wichtigste überhaupt ist) da man anmerken muss, dass diese Code Stelle später noch erklärt wird und in der späteren Erklärung den Quellcode nicht sieht. &#8230;&#8203;</p>
 </div>
-<div class="sect4">
-<h5 id="_save_speichern">save (Speichern)</h5>
 <div class="paragraph">
-<p>Um überhaupt ein ausführbares Programm zu erhalten ist es unerlässlich den
-erzeugten Quellcode in ein tatsächliches Programm umwandeln zu können. Die
-wichtigste Möglichkeit dazu ist einen Schnipsel in eine Datei abspeichern zu
-können. Dazu wird das Attribut <code>save</code> verwendet:</p>
+<p>TODO</p>
+</div>
+</div>
+<div class="sect5">
+<h6 id="_macro_systeme_mit_pipe">Macro Systeme mit pipe</h6>
+<div class="paragraph">
+<p>Ein <code>pipe</code> Block kann natürlich selber <a href="#usage_import_snippets">Snippets importieren</a>. Dadurch ist es möglich Funktionen zu definieren (sogar in einem anderen Dokument) und diese später in verschiedenen <code>pipe</code> Schnipseln zu benutzen.</p>
+</div>
+<div class="paragraph">
+<p>TODO</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="asciidoc"><span></span>Lets create a &quot;hello world&quot; program.
+<pre class="pygments highlight"><code data-lang="asciidoc"><span></span>First we define our macro lib:
 
-[source, lua, save]
-.hello.lua
+[[pipe_functions]]
+[source, rhai]
 ---
-print(&quot;Hello World&quot;)
----</code></pre>
+fn mystuff(string) {
+  // Do my fancy manipulation functions here
+}
+---
+
+Then we can use it in our pipes
+
+[source, rhai, pipe]
+---
+&lt;&lt;pipe_functions&gt;&gt;
+
+lisa.store(&quot;out&quot;, mystuff(&quot;test&quot;));
+---
+
+We can also use this functions in other snippets and even in other documents.</code></pre>
+</div>
 </div>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_eval_ausführen">eval (Ausführen)</h5>
-<div class="paragraph">
-<p>Eine weitere Methode das Programm zu nutzen ist es direkt auszuführen. Das wird
-mit dem Atrribut <code>eval</code> gemacht.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="asciidoc"><span></span>Lets run a &quot;hello world&quot; program.
-
-[source, lua, eval]
-.hello.lua
----
-print(&quot;Hello World&quot;)
----</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Dieses Beispiel würde direkt "Hello World" auf der Konsole schreiben.</p>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_pipe">pipe</h5>
-<div class="paragraph">
-<p>Manchmal möchte man einen Codeschnipsel in leicht modifizierter Form vielfach
-verwenden. In diesem Fall ist <code>pipe</code> ein sehr mächtiges Werkzeug.</p>
-</div>
-<div class="paragraph">
-<p>Wird <code>pipe</code> als Attribut an einen Code Block angehangen, wird der darin
-befindliche Code ausgeführt und das alle Argumente der Funktion <code>store</code> als
-Schnipsel, unter dem Namen des ersten Argumentes, abgelegt. Es werden alle im
-Domument definierten Parameter und das Dokument selbst als Variablen übergeben
-(das Verhalten lässt sich durch Parameter beeinflussen).</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="asciidoc"><span></span>Print out the doctument header when running the program.
-
-[source, lua, pipe]
-.hello-title.lua
----
-store(&quot;print_header&quot;, [[=[print(&quot;${doc.header}&quot;)]]=])
----</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Damit ist <code>pipe</code> ein äußerst mächtiges Werkzeug da man beliebig komplexe
-Programme benutzen kann um Code Schnipsel zu erzeugen. Alle Methoden zum
-Transformieren und Zusammenfügen lassen sich auch mit <code>pipe</code> verwenden, so dass
-man sogar mit <code>pipe</code> erzeugte Codeschnipsel verwenden könnte um neue <code>pipe</code>
-Codeschnipsel zu erzeugen.</p>
-</div>
-<div class="paragraph">
-<p>Auch, wenn man beliebige Funktionen in einem <code>pipe</code> Block erst definieren und
-dann nutzen oder auch importieren kann (Man könnte z.B. eine SQL-Bibliothek
-importieren und aktuelle Daten aus einer Datenbank in seinen Quelltext
-einbauen) gibt es einige, häufig gebrauchte Funktionen, welche einem immer zur
-Verfügung stehen:</p>
-</div>
-<div class="dlist">
-<dl>
-<dt class="hdlist1">store(name, schnipsel)</dt>
-<dd>
-<p>Speichert einen String unter einem Namen als Schnipsel
-ab.</p>
-</dd>
-<dt class="hdlist1">map(liste, function)</dt>
-<dd>
-<p>Führt eine Funktion über eine Liste von Objekten aus.</p>
-</dd>
-<dt class="hdlist1">save(path, schnipsel)</dt>
-<dd>
-<p>Führt den <code>save</code> Befehl auf einem String aus. Dieser
-wird unter dem Pfad <code>path</code> abgespeichert.</p>
-</dd>
-<dt class="hdlist1">eval(schnipsel, interpreter)</dt>
-<dd>
-<p>Führt den <code>eval</code> Befehl auf einem String aus.
-Der String wird von dem übergebenen <code>interpreter</code> ausgeführt (Standard ist
-<code>lua</code>).</p>
-</dd>
-<dt class="hdlist1">pipe(schnipsel_name, parameter)</dt>
-<dd>
-<p>Führt einen <code>pipe</code> Befehl auf einem anderen
-Schnipsel aus.</p>
-</dd>
-</dl>
-</div>
-<div class="paragraph">
-<p>Einige Variablen sind immer stehen ebenfalls immer zur Verfügung:</p>
-</div>
-<div class="dlist">
-<dl>
-<dt class="hdlist1">doc</dt>
-<dd>
-<p>Der ursprüngliche AST, welcher an die Erweiterung übergeben wird.</p>
-</dd>
-<dt class="hdlist1">args</dt>
-<dd>
-<p>Die Kommandozeilenparameter, die beim Aufruf zur Verfügung standen.</p>
-</dd>
-<dt class="hdlist1">rawsnippets</dt>
-<dd>
-<p>Die Codeschnipsel, wie sie aus dem AST extrahiert wurden, bevor
-die inneren Referenzen durch Schnipsel ersetzt wurden.</p>
-</dd>
-<dt class="hdlist1">snippets</dt>
-<dd>
-<p>Die Codeschnipsel mit bereits eingesetzten Schnipseln an den
-Referenzen.</p>
-</dd>
-</dl>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_den_ausführungsfluss_steuern">Den Ausführungsfluss steuern</h5>
+<h5 id="usage_control_flow">Den Ausführungsfluss steuern</h5>
 <div class="paragraph">
 <p>Manchmal ist es wichtig, die Reihenfolge, in der die Funktionen ausgeführt
 werden, festlegen zu können. Ist die Reihenfolge nicht explizit definiert kann
@@ -1508,57 +1579,6 @@ bedient werden. Für Entwickler wäre es wünschenswert einfach Textdateien
 bearbeiten zu können&#8230;&#8203;</p>
 </div>
 </div>
-<div class="sect2">
-<h3 id="_ein_übersetzungs_tool_für_literate_programme">Ein Übersetzungs-Tool für literate Programme</h3>
-<div class="paragraph">
-<p>Die neue Herangehensweise an das Programmieren hat bei mir eine neue Frage
-aufgeworfen: In welcher Sprache soll ich programmieren?</p>
-</div>
-<div class="paragraph">
-<p>Bisher war es für mich immer absolut klar, ein Programm in Englisch zu
-dokumentieren. Da sich nun aber der Fokus vom Quelltext auf das Darlegen von
-Ideen verschoben hat wäre es von Vorteil die Sprache zu nutzen, in welcher ich
-am leichtesten Ideen vermitteln kann. Auf einmal bekommen Dinge, die im
-normalen Quelltext normalerweise keine Rolle spielen (dürfen), wie Gefühle und
-Humor eine wichtige Bedeutung für das Projekt. Daher überlege ich das erste Mal
-ernsthaft Programme in Deutsch (meiner Muttersprache) zu veröffentlichen.
-<sup class="footnote">[<a id="_footnoteref_1" class="footnote" href="#_footnotedef_1" title="View footnote.">1</a>]</sup></p>
-</div>
-<div class="paragraph">
-<p>Will man aber mit einem internationlen Team zusammenarbeiten (und das ist
-besonders bei open source wichtig) so kommt man um englisch nicht herum (was
-wohl Portierung in diesem Zusammenhang bedeutet). Daher ist es nützlich ein
-Werkzeug zu haben, welches einem den Ursprungstext (in meinem Fall deutsch) und
-die Übersetzung (englisch) nebeneinander zeigt. Es sollte eine Übersicht
-liefern, welche Teile des Programms wie weit und in welcher Qualität übersetzt
-sind. Hierbei ergeben sich eine ganze Reihe Probleme.</p>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Im Gegensatz zu einem normalen Buch ist ein Programm normalerweise nicht
-abgeschlossen (zumindest wird mit der Übersetzung begonnen während das
-Programm noch nicht abgeschlossen ist) und beide Sprachen müssen parallel
-gepflegt werden ohne sich ausseinander zu entwickeln.
-Dabei sollte man die Änderungen zum aktuellen Übersetzungsstand sehen.</p>
-</li>
-<li>
-<p>Beide Programme sollten das gleiche Ausgabeprodukt erzeugen. Es darf keine
-verschiedenen Sprachvarianten geben, denn das würde zu einem riesen Chaos
-führen und der Support wie auch die Wartung wären unglaublich aufwendig.</p>
-</li>
-<li>
-<p>Da immer mindestens zwei Sprachen in einem Dokument gemixt sind (Natürliche
-Sprache und Programmiersprache) ergeben sich ganz ähnliche Fragen, wenn man
-eine alternative Implementierung in einer anderen Programmiersprache einfügen
-möchte.</p>
-</li>
-<li>
-<p>&#8230;&#8203;</p>
-</li>
-</ol>
-</div>
-</div>
 </div>
 </div>
 <div class="sect1">
@@ -1569,27 +1589,41 @@ möchte.</p>
 <div class="sect3">
 <h4 id="_eine_datenbank_für_codeschnipsel_anlegen">Eine Datenbank für Codeschnipsel anlegen</h4>
 <div class="paragraph">
-<p>Um die Snippets zu verarbeiten müssen wir leicht auf sie zugreifen können. Das
-Ziel der Extrackt Phase (TODO Link?) ist es alle Schnipsel in eine Datenbank
-(oder Cache je nach Sichtweise) zu überführen, wo wir wahlfrei darauf zugreifen
-können. Dafür verwenden wir eine <code>HashMap</code>.</p>
+<p>Um die Snippets zu verarbeiten müssen wir leicht auf sie zugreifen können. Das Ziel der <a href="#usage_extract">Extrakt Phase</a> ist es alle Schnipsel in eine Datenbank (oder Cache je nach Sichtweise) zu überführen, wo wir wahlfrei darauf zugreifen können. Dafür verwenden wir eine <code>HashMap</code>.</p>
 </div>
 <div id="crate_usages" class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">std</span>::<span class="tok-n">collections</span>::<span class="tok-n">HashMap</span><span class="tok-p">;</span><span class="tok-w"></span></code></pre>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">std</span>::<span class="tok-n">collections</span>::<span class="tok-n">HashMap</span><span class="tok-p">;</span><span class="tok-w"></span>
+<span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">std</span>::<span class="tok-n">collections</span>::<span class="tok-n">hash_map</span><span class="tok-p">;</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
-<div id="lisa_internal_variables" class="listingblock">
+<div id="internal_structs" class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-n">snippets</span>: <span class="tok-nc">HashMap</span><span class="tok-o">&lt;</span><span class="tok-nb">String</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">Snippet</span><span class="tok-o">&gt;</span><span class="tok-p">,</span><span class="tok-w"></span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Natürlich muss die Datenbank zu Beginn initialisiert werden.</p>
-</div>
-<div id="lisa_init_variables" class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-n">snippets</span>: <span class="tok-nc">HashMap</span>::<span class="tok-n">default</span><span class="tok-p">(),</span><span class="tok-w"></span></code></pre>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">struct</span> <span class="tok-nc">SnippetDB</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">  </span><span class="tok-n">snippets</span>: <span class="tok-nc">HashMap</span><span class="tok-o">&lt;</span><span class="tok-nb">String</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">Snippet</span><span class="tok-o">&gt;</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-p">}</span><span class="tok-w"></span>
+
+<span class="tok-k">impl</span><span class="tok-w"> </span><span class="tok-n">SnippetDB</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">  </span><span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">fn</span> <span class="tok-nf">new</span><span class="tok-p">()</span><span class="tok-w"> </span>-&gt; <span class="tok-nc">Self</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">SnippetDB</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">      </span><span class="tok-n">snippets</span>: <span class="tok-nc">HashMap</span>::<span class="tok-n">default</span><span class="tok-p">(),</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
+<span class="tok-w">  </span><span class="tok-p">}</span><span class="tok-w"></span>
+
+<span class="tok-w">  </span><span class="tok-o">&lt;&lt;</span><span class="tok-n">snippet_db_functions</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
+
+<span class="tok-w">  </span><span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">fn</span> <span class="tok-nf">get</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">name</span>: <span class="tok-kp">&amp;</span><span class="tok-kt">str</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nb">Option</span><span class="tok-o">&lt;&amp;</span><span class="tok-n">Snippet</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">snippets</span><span class="tok-p">.</span><span class="tok-n">get</span><span class="tok-p">(</span><span class="tok-n">name</span><span class="tok-p">)</span><span class="tok-w"></span>
+<span class="tok-w">  </span><span class="tok-p">}</span><span class="tok-w"></span>
+
+<span class="tok-w">  </span><span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">fn</span> <span class="tok-nf">pop</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">name</span>: <span class="tok-kp">&amp;</span><span class="tok-kt">str</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nb">Option</span><span class="tok-o">&lt;</span><span class="tok-n">Snippet</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">snippets</span><span class="tok-p">.</span><span class="tok-n">remove</span><span class="tok-p">(</span><span class="tok-n">name</span><span class="tok-p">)</span><span class="tok-w"></span>
+<span class="tok-w">  </span><span class="tok-p">}</span><span class="tok-w"></span>
+
+<span class="tok-w">  </span><span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">fn</span> <span class="tok-nf">iter</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-bp">self</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nc">hash_map</span>::<span class="tok-n">Iter</span><span class="tok-o">&lt;</span><span class="tok-nb">String</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">Snippet</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">snippets</span><span class="tok-p">.</span><span class="tok-n">iter</span><span class="tok-p">()</span><span class="tok-w"></span>
+<span class="tok-w">  </span><span class="tok-p">}</span><span class="tok-w"></span>
+<span class="tok-p">}</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1658,9 +1692,7 @@ werden.</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="3"></i><b>3</b></td>
-<td>Snippets haben andere Snippets, die sie einbinden (TODO link), oder man
-möchte eine explizite Reihenfolge festlegen (TODO link). Daher werden hier
-alle Snippets aufgelistet, die vorher verarbeitet werden müssen.</td>
+<td>Snippets haben <a href="#usage_import_snippets">andere Snippets, die sie einbinden</a>, oder man möchte eine explizite Reihenfolge festlegen (TODO link). Daher werden hier alle Snippets aufgelistet, die vorher verarbeitet werden müssen.</td>
 </tr>
 </table>
 </div>
@@ -1670,7 +1702,7 @@ alle Snippets aufgelistet, die vorher verarbeitet werden müssen.</td>
 <div id="internal_functions" class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-sd">/// Gets recursively all snippets from an element</span>
-<span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">fn</span> <span class="tok-nf">extract</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">input</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">ElementSpan</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nb">Result</span><span class="tok-o">&lt;</span><span class="tok-p">(),</span><span class="tok-w"> </span><span class="tok-n">Error</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">fn</span> <span class="tok-nf">extract</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">snippets</span>: <span class="tok-nc">SnippetDB</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">input</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">ElementSpan</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nc">SnippetDB</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-n">input</span><span class="tok-p">.</span><span class="tok-n">element</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">Element</span>::<span class="tok-n">TypedBlock</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">      </span><span class="tok-n">kind</span>: <span class="tok-nc">BlockType</span>::<span class="tok-n">Listing</span><span class="tok-p">,</span><span class="tok-w"></span>
@@ -1679,18 +1711,20 @@ alle Snippets aufgelistet, die vorher verarbeitet werden müssen.</td>
 <span class="tok-w">      </span><span class="tok-o">&lt;&lt;</span><span class="tok-n">extract_attributes</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
 <span class="tok-w">      </span><span class="tok-o">&lt;&lt;</span><span class="tok-n">find_references</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
 <span class="tok-w">      </span><span class="tok-o">&lt;&lt;</span><span class="tok-n">store_snippet_in_internal_db</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
+
+<span class="tok-w">      </span><span class="tok-n">snippets</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">Element</span>::<span class="tok-n">IncludeElement</span><span class="tok-p">(</span><span class="tok-n">ast</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><i class="conum" data-value="2"></i><b>(2)</b>
-<span class="tok-w">      </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">extract_ast</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">ast</span><span class="tok-p">.</span><span class="tok-n">inner</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">      </span><span class="tok-n">ast</span><span class="tok-p">.</span><span class="tok-n">inner</span><span class="tok-p">.</span><span class="tok-n">elements</span><span class="tok-p">.</span><span class="tok-n">iter</span><span class="tok-p">().</span><span class="tok-n">fold</span><span class="tok-p">(</span><span class="tok-n">snippets</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">|</span><span class="tok-n">snippets</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">element</span><span class="tok-o">|</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">extract</span><span class="tok-p">(</span><span class="tok-n">snippets</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">element</span><span class="tok-p">)</span><span class="tok-w"></span>
+<span class="tok-w">      </span><span class="tok-p">})</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">_</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><i class="conum" data-value="2"></i><b>(2)</b>
-<span class="tok-w">      </span><span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-n">element</span><span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span><span class="tok-n">input</span><span class="tok-p">.</span><span class="tok-n">children</span><span class="tok-p">.</span><span class="tok-n">iter</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">        </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">extract</span><span class="tok-p">(</span><span class="tok-n">element</span><span class="tok-p">);</span><span class="tok-w"></span>
-<span class="tok-w">      </span><span class="tok-p">}</span><span class="tok-w"></span>
+<span class="tok-w">      </span><span class="tok-n">input</span><span class="tok-p">.</span><span class="tok-n">children</span><span class="tok-p">.</span><span class="tok-n">iter</span><span class="tok-p">().</span><span class="tok-n">fold</span><span class="tok-p">(</span><span class="tok-n">snippets</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">|</span><span class="tok-n">snippets</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">element</span><span class="tok-o">|</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">        </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">extract</span><span class="tok-p">(</span><span class="tok-n">snippets</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">element</span><span class="tok-p">)</span><span class="tok-w"></span>
+<span class="tok-w">      </span><span class="tok-p">})</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-p">}</span><span class="tok-w"></span>
-
-<span class="tok-w">  </span><span class="tok-nb">Ok</span><span class="tok-p">(())</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
@@ -1718,7 +1752,7 @@ Parameter <code>source</code>. <code>lisa</code> verarbeitet nur diese Blocks.</
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">args</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">input</span><span class="tok-p">.</span><span class="tok-n">positional_attributes</span><span class="tok-p">.</span><span class="tok-n">iter</span><span class="tok-p">();</span><span class="tok-w"></span>
 <span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-n">args</span><span class="tok-p">.</span><span class="tok-n">next</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-o">==</span><span class="tok-w"> </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">AttributeValue</span>::<span class="tok-n">Ref</span><span class="tok-p">(</span><span class="tok-s">&quot;source&quot;</span><span class="tok-p">)))</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">  </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-nb">Ok</span><span class="tok-p">(());</span><span class="tok-w"></span>
+<span class="tok-w">  </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-n">snippets</span><span class="tok-p">;</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
@@ -1833,7 +1867,7 @@ wir davon aus, das es ein Snippet ohne besondere Verarbeitung ist.</p>
 <span class="tok-w">      </span><span class="tok-n">kind</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">SnippetType</span>::<span class="tok-n">Save</span><span class="tok-p">(</span><span class="tok-n">path</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">AttributeValue</span>::<span class="tok-n">Ref</span><span class="tok-p">(</span><span class="tok-s">&quot;eval&quot;</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">      </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">interpreter</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">interpreter</span><span class="tok-p">.</span><span class="tok-n">clone</span><span class="tok-p">().</span><span class="tok-n">ok_or</span><span class="tok-p">(</span><span class="tok-n">Error</span>::<span class="tok-n">Missing</span><span class="tok-p">)</span><span class="tok-o">?</span><span class="tok-p">;</span><span class="tok-w"></span>
+<span class="tok-w">      </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">interpreter</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">interpreter</span><span class="tok-p">.</span><span class="tok-n">clone</span><span class="tok-p">().</span><span class="tok-n">unwrap_or</span><span class="tok-p">(</span><span class="tok-s">&quot;interpreter_missing&quot;</span><span class="tok-p">.</span><span class="tok-n">to_string</span><span class="tok-p">());</span><span class="tok-w"></span>
 <span class="tok-w">      </span><span class="tok-n">kind</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">SnippetType</span>::<span class="tok-n">Eval</span><span class="tok-p">(</span><span class="tok-n">interpreter</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">AttributeValue</span>::<span class="tok-n">Ref</span><span class="tok-p">(</span><span class="tok-s">&quot;pipe&quot;</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
@@ -1859,7 +1893,7 @@ Datenbank abspeichern.</p>
 </div>
 <div id="store_snippet_in_internal_db" class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">store</span><span class="tok-p">(</span><span class="tok-w"></span>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-n">snippets</span><span class="tok-p">.</span><span class="tok-n">store</span><span class="tok-p">(</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-n">id</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-n">Snippet</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-n">kind</span>: <span class="tok-nc">kind</span><span class="tok-p">,</span><span class="tok-w"></span>
@@ -1873,7 +1907,7 @@ Datenbank abspeichern.</p>
 <div class="paragraph">
 <p>Wir rufen dazu die interne Funktion <code>store</code> auf.</p>
 </div>
-<div id="internal_functions" class="listingblock">
+<div id="snippet_db_functions" class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-sd">/// Stores a snippet in the internal database</span>
 <span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">fn</span> <span class="tok-nf">store</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">name</span>: <span class="tok-nb">String</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">snippet</span>: <span class="tok-nc">Snippet</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
@@ -1939,10 +1973,7 @@ leer ist.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Um die Referenzen zu finden verwenden wir die Pest (TODO link). Sie basiert auf
-Parsing Expression Grammars (TODO link) und wird bereits von asciidoctrine (TODO
-link) verwendet. Diese Art von Parsern ist (für mich) sehr leicht zu lesen und
-zu schreiben.</p>
+<p>Um die Referenzen zu finden verwenden wir die <a href="https://pest.rs/">Pest</a> Bibliothek. Sie basiert auf <a href="https://en.wikipedia.org/wiki/Parsing_expression_grammar">Parsing Expression Grammars</a> und wird bereits von asciidoctrine (TODO link) verwendet. Diese Art von Parsern ist (für mich) sehr leicht zu lesen und zu schreiben.</p>
 </div>
 <div id="required_crates" class="listingblock">
 <div class="content">
@@ -1986,9 +2017,7 @@ zu schreiben.</p>
 16
 17
 18
-19
-20</pre></div></td><td class="code"><pre><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">pest</span>::<span class="tok-n">Parser</span><span class="tok-p">;</span><span class="tok-w"></span>
-<span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">std</span>::<span class="tok-n">collections</span>::<span class="tok-n">HashMap</span><span class="tok-p">;</span><span class="tok-w"></span>
+19</pre></div></td><td class="code"><pre><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">pest</span>::<span class="tok-n">Parser</span><span class="tok-p">;</span><span class="tok-w"></span>
 
 <span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-k">crate</span>::<span class="tok-o">*</span><span class="tok-p">;</span><span class="tok-w"></span>
 
@@ -2004,7 +2033,7 @@ zu schreiben.</p>
 <span class="tok-p">}</span><span class="tok-w"></span>
 
 <span class="tok-sd">/// Merges the snippets into the depending snippet</span>
-<span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">fn</span> <span class="tok-nf">merge_dependencies</span><span class="tok-p">(</span><span class="tok-n">input</span>: <span class="tok-kp">&amp;</span><span class="tok-kt">str</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">snippets</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">HashMap</span><span class="tok-o">&lt;&amp;</span><span class="tok-kt">str</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-kt">str</span><span class="tok-o">&gt;</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nb">String</span> <span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">fn</span> <span class="tok-nf">merge_dependencies</span><span class="tok-p">(</span><span class="tok-n">input</span>: <span class="tok-kp">&amp;</span><span class="tok-kt">str</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">snippets</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">SnippetDB</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nb">String</span> <span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-o">&lt;&lt;</span><span class="tok-n">merge_dependencies</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span>
 </pre></td></tr></table></code></pre>
@@ -2149,13 +2178,9 @@ tatsächlichen Inhalte ersetzt werden. Dazu benutzen wir die Funktion
 </div>
 <div id="merge_snippet_content" class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">snippets</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">HashMap</span>::<span class="tok-n">new</span><span class="tok-p">();</span><span class="tok-w"></span>
-<span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">key</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">snippet</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">snippets</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">  </span><span class="tok-n">snippets</span><span class="tok-p">.</span><span class="tok-n">insert</span><span class="tok-p">(</span><span class="tok-n">key</span><span class="tok-p">.</span><span class="tok-n">as_str</span><span class="tok-p">(),</span><span class="tok-w"> </span><span class="tok-n">snippet</span><span class="tok-p">.</span><span class="tok-n">content</span><span class="tok-p">.</span><span class="tok-n">as_str</span><span class="tok-p">());</span><span class="tok-w"></span>
-<span class="tok-p">}</span><span class="tok-w"></span>
-<span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">content</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">codeblock_parser</span>::<span class="tok-n">merge_dependencies</span><span class="tok-p">(</span><span class="tok-n">content</span><span class="tok-p">.</span><span class="tok-n">as_str</span><span class="tok-p">(),</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-n">snippets</span><span class="tok-p">);</span><span class="tok-w"></span>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">content</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">codeblock_parser</span>::<span class="tok-n">merge_dependencies</span><span class="tok-p">(</span><span class="tok-n">content</span><span class="tok-p">.</span><span class="tok-n">as_str</span><span class="tok-p">(),</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-n">snippets</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-n">snippet</span><span class="tok-p">.</span><span class="tok-n">content</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">content</span><span class="tok-p">.</span><span class="tok-n">clone</span><span class="tok-p">();</span><span class="tok-w"></span>
-<span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">snippets</span><span class="tok-p">.</span><span class="tok-n">insert</span><span class="tok-p">(</span><span class="tok-n">key</span><span class="tok-p">.</span><span class="tok-n">clone</span><span class="tok-p">(),</span><span class="tok-w"> </span><span class="tok-n">snippet</span><span class="tok-p">.</span><span class="tok-n">clone</span><span class="tok-p">());</span><span class="tok-w"></span></code></pre>
+<span class="tok-n">snippets</span><span class="tok-p">.</span><span class="tok-n">store</span><span class="tok-p">(</span><span class="tok-n">key</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">snippet</span><span class="tok-p">.</span><span class="tok-n">clone</span><span class="tok-p">());</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -2177,7 +2202,7 @@ tatsächlichen Inhalt ersetzt.</p>
 <span class="tok-w">      </span><span class="tok-c1">// TODO Den snippet einfügen</span>
 <span class="tok-w">      </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">snippet</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">snippet</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">          </span><span class="tok-n">output</span><span class="tok-p">.</span><span class="tok-n">push_str</span><span class="tok-p">(</span><span class="tok-n">snippet</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">          </span><span class="tok-n">output</span><span class="tok-p">.</span><span class="tok-n">push_str</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">snippet</span><span class="tok-p">.</span><span class="tok-n">content</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-nb">None</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">          </span><span class="tok-c1">// TODO Fehlermeldung? Müsste vorher bereits abgefangen sein.</span>
@@ -2192,7 +2217,7 @@ tatsächlichen Inhalt ersetzt.</p>
 <span class="tok-w">      </span><span class="tok-c1">// TODO Den snippet einfügen und indentation beruecksichtigen</span>
 <span class="tok-w">      </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">snippet</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">snippet</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">          </span><span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-n">line</span><span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span><span class="tok-n">snippet</span><span class="tok-p">.</span><span class="tok-n">lines</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">          </span><span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-n">line</span><span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span><span class="tok-n">snippet</span><span class="tok-p">.</span><span class="tok-n">content</span><span class="tok-p">.</span><span class="tok-n">lines</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-n">output</span><span class="tok-p">.</span><span class="tok-n">push_str</span><span class="tok-p">(</span><span class="tok-s">&quot;</span><span class="tok-se">\n</span><span class="tok-s">&quot;</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-n">output</span><span class="tok-p">.</span><span class="tok-n">push_str</span><span class="tok-p">(</span><span class="tok-n">indentation</span><span class="tok-p">);</span><span class="tok-w"></span>
 <span class="tok-w">            </span><span class="tok-n">output</span><span class="tok-p">.</span><span class="tok-n">push_str</span><span class="tok-p">(</span><span class="tok-n">line</span><span class="tok-p">);</span><span class="tok-w"></span>
@@ -2254,17 +2279,10 @@ tatsächlichen Inhalt ersetzt.</p>
 <div class="sect2">
 <h3 id="_die_verarbeitungsreihenfolge_der_snippets_festlegen">Die Verarbeitungsreihenfolge der Snippets festlegen</h3>
 <div class="paragraph">
-<p>Eines der wichtigsten Features von <code>lisa</code> (und das, welches, wie ich glaube, es
-am stärksten von vergleichbaren Tools unterscheidet), ist, dass man den
-Kontrollfluss bestimmen kann (TODO link). Dadurch wird es in gewissem Sinne zu
-einer Dataflow Sprache.</p>
+<p>Eines der wichtigsten Features von <code>lisa</code> (und das, welches, wie ich glaube, esi am stärksten von vergleichbaren Tools unterscheidet), ist, dass man den <a href="#usage_control_flow">Kontrollfluss bestimmen kann</a>. Dadurch wird es in gewissem Sinne zu einer <a href="https://en.wikipedia.org/wiki/Dataflow_programming">Dataflow Sprache</a>.</p>
 </div>
 <div class="paragraph">
-<p>Damit das möglich wird muss herausgefunden werden, welches Snippet verarbeitet
-werden kann, und welches von anderen abhängt, die vorher verarbeitet werden
-müssen. Dazu verwenden wir die Topoligical Sorting (TODO Wikipedia Link)
-Methode. Wir implementieren sie nicht selbst, sondern benutzen den <code>topological-sort</code>
-(TODO link) crate.</p>
+<p>Damit das möglich wird muss herausgefunden werden, welches Snippet verarbeitet werden kann, und welches von anderen abhängt, die vorher verarbeitet werden müssen. Dazu verwenden wir die <a href="https://en.wikipedia.org/wiki/Topological_sorting">Topoligical Sorting</a> Methode. Wir implementieren sie nicht selbst, sondern benutzen den <code>topological-sort</code> (TODO link) crate.</p>
 </div>
 <div id="required_crates" class="listingblock">
 <div class="content">
@@ -2305,8 +2323,8 @@ füllen unsere Sortierstruktur.</p>
 <div id="internal_functions" class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-sd">/// Builds the dependency tree for topological sorting</span>
-<span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">fn</span> <span class="tok-nf">check_dependencies</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">  </span><span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">key</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">snippet</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">snippets</span><span class="tok-p">.</span><span class="tok-n">iter</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">fn</span> <span class="tok-nf">check_dependencies</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">snippets</span>: <span class="tok-kp">&amp;</span><span class="tok-nc">SnippetDB</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">  </span><span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-p">(</span><span class="tok-n">key</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">snippet</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span><span class="tok-n">snippets</span><span class="tok-p">.</span><span class="tok-n">iter</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-c1">// TODO Vielleicht sollten nur `save` und `eval` snippets</span>
 <span class="tok-w">    </span><span class="tok-c1">// unabhängig von dependencies aufgenommen werden?</span>
 <span class="tok-w">    </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">dependencies</span><span class="tok-p">.</span><span class="tok-n">insert</span><span class="tok-p">(</span><span class="tok-n">key</span><span class="tok-p">);</span><span class="tok-w"> </span><i class="conum" data-value="1"></i><b>(1)</b>
@@ -2378,11 +2396,15 @@ Snippet zu finden und zu speichern.</p>
 <h3 id="_ausgaben_erzeugen">Ausgaben erzeugen</h3>
 <div id="generate_outputs" class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">loop</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">db</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Rc</span>::<span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-n">RefCell</span>::<span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-n">snippets</span><span class="tok-p">));</span><span class="tok-w"></span>
+<span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">snippets</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Rc</span>::<span class="tok-n">clone</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">db</span><span class="tok-p">);</span><span class="tok-w"></span>
+
+<span class="tok-k">loop</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">key</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">dependencies</span><span class="tok-p">.</span><span class="tok-n">pop</span><span class="tok-p">();</span><span class="tok-w"> </span><i class="conum" data-value="1"></i><b>(1)</b>
-<span class="tok-w">  </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">key</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">  </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">snippet</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">key</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">key</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">      </span><span class="tok-o">&lt;&lt;</span><span class="tok-n">get_snippet</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
+<span class="tok-w">      </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">snippets</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">snippets</span><span class="tok-p">.</span><span class="tok-n">borrow_mut</span><span class="tok-p">();</span><span class="tok-w"></span>
+<span class="tok-w">      </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">snippet</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">snippets</span><span class="tok-p">.</span><span class="tok-n">pop</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">key</span><span class="tok-p">.</span><span class="tok-n">clone</span><span class="tok-p">());</span><span class="tok-w"></span>
 
 <span class="tok-w">      </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">snippet</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">snippet</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
@@ -2390,12 +2412,13 @@ Snippet zu finden und zu speichern.</p>
 
 <span class="tok-w">          </span><span class="tok-o">&lt;&lt;</span><span class="tok-n">merge_snippet_content</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
 
-<span class="tok-w">          </span><span class="tok-o">&lt;&lt;</span><span class="tok-n">execute_snippet_action</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
+<span class="tok-w">          </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">snippet</span><span class="tok-p">)</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-nb">None</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><i class="conum" data-value="4"></i><b>(4)</b>
 <span class="tok-w">          </span><span class="tok-c1">// TODO Fehlermeldung im AST. Ein Snippet sollte zu</span>
 <span class="tok-w">          </span><span class="tok-c1">// diesem Zeitpunkt immer bereits erstellt sein.</span>
 <span class="tok-w">          </span><span class="tok-n">println</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-s">&quot;Error: Dependency `{}` nicht gefunden&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">key</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-w">          </span><span class="tok-nb">None</span><span class="tok-w"></span>
 <span class="tok-w">        </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">      </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
@@ -2408,6 +2431,10 @@ Snippet zu finden und zu speichern.</p>
 <span class="tok-w">      </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">      </span><span class="tok-k">break</span><span class="tok-p">;</span><span class="tok-w"> </span><i class="conum" data-value="2"></i><b>(2)</b>
 <span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
+<span class="tok-w">  </span><span class="tok-p">};</span><span class="tok-w"></span>
+
+<span class="tok-w">  </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">snippet</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">snippet</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-o">&lt;&lt;</span><span class="tok-n">execute_snippet_action</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
 </div>
@@ -2442,28 +2469,18 @@ wurde dann ein Snippet referenziert aber nie definiert.</td>
 </table>
 </div>
 <div class="paragraph">
-<p>Wir müssen das Snippet verändern können (z.B. um den Textinhalt anzupassen).
-Damit das möglich ist entfernen wir es erstmal aus der Datenbank. Nach der
-Veränderung werden wir es wieder abspeichern (TODO link).</p>
-</div>
-<div id="get_snippet" class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">snippet</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">snippets</span><span class="tok-p">.</span><span class="tok-n">remove</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">key</span><span class="tok-p">.</span><span class="tok-n">clone</span><span class="tok-p">());</span><span class="tok-w"></span></code></pre>
-</div>
-</div>
-<div class="paragraph">
 <p>Je nach Snippet Typ können wir nun die entsprechende Aktion ausführen.</p>
 </div>
 <div id="execute_snippet_action" class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-n">snippet</span><span class="tok-p">.</span><span class="tok-n">kind</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-n">SnippetType</span>::<span class="tok-n">Eval</span><span class="tok-p">(</span><span class="tok-n">interpreter</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">eval</span><span class="tok-p">(</span><span class="tok-n">interpreter</span><span class="tok-p">.</span><span class="tok-n">to_string</span><span class="tok-p">(),</span><span class="tok-w"> </span><span class="tok-n">content</span><span class="tok-p">)</span><span class="tok-o">?</span><span class="tok-p">;</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">eval</span><span class="tok-p">(</span><span class="tok-n">interpreter</span><span class="tok-p">.</span><span class="tok-n">to_string</span><span class="tok-p">(),</span><span class="tok-w"> </span><span class="tok-n">snippet</span><span class="tok-p">.</span><span class="tok-n">content</span><span class="tok-p">)</span><span class="tok-o">?</span><span class="tok-p">;</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-n">SnippetType</span>::<span class="tok-n">Plain</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{}</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-n">SnippetType</span>::<span class="tok-n">Save</span><span class="tok-p">(</span><span class="tok-n">path</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-o">&lt;&lt;</span><span class="tok-n">get_filepath</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
-<span class="tok-w">    </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">save</span><span class="tok-p">(</span><span class="tok-n">path</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">content</span><span class="tok-p">)</span><span class="tok-o">?</span><span class="tok-p">;</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">save</span><span class="tok-p">(</span><span class="tok-n">path</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">snippet</span><span class="tok-p">.</span><span class="tok-n">content</span><span class="tok-p">)</span><span class="tok-o">?</span><span class="tok-p">;</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-p">}</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-n">SnippetType</span>::<span class="tok-n">Pipe</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
 <span class="tok-w">    </span><span class="tok-o">&lt;&lt;</span><span class="tok-n">do_pipe</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
@@ -2633,42 +2650,96 @@ unmittelbar vor dem schreiben in eine Datei "aufräumen".</p>
 <span class="tok-p">}</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
+<div class="paragraph">
+<p>TODO Die Ergebnisse ließen sich sicher auch als Bilder, Audio etc einbinden. Hier kann man bestimmt etwas von <a href="https://jupyter.org/" class="bare">https://jupyter.org/</a> und <a href="https://observablehq.com/" class="bare">https://observablehq.com/</a> lernen.</p>
+</div>
 </div>
 <div class="sect3">
 <h4 id="_pipe_snippets_dynamisch_erzeugen">Pipe: Snippets dynamisch erzeugen</h4>
 <div class="paragraph">
-<p>Beim <code>pipe</code> Befehl werden snippets als interne Scripte ausgeführt. Wir verwenden
-lua (TODO link) als Interpreter. Dazu benutzen wir den <code>rlua</code> (TODO link) crate.</p>
+<p>Beim <code>pipe</code> Befehl werden snippets als interne Scripte ausgeführt. Wir verwenden <a href="https://github.com/jonathandturner/rhai">rhai</a> als Interpreter.</p>
 </div>
 <div id="required_crates" class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">extern</span><span class="tok-w"> </span><span class="tok-k">crate</span><span class="tok-w"> </span><span class="tok-n">rlua</span><span class="tok-p">;</span><span class="tok-w"></span></code></pre>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">extern</span><span class="tok-w"> </span><span class="tok-k">crate</span><span class="tok-w"> </span><span class="tok-n">rhai</span><span class="tok-p">;</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
 <div id="crate_usages" class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">rlua</span>::<span class="tok-n">Lua</span><span class="tok-p">;</span><span class="tok-w"></span></code></pre>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">rhai</span>::<span class="tok-n">RegisterFn</span><span class="tok-p">;</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
 <div id="cargo_dependencies" class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="toml"><span></span><span class="tok-n">rlua</span> <span class="tok-o">=</span> <span class="tok-s">&quot;0.17.0&quot;</span></code></pre>
+<pre class="pygments highlight"><code data-lang="toml"><span></span><span class="tok-n">rhai</span> <span class="tok-o">=</span> <span class="tok-s">&quot;0.13.0&quot;</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Jede <code>pipe</code> bekommt ihre eigene lua Umgebung.</p>
+<p>Jede <code>pipe</code> bekommt ihre eigene Script Umgebung.</p>
 </div>
 <div id="do_pipe" class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">lua</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">Lua</span>::<span class="tok-n">new</span><span class="tok-p">();</span><span class="tok-w"></span>
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">engine</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">rhai</span>::<span class="tok-n">Engine</span>::<span class="tok-n">new</span><span class="tok-p">();</span><span class="tok-w"></span>
 
-<span class="tok-n">lua</span><span class="tok-p">.</span><span class="tok-n">context</span><span class="tok-p">(</span><span class="tok-o">|</span><span class="tok-n">lua</span><span class="tok-o">|</span><span class="tok-w"> </span>-&gt; <span class="tok-nc">rlua</span>::<span class="tok-nb">Result</span><span class="tok-o">&lt;</span><span class="tok-p">()</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
-<span class="tok-w">  </span><span class="tok-o">&lt;&lt;</span><span class="tok-n">init_lua_functions</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
-<span class="tok-w">  </span><span class="tok-o">&lt;&lt;</span><span class="tok-n">init_lua_globals</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"></span>
+<span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">scope</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">rhai</span>::<span class="tok-n">Scope</span>::<span class="tok-n">new</span><span class="tok-p">();</span><span class="tok-w"></span>
 
-<span class="tok-w">  </span><span class="tok-n">lua</span><span class="tok-p">.</span><span class="tok-n">load</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">content</span><span class="tok-p">).</span><span class="tok-n">set_name</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">key</span><span class="tok-p">)</span><span class="tok-o">?</span><span class="tok-p">.</span><span class="tok-n">exec</span><span class="tok-p">()</span><span class="tok-o">?</span><span class="tok-p">;</span><span class="tok-w"></span>
-<span class="tok-w">  </span><span class="tok-nb">Ok</span><span class="tok-p">(())</span><span class="tok-w"></span>
-<span class="tok-p">});</span><span class="tok-w"></span></code></pre>
+<span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">wrapper</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">LisaWrapper</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><span class="tok-n">snippets</span>: <span class="tok-nc">Rc</span>::<span class="tok-n">clone</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">db</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">};</span><span class="tok-w"></span>
+<span class="tok-n">scope</span><span class="tok-p">.</span><span class="tok-n">push_constant</span><span class="tok-p">(</span><span class="tok-s">&quot;lisa&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">wrapper</span><span class="tok-p">);</span><span class="tok-w"></span>
+
+<span class="tok-n">engine</span><span class="tok-p">.</span><span class="tok-n">register_type_with_name</span>::<span class="tok-o">&lt;</span><span class="tok-n">LisaWrapper</span><span class="tok-o">&gt;</span><span class="tok-p">(</span><span class="tok-s">&quot;LisaType&quot;</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-n">engine</span><span class="tok-p">.</span><span class="tok-n">register_fn</span><span class="tok-p">(</span><span class="tok-s">&quot;store&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">LisaWrapper</span>::<span class="tok-n">store</span><span class="tok-p">);</span><span class="tok-w"></span>
+<span class="tok-n">engine</span><span class="tok-p">.</span><span class="tok-n">register_fn</span><span class="tok-p">(</span><span class="tok-s">&quot;get_snippet&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">LisaWrapper</span>::<span class="tok-n">get_snippet</span><span class="tok-p">);</span><span class="tok-w"></span>
+
+<span class="tok-n">println</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-s">&quot;Piping von snippet mit content {}: {:?} &quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">snippet</span><span class="tok-p">.</span><span class="tok-n">content</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">engine</span><span class="tok-p">.</span><span class="tok-n">eval_with_scope</span>::<span class="tok-o">&lt;</span><span class="tok-p">()</span><span class="tok-o">&gt;</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">scope</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-n">snippet</span><span class="tok-p">.</span><span class="tok-n">content</span><span class="tok-p">));</span><span class="tok-w"></span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Wir übergeben dem Interpreter eine Funktionsumgebung, welche die grundlegenden Funktionen zulässt.</p>
+</div>
+<div id="internal_structs" class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-cp">#[derive(Clone)]</span><span class="tok-w"></span>
+<span class="tok-k">struct</span> <span class="tok-nc">LisaWrapper</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">  </span><span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-n">snippets</span>: <span class="tok-nc">Rc</span><span class="tok-o">&lt;</span><span class="tok-n">RefCell</span><span class="tok-o">&lt;</span><span class="tok-n">SnippetDB</span><span class="tok-o">&gt;&gt;</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-p">}</span><span class="tok-w"></span>
+
+<span class="tok-k">impl</span><span class="tok-w"> </span><span class="tok-n">LisaWrapper</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">  </span><span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">fn</span> <span class="tok-nf">store</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">name</span>: <span class="tok-nb">String</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">content</span>: <span class="tok-nb">String</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">snippets</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">snippets</span><span class="tok-p">.</span><span class="tok-n">borrow_mut</span><span class="tok-p">();</span><span class="tok-w"></span>
+
+<span class="tok-w">    </span><span class="tok-n">snippets</span><span class="tok-p">.</span><span class="tok-n">pop</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">name</span><span class="tok-p">);</span><span class="tok-w"> </span><i class="conum" data-value="1"></i><b>(1)</b>
+
+<span class="tok-w">    </span><span class="tok-n">snippets</span><span class="tok-p">.</span><span class="tok-n">store</span><span class="tok-p">(</span><span class="tok-n">name</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">Snippet</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">      </span><span class="tok-n">kind</span>: <span class="tok-nc">SnippetType</span>::<span class="tok-n">Plain</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">      </span><span class="tok-n">content</span>: <span class="tok-nc">content</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">      </span><span class="tok-n">children</span>: <span class="tok-nb">Vec</span>::<span class="tok-n">new</span><span class="tok-p">(),</span><span class="tok-w"></span>
+<span class="tok-w">      </span><span class="tok-n">depends_on</span>: <span class="tok-nb">Vec</span>::<span class="tok-n">new</span><span class="tok-p">(),</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-p">});</span><span class="tok-w"></span>
+<span class="tok-w">  </span><span class="tok-p">}</span><span class="tok-w"></span>
+
+<span class="tok-w">  </span><span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">fn</span> <span class="tok-nf">get_snippet</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">name</span>: <span class="tok-nb">String</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nb">String</span> <span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">snippets</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">snippets</span><span class="tok-p">.</span><span class="tok-n">borrow_mut</span><span class="tok-p">();</span><span class="tok-w"></span>
+
+<span class="tok-w">    </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">snippets</span><span class="tok-p">.</span><span class="tok-n">get</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">name</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">      </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">snippet</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">snippet</span><span class="tok-p">.</span><span class="tok-n">content</span><span class="tok-p">.</span><span class="tok-n">clone</span><span class="tok-p">(),</span><span class="tok-w"></span>
+<span class="tok-w">      </span><span class="tok-nb">None</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-s">&quot;&quot;</span><span class="tok-p">.</span><span class="tok-n">to_string</span><span class="tok-p">(),</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-p">}</span><span class="tok-w"></span>
+<span class="tok-w">  </span><span class="tok-p">}</span><span class="tok-w"></span>
+<span class="tok-p">}</span><span class="tok-w"></span></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Eine wichtige Anwendung von Pipe-Snippets ist sich selbst dynamisch zu schreiben (TODO link). Damit das klappt muss der bestehende Inhalt ersetzt werden (Und nicht angehängt).</td>
+</tr>
+</table>
+</div>
+<div id="crate_usages" class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">core</span>::<span class="tok-n">cell</span>::<span class="tok-n">RefCell</span><span class="tok-p">;</span><span class="tok-w"></span>
+<span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">std</span>::<span class="tok-n">rc</span>::<span class="tok-n">Rc</span><span class="tok-p">;</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
 </div>
@@ -2696,6 +2767,14 @@ lua (TODO link) als Interpreter. Dazu benutzen wir den <code>rlua</code> (TODO l
 </div>
 <div class="paragraph">
 <p>TODO Logging</p>
+</div>
+<div class="paragraph">
+<p>Das resultierende <code>lisa</code> executable soll allerdings alle Arten von Fehlern abfangen, deshalb verwenden wir hier den <code>anyhow</code> crate.</p>
+</div>
+<div id="cargo_dependencies" class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="toml"><span></span><span class="tok-n">anyhow</span> <span class="tok-o">=</span> <span class="tok-s">&quot;1.0&quot;</span></code></pre>
+</div>
 </div>
 </div>
 </div>
@@ -2727,7 +2806,7 @@ das Programm (und die Bibliothek) kompiliert werden können.</p>
  9
 10</pre></div></td><td class="code"><pre><span></span><span class="tok-p">[</span><span class="tok-n">package</span><span class="tok-p">]</span>
 <span class="tok-n">name</span> <span class="tok-o">=</span> <span class="tok-s">&quot;lisa&quot;</span>
-<span class="tok-n">version</span> <span class="tok-o">=</span> <span class="tok-s">&quot;0.1.0&quot;</span>
+<span class="tok-n">version</span> <span class="tok-o">=</span> <span class="tok-s">&quot;0.2.0&quot;</span>
 <span class="tok-n">authors</span> <span class="tok-o">=</span> <span class="tok-p">[</span><span class="tok-s">&quot;Benjamin Kober &lt;k.o.b.e.r@web.de&gt;&quot;</span><span class="tok-p">]</span>
 <span class="tok-n">edition</span> <span class="tok-o">=</span> <span class="tok-s">&quot;2018&quot;</span>
 
@@ -2741,15 +2820,9 @@ das Programm (und die Bibliothek) kompiliert werden können.</p>
 </div>
 </div>
 </div>
-<div id="footnotes">
-<hr>
-<div class="footnote" id="_footnotedef_1">
-<a href="#_footnoteref_1">1</a>. Bei der Programmiersprache geht es also gar nicht mehr so sehr um die Computersprache, sondern um die von Menschen verwendete Sprache.
-</div>
-</div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-04-13 22:19:03 +0200
+Last updated 2020-05-12 10:55:46 +0200
 </div>
 </div>
 <style>
