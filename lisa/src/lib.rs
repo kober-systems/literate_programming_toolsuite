@@ -251,7 +251,7 @@ impl Lisa {
   }
 
   /// Builds the dependency tree for topological sorting
-  pub fn check_dependencies(&mut self, snippets: &SnippetDB) {
+  pub fn calculate_snippet_ordering(&mut self, snippets: &SnippetDB) {
     for (key, snippet) in snippets.iter() {
       // TODO Vielleicht sollten nur `save` und `eval` snippets
       // unabhängig von dependencies aufgenommen werden?

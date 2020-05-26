@@ -124,7 +124,7 @@ impl Extension for Lisa { // <1>
   fn transform<'a>(&mut self, mut input: AST<'a>) -> AST<'a> { // <2>
     let mut snippets = self.extract_ast(&input).unwrap(); // <3>
 
-    self.check_dependencies(&snippets); // <5>
+    self.calculate_snippet_ordering(&snippets); // <5>
 
     self.generate_outputs(snippets, &input); // <4>
 
@@ -1357,7 +1357,7 @@ füllen unsere Sortierstruktur.
 [source, rust]
 ----
 /// Builds the dependency tree for topological sorting
-pub fn check_dependencies(&mut self, snippets: &SnippetDB) {
+pub fn calculate_snippet_ordering(&mut self, snippets: &SnippetDB) {
   for (key, snippet) in snippets.iter() {
     // TODO Vielleicht sollten nur `save` und `eval` snippets
     // unabhängig von dependencies aufgenommen werden?
@@ -1380,8 +1380,7 @@ pub fn check_dependencies(&mut self, snippets: &SnippetDB) {
     Abhängigkeiten verloren gehen.
 <2> Zudem müssen alle Abhängigkeiten bekanntgegeben werden.
 
-Wir verwenden die `get_dependencies` Funktion um die abhängigen keys zu einem
-Snippet zu finden und zu speichern.
+Wir verwenden die `calculate_snippet_ordering` Funktion um die abhängigen keys zu einem Snippet zu finden und zu speichern.
 
 [[find_references]]
 [source, rust]
