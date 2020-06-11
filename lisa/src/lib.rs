@@ -368,12 +368,13 @@ impl Lisa {
 
           match snippet {
             Some(mut snippet) => {
-              let content = snippet.content.clone();
+              if !snippet.raw {
+                let content = snippet.content.clone();
+                let content = codeblock_parser::merge_dependencies(content.as_str(), &snippets);
+                snippet.content = content.clone();
+              };
 
-              let content = codeblock_parser::merge_dependencies(content.as_str(), &snippets);
-              snippet.content = content.clone();
               snippets.store(key, snippet.clone());
-
               Some(snippet)
             }
             None => {

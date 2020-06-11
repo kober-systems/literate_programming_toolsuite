@@ -1218,9 +1218,9 @@ tatsächlichen Inhalte ersetzt werden. Dazu benutzen wir die Funktion
 [[merge_snippet_content]]
 [source, rust]
 ----
+let content = snippet.content.clone();
 let content = codeblock_parser::merge_dependencies(content.as_str(), &snippets);
 snippet.content = content.clone();
-snippets.store(key, snippet.clone());
 ----
 
 In dieser Funktion wird ein String erzeugt, die Referenzen im Snippet durch den
@@ -1437,10 +1437,11 @@ loop {
 
       match snippet {
         Some(mut snippet) => {
-          let content = snippet.content.clone();
+          if !snippet.raw {
+            <<merge_snippet_content>>
+          };
 
-          <<merge_snippet_content>>
-
+          snippets.store(key, snippet.clone());
           Some(snippet)
         }
         None => { // <4>
@@ -1602,7 +1603,7 @@ pub fn eval(&self, interpreter: String, content: String) -> Result<(), Error> {
 }
 ----
 
-Dafür benutzen wir den `std::process` crate.
+Wir benutzen den `std::process` crate um einen Interpreter in einem eigenen Prozess starten zu können.
 
 [[crate_usages]]
 [source, rust]
@@ -1628,6 +1629,7 @@ eval.stdin
   .as_mut()
   .ok_or(Error::Childprocess)?
   .write_all(content.as_bytes())?; // TODO Wie soll EOF gesendet werden?
+let output = eval.wait_with_output()?;
 ----
 
 [[errors]]
@@ -1637,11 +1639,11 @@ eval.stdin
 Childprocess,
 ----
 
+Nachdem der Prozess ausgeführt wurde können wir seine Ausgaben (über `stdout` und `stderr`) in das Ausgabedokument (den AST) übernehmen. Dabei ist es nicht nur interessant Texte anzuzeigen sondern es ist auch möglich beliebige Inhalte anzuzeigen.
+
 [[process_stdout_and_stderr]]
 [source, rust]
 ----
-let output = eval.wait_with_output()?;
-
 // TODO in den Asciidoc AST einbinden
 if output.status.success() {
   let out = match String::from_utf8(output.stdout) {
