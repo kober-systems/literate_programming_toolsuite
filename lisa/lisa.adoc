@@ -805,6 +805,8 @@ pub struct Snippet {
   /// List of all keys the snippet depends on
   /// before it can be processed
   pub depends_on: Vec<String>, // <3>
+  pub raw: bool,
+  pub join_str: String,
 }
 ----
 <1> Ein Snippet kann aus mehreren aneinandergehängten Snippets bestehen (TODO
@@ -898,6 +900,9 @@ let mut path = None;
 let mut title = None;
 let mut id =
   "_id_".to_string() + &input.start.to_string() + &"_".to_string() + &input.end.to_string(); // TODO Vielleicht Datei + Zeile?
+let mut raw = false;
+let join_str = input.get_attribute("lisa-join").unwrap_or("\n\n".to_string());
+let join_str = join_str.replace("\\\\", "\\").replace("\\n", "\n").replace("\\t", "\t");
 ----
 
 Außerdem gehen wir alle Attribute durch und überschreiben unsere Standardwerte
@@ -977,6 +982,9 @@ for argument in args {
     AttributeValue::Ref("pipe") => {
       kind = SnippetType::Pipe;
     }
+    AttributeValue::Ref("lisa-raw") => {
+      raw = true;
+    }
     _ => (),
   }
 }
@@ -1004,6 +1012,8 @@ snippets.store(
     content: content,
     children: Vec::new(),
     depends_on: dependencies,
+    raw: raw,
+    join_str: join_str,
   },
 );
 ----
@@ -1022,7 +1032,7 @@ pub fn store(&mut self, name: String, snippet: Snippet) {
         let other = base.clone();
         &base.children.push(other);
       }
-      base.content.push_str("\n");
+      base.content.push_str(base.join_str.as_str()); // <4>
       base.content.push_str(snippet.content.as_str());
       base.children.push(snippet);
     }
@@ -1037,6 +1047,7 @@ pub fn store(&mut self, name: String, snippet: Snippet) {
     wurde.
 <2> Falls ja wird es an das bestehende angehängt.
 <3> Falls nicht kann man es einfach abspeichern.
+<4> Standardmäßig fügen wir zwischen aneinandergehängten Snippets eine Leerzeile ein. Das kann aber mit `lisa-join` konfiguriert werden.
 
 === Referenzen in einem Snippet finden
 Wir möchten, die referenzierten Snippets später einbinden. Dazu müssen sie
@@ -1715,6 +1726,8 @@ impl LisaWrapper {
       content: content,
       children: Vec::new(),
       depends_on: Vec::new(),
+      raw: true,
+      join_str: "".to_string(),
     });
   }
 

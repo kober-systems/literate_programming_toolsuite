@@ -40,7 +40,7 @@ impl SnippetDB {
           let other = base.clone();
           &base.children.push(other);
         }
-        base.content.push_str("\n");
+        base.content.push_str(base.join_str.as_str());
         base.content.push_str(snippet.content.as_str());
         base.children.push(snippet);
       }
@@ -79,6 +79,8 @@ pub struct Snippet {
   /// List of all keys the snippet depends on
   /// before it can be processed
   pub depends_on: Vec<String>,
+  pub raw: bool,
+  pub join_str: String,
 }
 
 #[derive(Clone)]
@@ -97,6 +99,8 @@ impl LisaWrapper {
       content: content,
       children: Vec::new(),
       depends_on: Vec::new(),
+      raw: true,
+      join_str: "".to_string(),
     });
   }
 
@@ -158,6 +162,10 @@ impl Lisa {
         let mut title = None;
         let mut id =
           "_id_".to_string() + &input.start.to_string() + &"_".to_string() + &input.end.to_string(); // TODO Vielleicht Datei + Zeile?
+        let mut raw = false;
+        let join_str = input.get_attribute("lisa-join").unwrap_or("\n\n".to_string());
+        let join_str = join_str.replace("\\\\", "\\").replace("\\n", "\n").replace("\\t", "\t");
+
         for attribute in input.attributes.iter() {
           if attribute.key == "anchor" {
             id = match &attribute.value {
@@ -211,6 +219,9 @@ impl Lisa {
             AttributeValue::Ref("pipe") => {
               kind = SnippetType::Pipe;
             }
+            AttributeValue::Ref("lisa-raw") => {
+              raw = true;
+            }
             _ => (),
           }
         }
@@ -232,6 +243,8 @@ impl Lisa {
             content: content,
             children: Vec::new(),
             depends_on: dependencies,
+            raw: raw,
+            join_str: join_str,
           },
         );
 
