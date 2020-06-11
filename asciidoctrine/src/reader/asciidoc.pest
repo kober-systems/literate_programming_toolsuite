@@ -124,14 +124,13 @@ inline_attribute_list = {
   "[" ~ (attribute ~ ("," ~ attribute)* )? ~ "]"
 }
 
-attribute = {
-  (identifier ~ "=" ~ attribute_value) |
-  attribute_value
-}
+attribute = { named_attribute | attribute_value }
+named_attribute = { identifier ~ "=" ~ attribute_value }
 attribute_value = {
-  ("\"" ~ ( "\\\"" | (!"," ~ !"]" ~ !"\"" ~ ANY))* ~ "\"") |
+  ("\"" ~ inner_attribute_value ~ "\"") |
   ( (!"," ~ !"]" ~ ANY)+ )
 }
+inner_attribute_value = { ( "\\\"" | (!"," ~ !"]" ~ !"\"" ~ ANY))* }
 
 anchor = { inline_anchor ~ NEWLINE }
 inline_anchor = { "[[" ~ (identifier | path) ~ "]]" }

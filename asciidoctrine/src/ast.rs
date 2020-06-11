@@ -40,6 +40,21 @@ pub struct ElementSpan<'a> {
   pub attributes: Vec<Attribute<'a>>,
 }
 
+impl ElementSpan<'_> {
+  pub fn get_attribute(&self, name: &str) -> Option<String> {
+    for attribute in self.attributes.iter() {
+      if &attribute.key == name {
+        return match &attribute.value {
+          AttributeValue::Ref(value) => Some(value.to_string()),
+          AttributeValue::String(value) => Some(value.clone()),
+        };
+      }
+    }
+
+    None
+  }
+}
+
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub enum Element<'a> {
   Attribute(#[serde(borrow)] Attribute<'a>),

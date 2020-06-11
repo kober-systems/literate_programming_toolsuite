@@ -54,11 +54,39 @@ fn process_inline_attribute_list<'a>(
   for subelement in element.into_inner() {
     match subelement.as_rule() {
       Rule::attribute => {
-        // TODO Wir müssen unterschiedlich damit umgehen, ob ein oder mehrere
-        // identifier existieren
-        base
-          .positional_attributes
-          .push(AttributeValue::Ref(subelement.as_str()));
+        for subelement in subelement.into_inner() {
+          match subelement.as_rule() {
+            Rule::attribute_value => {
+              // TODO Wir müssen unterschiedlich damit umgehen, ob ein oder mehrere
+              // identifier existieren
+              base
+                .positional_attributes
+                .push(AttributeValue::Ref(subelement.as_str()));
+            }
+            Rule::named_attribute => {
+              let mut key = None;
+              let mut value = None;
+
+              for subelement in subelement.into_inner() {
+                match subelement.as_rule() {
+                  Rule::identifier => key = Some(subelement.as_str()),
+                  Rule::attribute_value => {
+                    value = Some(subelement.into_inner().concat());
+                  }
+                  // TODO Fehler abfangen und anzeigen
+                  _ => (),
+                }
+              }
+
+              base.attributes.push(Attribute {
+                key: key.unwrap().to_string(),
+                value: AttributeValue::String(value.unwrap()),
+              });
+            }
+            // TODO Fehler abfangen und anzeigen
+            _ => (),
+          }
+        }
       }
       // TODO Fehler abfangen und anzeigen
       _ => (),
