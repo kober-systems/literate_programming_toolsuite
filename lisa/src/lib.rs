@@ -105,7 +105,7 @@ impl LisaWrapper {
   }
 
   pub fn get_snippet(&mut self, name: String) -> String {
-    let mut snippets = self.snippets.borrow_mut();
+    let snippets = self.snippets.borrow_mut();
 
     match snippets.get(&name) {
       Some(snippet) => snippet.content.clone(),
@@ -123,7 +123,6 @@ pub enum Error {
   #[error("Child process stdin has not been captured!")]
   Childprocess,
 }
-
 
 pub struct Lisa {
   dependencies: TopologicalSort<String>,
@@ -157,6 +156,7 @@ impl Lisa {
             }
           }
         }
+
         let mut content = None;
         let mut path = None;
         let mut title = None;
@@ -198,9 +198,11 @@ impl Lisa {
             };
           }
         }
+
         if path == None {
           path = title;
         }
+
         let mut kind = SnippetType::Plain;
 
         for argument in args {
@@ -225,6 +227,7 @@ impl Lisa {
             _ => (),
           }
         }
+
         if content == None {
           content = Some(input.content.to_string());
         }
@@ -309,7 +312,8 @@ impl Lisa {
   /// Run a snippet in an interpreter
   pub fn eval(&self, interpreter: String, content: String) -> Result<(), Error> {
 
-    let mut eval = Command::new(interpreter).stdin(Stdio::piped())
+    let mut eval = Command::new(interpreter)
+      .stdin(Stdio::piped())
       .stderr(Stdio::piped())
       .stdout(Stdio::piped())
       .spawn()?;
@@ -318,7 +322,6 @@ impl Lisa {
       .as_mut()
       .ok_or(Error::Childprocess)?
       .write_all(content.as_bytes())?; // TODO Wie soll EOF gesendet werden?
-
     let output = eval.wait_with_output()?;
 
     // TODO in den Asciidoc AST einbinden
@@ -341,7 +344,7 @@ impl Lisa {
 
   /// Gets all snippets from the ast
   pub fn extract_ast(&mut self, input: &AST) -> Result<SnippetDB, Error> {
-    let mut snippets = SnippetDB::new();
+    let snippets = SnippetDB::new();
 
     // extract snippets from all inner elements
     let snippets = input.elements.iter().fold(snippets, |snippets, element| {
@@ -354,7 +357,7 @@ impl Lisa {
   /// Build all snippets (Runs the vm)
   pub fn generate_outputs(&mut self, snippets: SnippetDB, mut ast: &AST) -> Result<(), Error> {
     let db = Rc::new(RefCell::new(snippets));
-    let mut snippets = Rc::clone(&db);
+    let snippets = Rc::clone(&db);
 
     loop {
       let key = self.dependencies.pop();
@@ -426,9 +429,9 @@ impl Lisa {
 
 impl Extension for Lisa {
   fn transform<'a>(&mut self, mut input: AST<'a>) -> AST<'a> {
-    let mut snippets = self.extract_ast(&input).unwrap();
+    let snippets = self.extract_ast(&input).unwrap();
 
-    self.check_dependencies(&snippets);
+    self.calculate_snippet_ordering(&snippets);
 
     self.generate_outputs(snippets, &input);
 

@@ -36,19 +36,19 @@ eigenen asciidoc Interpreter in rust geschrieben habe, habe ich mich
 entschlossen `lisa` als asciidoctrine-extension zu implementieren.
 
 [[required_crates]]
-[source, rust]
+[source, rust, lisa-join="\n"]
 --------------------------------------------------------------------------------
 extern crate asciidoctrine;
 --------------------------------------------------------------------------------
 
 [[crate_usages]]
-[source, rust]
+[source, rust, lisa-join="\n"]
 --------------------------------------------------------------------------------
 use asciidoctrine::*;
 --------------------------------------------------------------------------------
 
 [[cargo_dependencies]]
-[source, toml]
+[source, toml, lisa-join="\n"]
 --------------------------------------------------------------------------------
 asciidoctrine = { path = "../asciidoctrine" }
 --------------------------------------------------------------------------------
@@ -102,7 +102,7 @@ impl Lisa {
 
   /// Gets all snippets from the ast
   pub fn extract_ast(&mut self, input: &AST) -> Result<SnippetDB, Error> { // <3>
-    let mut snippets = SnippetDB::new();
+    let snippets = SnippetDB::new();
 
     // extract snippets from all inner elements
     let snippets = input.elements.iter().fold(snippets, |snippets, element| {
@@ -122,7 +122,7 @@ impl Lisa {
 
 impl Extension for Lisa { // <1>
   fn transform<'a>(&mut self, mut input: AST<'a>) -> AST<'a> { // <2>
-    let mut snippets = self.extract_ast(&input).unwrap(); // <3>
+    let snippets = self.extract_ast(&input).unwrap(); // <3>
 
     self.calculate_snippet_ordering(&snippets); // <5>
 
@@ -189,9 +189,8 @@ Es ist wichtig eine Begründung für alle Designentscheidungen aufzuschreiben da
 Die normalen Quellcode Listings können gebraucht werden, um ein Programm zu
 erstellen.
 
-[listing]
 [source, asciidoc]
-................................................................................
+....
 Fliestext ... <3>
 
 [[ID]] <2>
@@ -202,7 +201,7 @@ Quelltext ... <1>
 ----
 
 Fliestext ... <3>
-................................................................................
+....
 <1> `lisa` kümmert sich nur um Quelltext-Snippets.
 <2> Die ID (`anchor`) kann benutzt werden, um Code-Snippets zu referenzieren.
 <4> Der restliche Text wird von dem Programm ignoriert.
@@ -220,7 +219,7 @@ Die verschiedenen Codeschnipsel kann man in anderen Codeschnipseln einbinden.
 Dafür verwendet man einfach eine `cross reference` auf den `anchor` des
 jeweiligen Schnipsels:
 
-[source, asciidoc]
+[source, asciidoc, lisa-raw]
 ....
 We need the testmodule for this project.
 
@@ -256,8 +255,7 @@ print(testmodule.version)
 
 Die Reihenfolge ist dabei egal.
 
-[listing]
-[source,asciidoc]
+[source, asciidoc, lisa-raw]
 ....
 First we give a short outline of the program. It imports the required modules
 and then prints out its version.
@@ -383,7 +381,7 @@ erzeugten Quellcode in ein tatsächliches Programm umwandeln zu können. Die
 wichtigste Möglichkeit dazu ist einen Schnipsel in eine Datei abspeichern zu
 können. Dazu wird das Attribut `save` verwendet:
 
-[source,asciidoc]
+[source, asciidoc]
 ....
 Lets create a "hello world" program.
 
@@ -406,7 +404,7 @@ implementieren?
 ===== eval (Ausführen)
 Eine weitere Methode das Programm zu nutzen ist es direkt auszuführen. Das wird mit dem Atrribut `eval` gemacht.
 
-[source,asciidoc]
+[source, asciidoc]
 ....
 Lets run a "hello world" program.
 
@@ -783,7 +781,6 @@ pub enum SnippetType {
   Pipe,         // <3>
   Plain,        // <4>
 }
-
 ----
 <1> Er kann in eine Datei abgespeichert werden (TODO link)
 <2> Oder von einem Interpreter ausgeführt werden (TODO link)
@@ -845,7 +842,6 @@ pub fn extract(&mut self, mut snippets: SnippetDB, input: &ElementSpan) -> Snipp
     }
   }
 }
-
 ----
 <1> Ist ein Element ein Code-Snippet wird es weiterverarbeitet.
 <2> Falls ein Element zwar kein Snippet ist aber Unterknoten hat, wird rekursiv
@@ -991,7 +987,7 @@ for argument in args {
 ----
 
 [[errors]]
-[source, rust]
+[source, rust, lisa-join="\n"]
 ----
 #[error("a nessessary attribute is missing")]
 Missing,
@@ -1041,7 +1037,6 @@ pub fn store(&mut self, name: String, snippet: Snippet) {
     }
   }
 }
-
 ----
 <1> Zunächst wird geprüft, ob bereits ein Snippet mit dieser Id gespeichert
     wurde.
@@ -1167,7 +1162,7 @@ bestehen darf. Zudem darf sie nicht mit einem Verbindungsstrich beginnen, um
 nicht den wie eine Minus Expression zu wirken (und damit Verwirrung zu stiften).
 
 [[internal_gramma_elements]]
-[source, pest]
+[source, pest, lisa-join="\n"]
 .identifier
 ----
 identifier = @{ (ASCII_ALPHANUMERIC | "_") ~ (ASCII_ALPHANUMERIC | "_" | "-" )* }
@@ -1384,7 +1379,6 @@ pub fn calculate_snippet_ordering(&mut self, snippets: &SnippetDB) {
     }
   }
 }
-
 ----
 <1> Jedes Snippet muss in die Sortierung mit eingebunden werden, auch, wenn es
     keine Abhängigkeiten hat. Sonst könnten direkt ausgeführte Snippets ohne
@@ -1432,7 +1426,7 @@ depends_on_ids
 [source, rust]
 ----
 let db = Rc::new(RefCell::new(snippets));
-let mut snippets = Rc::clone(&db);
+let snippets = Rc::clone(&db);
 
 loop {
   let key = self.dependencies.pop(); // <1>
@@ -1538,7 +1532,6 @@ pub fn save(&self, path: String, content: String) -> Result<(), Error> {
 
   Ok(())
 }
-
 ----
 <1> Wenn der Ordner, in dem sich die Datei befindet, nicht existiert, muss er
     zuerst erzeugt werden. Sonst käme es beim schreiben der Datei zu einer
@@ -1607,7 +1600,6 @@ pub fn eval(&self, interpreter: String, content: String) -> Result<(), Error> {
 
   Ok(())
 }
-
 ----
 
 Dafür benutzen wir den `std::process` crate.
@@ -1622,7 +1614,8 @@ use std::process::{Command, Stdio};
 [[spawn_interpreter]]
 [source, rust]
 ----
-let mut eval = Command::new(interpreter).stdin(Stdio::piped())
+let mut eval = Command::new(interpreter)
+  .stdin(Stdio::piped())
   .stderr(Stdio::piped())
   .stdout(Stdio::piped())
   .spawn()?;
@@ -1732,7 +1725,7 @@ impl LisaWrapper {
   }
 
   pub fn get_snippet(&mut self, name: String) -> String {
-    let mut snippets = self.snippets.borrow_mut();
+    let snippets = self.snippets.borrow_mut();
 
     match snippets.get(&name) {
       Some(snippet) => snippet.content.clone(),
@@ -1740,7 +1733,6 @@ impl LisaWrapper {
     }
   }
 }
-
 ----
 <1> Eine wichtige Anwendung von Pipe-Snippets ist sich selbst dynamisch zu schreiben (TODO link). Damit das klappt muss der bestehende Inhalt ersetzt werden (Und nicht angehängt).
 
@@ -1767,7 +1759,6 @@ thiserror = "1.0"
 pub enum Error {
   <<errors>>
 }
-
 ----
 
 Das betrifft alles Fehler, welche so von der Bibliothek nicht abgefangen werden. Es gibt allerdings auch Fehler, welche erst zur Laufzeit vom Programm abgefangen werden. Für diese benötigen wir einen Logging Mechanismus.
