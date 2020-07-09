@@ -830,16 +830,16 @@ pub fn extract(&mut self, mut snippets: SnippetDB, input: &ElementSpan) -> Snipp
 
       snippets
     }
-    Element::IncludeElement(ast) => { // <2>
-      ast.inner.elements.iter().fold(snippets, |snippets, element| {
+    Element::IncludeElement(ast) => ast // <2>
+      .inner
+      .elements
+      .iter()
+      .fold(snippets, |snippets, element| {
         self.extract(snippets, element)
-      })
-    }
-    _ => { // <2>
-      input.children.iter().fold(snippets, |snippets, element| {
-        self.extract(snippets, element)
-      })
-    }
+      }),
+    _ => input.children.iter().fold(snippets, |snippets, element| { // <2>
+      self.extract(snippets, element)
+    }),
   }
 }
 ----
@@ -1587,7 +1587,8 @@ let mut eval = Command::new(interpreter)
 [[run_eval_command]]
 [source, rust]
 ----
-eval.stdin
+eval
+  .stdin
   .as_mut()
   .ok_or(Error::Childprocess)?
   .write_all(content.as_bytes())?; // TODO Wie soll EOF gesendet werden?
@@ -1652,7 +1653,9 @@ let mut engine = rhai::Engine::new();
 
 let mut scope = rhai::Scope::new();
 
-let wrapper = LisaWrapper { snippets: Rc::clone(&db) };
+let wrapper = LisaWrapper {
+  snippets: Rc::clone(&db)
+};
 scope.push_constant("lisa", wrapper);
 
 engine.register_type_with_name::<LisaWrapper>("LisaType");
@@ -1678,14 +1681,17 @@ impl LisaWrapper {
 
     snippets.pop(&name); // <1>
 
-    snippets.store(name, Snippet {
-      kind: SnippetType::Plain,
-      content: content,
-      children: Vec::new(),
-      depends_on: Vec::new(),
-      raw: true,
-      join_str: "".to_string(),
-    });
+    snippets.store(
+      name,
+      Snippet {
+        kind: SnippetType::Plain,
+        content: content,
+        children: Vec::new(),
+        depends_on: Vec::new(),
+        raw: true,
+        join_str: "".to_string(),
+      },
+    );
   }
 
   pub fn get_snippet(&mut self, name: String) -> String {

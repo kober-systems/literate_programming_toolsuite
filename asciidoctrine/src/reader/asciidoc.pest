@@ -54,7 +54,6 @@ email = { "<" ~ (LETTER | "." )+ ~ "@" ~ (LETTER | "." )+ ~ ">" }
 attribute_entry = { ":" ~ identifier ~ ":" ~ identifier? ~ &NEWLINE }
 attribute_entry_block = { attribute_entry ~ NEWLINE }
 
-/// Orange
 delimited_block = {
   (anchor | attribute_list | blocktitle)* ~
   (

@@ -94,14 +94,17 @@ impl LisaWrapper {
 
     snippets.pop(&name);
 
-    snippets.store(name, Snippet {
-      kind: SnippetType::Plain,
-      content: content,
-      children: Vec::new(),
-      depends_on: Vec::new(),
-      raw: true,
-      join_str: "".to_string(),
-    });
+    snippets.store(
+      name,
+      Snippet {
+        kind: SnippetType::Plain,
+        content: content,
+        children: Vec::new(),
+        depends_on: Vec::new(),
+        raw: true,
+        join_str: "".to_string(),
+      },
+    );
   }
 
   pub fn get_snippet(&mut self, name: String) -> String {
@@ -219,16 +222,16 @@ impl Lisa {
 
         snippets
       }
-      Element::IncludeElement(ast) => {
-        ast.inner.elements.iter().fold(snippets, |snippets, element| {
+      Element::IncludeElement(ast) => ast
+        .inner
+        .elements
+        .iter()
+        .fold(snippets, |snippets, element| {
           self.extract(snippets, element)
-        })
-      }
-      _ => {
-        input.children.iter().fold(snippets, |snippets, element| {
-          self.extract(snippets, element)
-        })
-      }
+        }),
+      _ => input.children.iter().fold(snippets, |snippets, element| {
+        self.extract(snippets, element)
+      }),
     }
   }
 
@@ -285,7 +288,8 @@ impl Lisa {
       .stdout(Stdio::piped())
       .spawn()?;
 
-    eval.stdin
+    eval
+      .stdin
       .as_mut()
       .ok_or(Error::Childprocess)?
       .write_all(content.as_bytes())?; // TODO Wie soll EOF gesendet werden?
@@ -378,7 +382,9 @@ impl Lisa {
 
             let mut scope = rhai::Scope::new();
 
-            let wrapper = LisaWrapper { snippets: Rc::clone(&db) };
+            let wrapper = LisaWrapper {
+              snippets: Rc::clone(&db)
+            };
             scope.push_constant("lisa", wrapper);
 
             engine.register_type_with_name::<LisaWrapper>("LisaType");
