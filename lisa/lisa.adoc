@@ -1511,6 +1511,8 @@ Um eine Datei zu speichern haben wir eine eigene Funktion.
 ----
 /// Saves a Snippet to a file
 pub fn save(&self, path: String, content: String) -> Result<(), Error> {
+  <<strip_all_lines_in_content>>
+
   // TODO Allow directory prefix from options
   <<check_path_not_allready_used_by_lisa>>
   <<add_path_to_the_list_of_outputs>>
@@ -1522,13 +1524,12 @@ pub fn save(&self, path: String, content: String) -> Result<(), Error> {
     }
   }
 
-  <<strip_all_lines_in_content>>
-
-  let old_content = fs::read_to_string(path)?; // <2>
-  if old_content == content {
-    return Ok(());
+  if path.exists() {
+    let old_content = fs::read_to_string(path)?; // <2>
+    if old_content == content {
+      return Ok(());
+    }
   }
-
   fs::write(path, content)?;
 
   Ok(())

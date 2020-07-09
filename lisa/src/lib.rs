@@ -286,6 +286,10 @@ impl Lisa {
 
   /// Saves a Snippet to a file
   pub fn save(&self, path: String, content: String) -> Result<(), Error> {
+    let content = content.lines()
+                         .map(|line| { String::from(line.trim_end()) + "\n" })
+                         .collect::<String>();
+
     // TODO Allow directory prefix from options
 
     let path = Path::new(&path);
@@ -295,15 +299,12 @@ impl Lisa {
       }
     }
 
-    let content = content.lines()
-                         .map(|line| { String::from(line.trim_end()) + "\n" })
-                         .collect::<String>();
-
-    let old_content = fs::read_to_string(path)?;
-    if old_content == content {
-      return Ok(());
+    if path.exists() {
+      let old_content = fs::read_to_string(path)?;
+      if old_content == content {
+        return Ok(());
+      }
     }
-
     fs::write(path, content)?;
 
     Ok(())
