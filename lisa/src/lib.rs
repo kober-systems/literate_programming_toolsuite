@@ -157,51 +157,21 @@ impl Lisa {
           }
         }
 
-        let mut content = None;
-        let mut path = None;
-        let mut title = None;
-        let mut id =
-          "_id_".to_string() + &input.start.to_string() + &"_".to_string() + &input.end.to_string(); // TODO Vielleicht Datei + Zeile?
+        let title = input.get_attribute("title");
+        let path = input.get_attribute("path").or(title.clone());
+
+        let id = input.get_attribute("anchor").unwrap_or(
+          "_id_".to_string() + &input.start.to_string() + &"_".to_string() + &input.end.to_string(),
+        ); // TODO Vielleicht Datei + Zeile?
+
+        let interpreter = input.get_attribute("interpreter").or(interpreter);
         let mut raw = false;
-        let join_str = input.get_attribute("lisa-join").unwrap_or("\n\n".to_string());
-        let join_str = join_str.replace("\\\\", "\\").replace("\\n", "\n").replace("\\t", "\t");
-
-        for attribute in input.attributes.iter() {
-          if attribute.key == "anchor" {
-            id = match &attribute.value {
-              AttributeValue::String(value) => value.clone(),
-              AttributeValue::Ref(value) => value.to_string(),
-            };
-          }
-          if attribute.key == "path" {
-            path = match &attribute.value {
-              AttributeValue::String(value) => Some(value.clone()),
-              AttributeValue::Ref(value) => Some(value.to_string()),
-            };
-          }
-          if attribute.key == "title" {
-            title = match &attribute.value {
-              AttributeValue::String(value) => Some(value.clone()),
-              AttributeValue::Ref(value) => Some(value.to_string()),
-            };
-          }
-          if attribute.key == "content" {
-            content = match &attribute.value {
-              AttributeValue::String(value) => Some(value.clone()),
-              AttributeValue::Ref(value) => Some(value.to_string()),
-            };
-          }
-          if attribute.key == "interpreter" {
-            interpreter = match &attribute.value {
-              AttributeValue::String(value) => Some(value.clone()),
-              AttributeValue::Ref(value) => Some(value.to_string()),
-            };
-          }
-        }
-
-        if path == None {
-          path = title;
-        }
+        let join_str = input
+          .get_attribute("lisa-join")
+          .unwrap_or("\n\n".to_string())
+          .replace("\\\\", "\\")
+          .replace("\\n", "\n")
+          .replace("\\t", "\t");
 
         let mut kind = SnippetType::Plain;
 
@@ -228,13 +198,9 @@ impl Lisa {
           }
         }
 
-        if content == None {
-          content = Some(input.content.to_string());
-        }
-        let content = match content {
-          Some(content) => content,
-          None => "".to_string(),
-        };
+        let content = input
+          .get_attribute("content")
+          .unwrap_or(input.content.to_string());
         let mut dependencies = Vec::new();
         for dependency in codeblock_parser::get_dependencies(content.as_str()).iter() {
           dependencies.push(dependency.to_string());

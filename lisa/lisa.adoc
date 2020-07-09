@@ -884,73 +884,38 @@ if let Some(value) = args.next()  {
 Es gibt einige Attribute der Codeschnipsel im AST, die für die
 Weiterverarbeitung durch `lisa` wichtig sind.
 
-Die `id` benötigen wir, damit Snippets aufeinander verweisen können. Falls sie
-im Quelldokument nicht definiert wurde verwenden wir die Anfangs- und
-Endposition des Blocks um eine eindeutige id zu bekommen.
+Das Pfad Attribut ist wichtig für alle `save` Snippets (TODO link). Falls es nicht explizit definiert wurde, gehen wir davon aus, das der Titel des Codeblocks den Pfad enthällt.
 
 [[extract_attributes]]
 [source, rust]
 ----
-let mut content = None;
-let mut path = None;
-let mut title = None;
-let mut id =
-  "_id_".to_string() + &input.start.to_string() + &"_".to_string() + &input.end.to_string(); // TODO Vielleicht Datei + Zeile?
+let title = input.get_attribute("title");
+let path = input.get_attribute("path").or(title.clone());
+----
+
+Die `id` benötigen wir, damit Snippets aufeinander verweisen können. Falls sie im Quelldokument nicht definiert wurde verwenden wir die Anfangs- und Endposition des Blocks um eine eindeutige id zu bekommen.
+
+[[extract_attributes]]
+[source, rust]
+----
+let id = input.get_attribute("anchor").unwrap_or(
+  "_id_".to_string() + &input.start.to_string() + &"_".to_string() + &input.end.to_string(),
+); // TODO Vielleicht Datei + Zeile?
+----
+
+Außerdem gehen wir alle Attribute durch und überschreiben unsere Standardwerte falls das Attribut definiert wurde.
+
+[[extract_attributes]]
+[source, rust]
+----
+let interpreter = input.get_attribute("interpreter").or(interpreter);
 let mut raw = false;
-let join_str = input.get_attribute("lisa-join").unwrap_or("\n\n".to_string());
-let join_str = join_str.replace("\\\\", "\\").replace("\\n", "\n").replace("\\t", "\t");
-----
-
-Außerdem gehen wir alle Attribute durch und überschreiben unsere Standardwerte
-falls das Attribut definiert wurde.
-
-[[extract_attributes]]
-[source, rust]
-----
-for attribute in input.attributes.iter() {
-  if attribute.key == "anchor" {
-    id = match &attribute.value {
-      AttributeValue::String(value) => value.clone(),
-      AttributeValue::Ref(value) => value.to_string(),
-    };
-  }
-  if attribute.key == "path" {
-    path = match &attribute.value {
-      AttributeValue::String(value) => Some(value.clone()),
-      AttributeValue::Ref(value) => Some(value.to_string()),
-    };
-  }
-  if attribute.key == "title" {
-    title = match &attribute.value {
-      AttributeValue::String(value) => Some(value.clone()),
-      AttributeValue::Ref(value) => Some(value.to_string()),
-    };
-  }
-  if attribute.key == "content" {
-    content = match &attribute.value {
-      AttributeValue::String(value) => Some(value.clone()),
-      AttributeValue::Ref(value) => Some(value.to_string()),
-    };
-  }
-  if attribute.key == "interpreter" {
-    interpreter = match &attribute.value {
-      AttributeValue::String(value) => Some(value.clone()),
-      AttributeValue::Ref(value) => Some(value.to_string()),
-    };
-  }
-}
-----
-
-Das Pfad Attribut ist wichtig für alle `save` Snippets (TODO link). Falls es
-nicht explizit definiert wurde, gehen wir davon aus, das der Titel des
-Codeblocks den Pfad enthällt.
-
-[[extract_attributes]]
-[source, rust]
-----
-if path == None {
-  path = title;
-}
+let join_str = input
+  .get_attribute("lisa-join")
+  .unwrap_or("\n\n".to_string())
+  .replace("\\\\", "\\")
+  .replace("\\n", "\n")
+  .replace("\\t", "\t");
 ----
 
 Ebenso benötigen wir einen Snippet Typ (TODO link). Er wird in den
@@ -1056,13 +1021,9 @@ leer ist.
 [[extract_attributes]]
 [source, rust]
 ----
-if content == None {
-  content = Some(input.content.to_string());
-}
-let content = match content {
-  Some(content) => content,
-  None => "".to_string(),
-};
+let content = input
+  .get_attribute("content")
+  .unwrap_or(input.content.to_string());
 ----
 
 Um die Referenzen zu finden verwenden wir die https://pest.rs/[Pest] Bibliothek. Sie basiert auf https://en.wikipedia.org/wiki/Parsing_expression_grammar[Parsing Expression Grammars] und wird bereits von asciidoctrine (TODO link) verwendet. Diese Art von Parsern ist (für mich) sehr leicht zu lesen und zu schreiben.
