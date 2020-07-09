@@ -1462,15 +1462,15 @@ loop {
         None => { // <4>
           // TODO Fehlermeldung im AST. Ein Snippet sollte zu
           // diesem Zeitpunkt immer bereits erstellt sein.
-          println!("Error: Dependency `{}` nicht gefunden", key);
+          warn!("Dependency `{}` nicht gefunden", key);
           None
         }
       }
     }
     None => { // <2>
       if !self.dependencies.is_empty() { // <3>
-        println!(
-          "Error: Es ist ein Ring in den Abhängigkeiten ({:#?})",
+        error!(
+          "Es ist ein Ring in den Abhängigkeiten ({:#?})",
           self.dependencies
         );
       }
@@ -1667,13 +1667,13 @@ if output.status.success() {
     Ok(out) => out,
     Err(_) => "Error: Couldn't decode stdout".to_string(),
   };
-  println!("{}", out); // TODO entfernen
+  info!("{}", out); // TODO entfernen
 } else {
   let err = match String::from_utf8(output.stderr) {
     Ok(out) => out,
     Err(_) => "Error: Couldn't decode stderr".to_string(),
   };
-  println!("External command failed:\n {}", err) // TODO entfernen
+  error!("External command failed:\n {}", err) // TODO entfernen
 }
 ----
 
@@ -1787,7 +1787,19 @@ pub enum Error {
 
 Das betrifft alles Fehler, welche so von der Bibliothek nicht abgefangen werden. Es gibt allerdings auch Fehler, welche erst zur Laufzeit vom Programm abgefangen werden. Für diese benötigen wir einen Logging Mechanismus.
 
-TODO Logging
+[[cargo_dependencies]]
+[source, toml]
+----
+log = "0.4.8"
+simple_logger = "1.6.0"
+----
+
+[[crate_usages]]
+[source, rust]
+----
+#[macro_use]
+extern crate log;
+----
 
 Das resultierende `lisa` executable soll allerdings alle Arten von Fehlern abfangen, deshalb verwenden wir hier den `anyhow` crate.
 

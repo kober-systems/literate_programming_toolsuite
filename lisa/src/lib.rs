@@ -19,6 +19,8 @@ use std::process::{Command, Stdio};
 use rhai::RegisterFn;
 use core::cell::RefCell;
 use std::rc::Rc;
+#[macro_use]
+extern crate log;
 
 pub struct SnippetDB {
   snippets: HashMap<String, Snippet>,
@@ -301,13 +303,13 @@ impl Lisa {
         Ok(out) => out,
         Err(_) => "Error: Couldn't decode stdout".to_string(),
       };
-      println!("{}", out); // TODO entfernen
+      info!("{}", out); // TODO entfernen
     } else {
       let err = match String::from_utf8(output.stderr) {
         Ok(out) => out,
         Err(_) => "Error: Couldn't decode stderr".to_string(),
       };
-      println!("External command failed:\n {}", err) // TODO entfernen
+      error!("External command failed:\n {}", err) // TODO entfernen
     }
 
     Ok(())
@@ -351,15 +353,15 @@ impl Lisa {
             None => {
               // TODO Fehlermeldung im AST. Ein Snippet sollte zu
               // diesem Zeitpunkt immer bereits erstellt sein.
-              println!("Error: Dependency `{}` nicht gefunden", key);
+              warn!("Dependency `{}` nicht gefunden", key);
               None
             }
           }
         }
         None => {
           if !self.dependencies.is_empty() {
-            println!(
-              "Error: Es ist ein Ring in den Abhängigkeiten ({:#?})",
+            error!(
+              "Es ist ein Ring in den Abhängigkeiten ({:#?})",
               self.dependencies
             );
           }

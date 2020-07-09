@@ -1,5 +1,6 @@
 extern crate asciidoctrine;
 extern crate lisa;
+extern crate simple_logger;
 
 use anyhow::{Context, Result};
 use asciidoctrine::*;
@@ -8,6 +9,7 @@ use std::fs;
 use std::io::{self, Read};
 
 fn main() -> Result<()> {
+  simple_logger::init()?;
   let mut opts = options::from_args();
 
   let reader: Box<dyn Reader> = match opts.readerfmt {
