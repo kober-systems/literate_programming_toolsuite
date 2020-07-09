@@ -1,4 +1,4 @@
-= Lisa - Literate Intuitive Sourcecode Analysis framework
+= Lisa - LIterate Scripting for Asciidoc
 Benjamin Kober <k.o.b.e.r@web.de>
 :toc: left
 
@@ -231,7 +231,7 @@ require "testmodule"
 
 This is the importing file. We could print out the version.
 
-[source, lua]
+[source, lua, save]
 .sample1.lua
 ----
 <<sample1_required_modules>> -- <2>
@@ -260,7 +260,7 @@ Die Reihenfolge ist dabei egal.
 First we give a short outline of the program. It imports the required modules
 and then prints out its version.
 
-[source, lua]
+[source, lua, save]
 .sample2.lua
 ----
 <<sample2_required_modules>>
@@ -290,6 +290,60 @@ print(testmodule.version)
 
 Außerdem kann man einen Codeschnipsel beliebig oft in einem oder mehreren
 anderen Codeschnipseln einfügen.
+
+[source, asciidoc, lisa-raw]
+....
+Lets assume we want to use the following snippet in multiple places.
+
+[[sample3_multiple]]
+[source, lua]
+----
+require "testmodule"
+----
+
+Than we could import it in the same snippet multiple times.
+
+[source, lua, save]
+.sample3-1.lua
+----
+<<sample3_multiple>>
+
+print(testmodule.version)
+
+<<sample3_multiple>>
+----
+
+And we could even use it again in another snippet.
+
+[source, lua, save]
+.sample3-2.lua
+----
+<<sample3_multiple>>
+
+print(testmodule.version .. "my other snippet")
+----
+
+....
+
+In diesem Fall würden die folgenden beiden Dateien generiert.
+
+[source, lua]
+.sample3-1.lua
+----
+require "testmodule"
+
+print(testmodule.version)
+
+require "testmodule"
+----
+
+[source, lua]
+.sample3-2.lua
+----
+require "testmodule"
+
+print(testmodule.version .. "my other snippet")
+----
 
 Verwenden zwei (oder mehr) Schnipsel den gleichen `anchor`, so wird der Inhalt
 in der Reihenfolge, in der die Schnipsel im Quelltext erscheinen,
