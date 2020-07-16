@@ -6,6 +6,7 @@ extern crate pest;
 #[macro_use]
 extern crate pest_derive;
 
+use std::io;
 pub use structopt::StructOpt;
 use thiserror::Error;
 
@@ -23,8 +24,10 @@ pub use writer::json::JsonWriter;
 pub enum AsciidoctrineError {
   #[error("could not parse input")]
   Parse(String),
-  #[error("json parsing error")]
+  #[error(transparent)]
   Json(#[from] serde_json::Error),
+  #[error(transparent)]
+  Io(#[from] std::io::Error),
 }
 
 type Result<T> = std::result::Result<T, AsciidoctrineError>;
@@ -39,12 +42,10 @@ pub trait Extension {
   fn transform<'a>(&mut self, input: AST<'a>) -> AST<'a>;
 }
 
-pub trait Writer {
+pub trait Writer<T: io::Write> {
   // TODO Result zurückgeben mit Fehler oder Liste der Geschriebenen Dateien
   // TODO Options
-  // TODO Vielleicht sollten wir einen Buffer zurückgeben um Seiteneffekte
-  //      abzubilden.
-  fn write<'a>(&self, ast: AST) -> Result<()>;
+  fn write<'a>(&self, ast: AST, out: T) -> Result<()>;
 }
 
 // TODO Add Options

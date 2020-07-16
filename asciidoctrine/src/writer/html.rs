@@ -1,6 +1,6 @@
 pub use crate::ast::*;
-use crate::writer::*;
 use crate::Result;
+use std::io;
 
 pub struct HtmlWriter {}
 
@@ -10,25 +10,35 @@ impl HtmlWriter {
   }
 }
 
-impl crate::Writer for HtmlWriter {
-  fn write<'a>(&self, ast: AST) -> Result<()> {
+impl<T: io::Write> crate::Writer<T> for HtmlWriter {
+  fn write<'a>(&self, ast: AST, mut out: T) -> Result<()> {
     for element in ast.elements.iter() {
-      write_html(element);
+      write_html(element, &mut out)?;
     }
+    out.flush()?;
 
     Ok(())
   }
 }
 
 // TODO Styles etc
-// TODO Out buffer
-fn write_html(input: &ElementSpan) -> Result<()> {
+fn write_html<T: io::Write>(input: &ElementSpan, out: &mut T) -> Result<()> {
   match &input.element {
-    Element::Title { level: level } => {
-      print!("<h{}>{}</h{}>\n", level, input.content, level);
+    Element::Title { level } => {
+      out.write_all(
+        &format!(
+          "<h{}>{}</h{}>\n",
+          level,
+          input.get_attribute("name").unwrap_or("".to_string()),
+          level
+        )
+        .as_bytes(),
+      )?;
     }
     _ => {
-      print!("<NOT-YET-SUPPORTED>{}</NOT-YET-SUPPORTED>", input.content);
+      out.write_all(
+        &format!("<NOT-YET-SUPPORTED>{}</NOT-YET-SUPPORTED>\n", input.content).as_bytes(),
+      )?;
     }
   }
 
