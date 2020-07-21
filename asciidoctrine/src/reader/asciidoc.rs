@@ -1,6 +1,7 @@
 pub use crate::ast::*;
 use crate::reader::*;
 use crate::Result;
+use pest::iterators::Pair;
 use pest::Parser;
 
 pub struct AsciidocReader {}
@@ -22,7 +23,7 @@ impl crate::Reader for AsciidocReader {
 pub struct AsciidocParser;
 
 fn process_anchor<'a>(
-  element: pest::iterators::Pair<'a, asciidoc::Rule>,
+  element: Pair<'a, asciidoc::Rule>,
   mut base: ElementSpan<'a>,
 ) -> ElementSpan<'a> {
   for element in element.into_inner() {
@@ -48,7 +49,7 @@ fn process_anchor<'a>(
 }
 
 fn process_inline_attribute_list<'a>(
-  element: pest::iterators::Pair<'a, asciidoc::Rule>,
+  element: Pair<'a, asciidoc::Rule>,
   mut base: ElementSpan<'a>,
 ) -> ElementSpan<'a> {
   for subelement in element.into_inner() {
@@ -96,7 +97,7 @@ fn process_inline_attribute_list<'a>(
 }
 
 fn process_attribute_list<'a>(
-  element: pest::iterators::Pair<'a, asciidoc::Rule>,
+  element: Pair<'a, asciidoc::Rule>,
   mut base: ElementSpan<'a>,
 ) -> ElementSpan<'a> {
   for element in element.into_inner() {
@@ -111,7 +112,7 @@ fn process_attribute_list<'a>(
 }
 
 fn process_delimited_inner<'a>(
-  element: pest::iterators::Pair<'a, asciidoc::Rule>,
+  element: Pair<'a, asciidoc::Rule>,
   mut base: ElementSpan<'a>,
 ) -> ElementSpan<'a> {
   for element in element.into_inner() {
@@ -129,7 +130,7 @@ fn process_delimited_inner<'a>(
 }
 
 fn process_blocktitle<'a>(
-  element: pest::iterators::Pair<'a, asciidoc::Rule>,
+  element: Pair<'a, asciidoc::Rule>,
   mut base: ElementSpan<'a>,
 ) -> ElementSpan<'a> {
   for element in element.into_inner() {
@@ -147,7 +148,7 @@ fn process_blocktitle<'a>(
 }
 
 fn process_xref<'a>(
-  element: pest::iterators::Pair<'a, asciidoc::Rule>,
+  element: Pair<'a, asciidoc::Rule>,
   mut base: ElementSpan<'a>,
 ) -> ElementSpan<'a> {
   base.element = Element::XRef;
@@ -168,7 +169,7 @@ fn process_xref<'a>(
 }
 
 fn process_link<'a>(
-  element: pest::iterators::Pair<'a, asciidoc::Rule>,
+  element: Pair<'a, asciidoc::Rule>,
   mut base: ElementSpan<'a>,
 ) -> ElementSpan<'a> {
   base.element = Element::Link;
@@ -199,7 +200,7 @@ fn process_link<'a>(
 }
 
 fn process_inline<'a>(
-  element: pest::iterators::Pair<'a, asciidoc::Rule>,
+  element: Pair<'a, asciidoc::Rule>,
   mut base: ElementSpan<'a>,
 ) -> ElementSpan<'a> {
   for element in element.into_inner() {
@@ -219,7 +220,7 @@ fn process_inline<'a>(
 }
 
 fn process_title<'a>(
-  element: pest::iterators::Pair<'a, asciidoc::Rule>,
+  element: Pair<'a, asciidoc::Rule>,
   mut base: ElementSpan<'a>,
 ) -> Option<ElementSpan<'a>> {
   match element.as_rule() {
@@ -279,7 +280,7 @@ fn process_title<'a>(
   Some(base)
 }
 
-fn set_span<'a>(element: &pest::iterators::Pair<'a, asciidoc::Rule>) -> ElementSpan<'a> {
+fn set_span<'a>(element: &Pair<'a, asciidoc::Rule>) -> ElementSpan<'a> {
   let (start_line, start_col) = element.as_span().start_pos().line_col();
   let (end_line, end_col) = element.as_span().end_pos().line_col();
 
@@ -299,11 +300,8 @@ fn set_span<'a>(element: &pest::iterators::Pair<'a, asciidoc::Rule>) -> ElementS
   }
 }
 
-fn process_element<'a>(
-  element: pest::iterators::Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-) -> Option<ElementSpan<'a>> {
-  base = set_span(&element);
+fn process_element<'a>(element: Pair<'a, asciidoc::Rule>) -> Option<ElementSpan<'a>> {
+  let mut base = set_span(&element);
 
   let element = match element.as_rule() {
     Rule::header => {
@@ -424,26 +422,12 @@ pub fn parse_ast(input: &str) -> Result<AST> {
   // TODO Result auswerten
   let ast = AsciidocParser::parse(Rule::asciidoc, input).expect("couldn't parse input.");
 
-  let mut base = ElementSpan {
-    element: Element::Error("Root".to_string()),
-    source: None, // TODO
-    content: ast.as_str(),
-    children: Vec::new(),
-    attributes: Vec::new(),
-    positional_attributes: Vec::new(),
-    start: 0,
-    end: 0,
-    start_line: 0,
-    start_col: 0,
-    end_line: 0,
-    end_col: 0,
-  };
   let mut attributes = Vec::new();
   let mut elements = Vec::new();
 
   for element in ast {
     //println!("{:#?}", element); // TODO entfernen
-    if let Some(element) = process_element(element, base.clone()) {
+    if let Some(element) = process_element(element) {
       elements.push(element);
     }
   }
