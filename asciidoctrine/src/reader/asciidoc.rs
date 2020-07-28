@@ -345,7 +345,7 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>) -> Option<ElementSpan<
     }
     Rule::block => {
       for subelement in element.into_inner() {
-        if let Some(e) = process_element(subelement, base.clone()) {
+        if let Some(e) = process_element(subelement) {
           base = e;
         }
       }
