@@ -96,7 +96,7 @@ delimited_source = {
 
 delimited_verse = { "verse" } // TODO
 
-paragraph = { (inline | other_inline)+ }
+paragraph = ${ (inline | other_inline)+ }
 
 list = { bullet_list | numbered_list }
 
@@ -139,7 +139,7 @@ blocktitle = { "." ~ line ~ NEWLINE }
 ////////////////////////////////////////////////////////////////////////////////
 // inline elements
 
-inline = !{
+inline = {
   !empty_lines ~ !EOI ~
   ( comment |
     link |
@@ -164,7 +164,7 @@ proto = ${ ("http" ~ "s"?) |
 
 footnote = { "footnote:" ~ inline_attribute_list }
 footnoteref = { "footnoteref:" ~ inline_attribute_list }
-xref = { "<<" ~ identifier ~ (NEWLINE? ~ "," ~ NEWLINE? ~ word+)? ~ ">>" }
+xref = !{ "<<" ~ identifier ~ (NEWLINE? ~ "," ~ NEWLINE? ~ word+)? ~ ">>" }
 
 strong = @{ "*" ~ (!"*" ~ linechar)+ ~ "*" }
 emphasized = @{ "_" ~ (!"_" ~ linechar)+ ~ "_" }
