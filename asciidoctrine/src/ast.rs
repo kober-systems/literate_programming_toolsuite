@@ -95,11 +95,7 @@ pub enum Element<'a> {
   /// An external link
   Link,
   /// A list item
-  ListItem {
-    //bullet: ListBullet, TODO
-    bullet: String,
-    level: u32,
-  },
+  ListItem(u32),
   /// A table row
   TableRow,
   /// A table cell

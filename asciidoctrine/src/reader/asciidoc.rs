@@ -300,6 +300,35 @@ fn set_span<'a>(element: &Pair<'a, asciidoc::Rule>) -> ElementSpan<'a> {
   }
 }
 
+fn process_paragraph<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+) -> ElementSpan<'a> {
+  base.element = Element::Paragraph;
+
+  for subelement in element.into_inner() {
+    let mut sub = set_span(&subelement);
+    match subelement.as_rule() {
+      Rule::other_inline => {
+        sub.element = Element::Text;
+        // TODO Newlines entfernen? Als Attribut?
+      }
+      Rule::other_list_inline => {
+        sub.element = Element::Text;
+      }
+      Rule::inline => {
+        sub = process_inline(subelement, sub);
+      }
+      _ => {
+        sub.element = Element::Error("Not implemented!".to_string());
+      }
+    }
+    base.children.push(sub);
+  }
+
+  base
+}
+
 fn process_element<'a>(element: Pair<'a, asciidoc::Rule>) -> Option<ElementSpan<'a>> {
   let mut base = set_span(&element);
 
@@ -351,6 +380,44 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>) -> Option<ElementSpan<
       }
       Some(base)
     }
+    Rule::list => {
+      for subelement in element.into_inner() {
+        if let Some(e) = process_element(subelement) {
+          base = e;
+        }
+      }
+      Some(base)
+    }
+    Rule::bullet_list => {
+      base.element = Element::List;
+
+      for subelement in element.into_inner() {
+        if let Some(e) = process_element(subelement) {
+          base.children.push(e);
+        }
+      }
+
+      Some(base)
+    }
+    Rule::bullet_list_element => {
+      for subelement in element.into_inner() {
+        if subelement.as_rule() == Rule::bullet {
+          base.element = Element::ListItem(subelement.as_str().trim().len() as u32);
+        } else {
+          if let Some(e) = process_element(subelement) {
+            base.children.push(e);
+          }
+        }
+      }
+
+      Some(base)
+    }
+    Rule::list_element => {
+      match element.into_inner().next() {
+        Some(subelement) => process_element(subelement),
+        None => None,
+      }
+    }
     Rule::delimited_block => {
       for subelement in element.into_inner() {
         match subelement.as_rule() {
@@ -380,23 +447,16 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>) -> Option<ElementSpan<
       Some(base)
     }
     Rule::paragraph => {
-      base.element = Element::Paragraph;
-      for subelement in element.into_inner() {
-        let mut sub = set_span(&subelement);
-        match subelement.as_rule() {
-          Rule::other_inline => {
-            sub.element = Element::Text;
-            // TODO Newlines entfernen? Als Attribut?
-          }
-          Rule::inline => {
-            sub = process_inline(subelement, sub);
-          }
-          _ => {
-            sub.element = Element::Error("Not implemented!".to_string());
-          }
-        }
-        base.children.push(sub);
-      }
+      Some(process_paragraph(element, base))
+    }
+    Rule::list_paragraph => {
+      Some(process_paragraph(element, base))
+    }
+    Rule::inline => {
+      Some(process_inline(element, base))
+    }
+    Rule::other_list_inline => {
+      base.element = Element::Text;
       Some(base)
     }
     Rule::delimited_source => {

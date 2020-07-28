@@ -319,8 +319,337 @@ it has an internal <<reference>>. Both should be parsed.
 // TODO bold, italian, auch ob es in einem Wort ignoriert wird
 // Attributliste oder Anchor zu Beginn eines Paragraphs
 
-// TODO Lists
-// Bullet Lists, Numbered Lists, Attribute Lists
+// --------------------------------------------------------------------------
+// Lists
+// --------------------------------------------------------------------------
+
+#[test]
+fn parse_bullet_list() -> Result<()> {
+  let input = r#"
+* Item 1
+* Item 2
+* Item 3
+"#;
+
+  let ast = AST {
+    content: input,
+    elements: vec![ElementSpan {
+      source: None,
+      content: input.trim_start(),
+      element: Element::List,
+      start: 1,
+      end: 28,
+      start_line: 2,
+      start_col: 1,
+      end_line: 5,
+      end_col: 1,
+      children: vec![
+        ElementSpan {
+          source: None,
+          content: "* Item 1\n",
+          element: Element::ListItem(1),
+          start: 1,
+          end: 10,
+          start_line: 2,
+          start_col: 1,
+          end_line: 3,
+          end_col: 1,
+          children: vec![
+                      ElementSpan {
+                          source: None,
+                          content: "Item 1",
+                          start: 3,
+                          end: 9,
+                          start_line: 2,
+                          start_col: 3,
+                          end_line: 2,
+                          end_col: 9,
+                          element: Element::Paragraph,
+                          children: vec![
+                              ElementSpan {
+                                  source: None,
+                                  content: "Item 1",
+                                  start: 3,
+                                  end: 9,
+                                  start_line: 2,
+                                  start_col: 3,
+                                  end_line: 2,
+                                  end_col: 9,
+                                  element: Element::Text,
+                                  children: vec![],
+                                  positional_attributes: vec![],
+                                  attributes: vec![],
+                              },
+                          ],
+                          positional_attributes: vec![],
+                          attributes: vec![],
+                      },
+                  ],
+          positional_attributes: Vec::new(),
+          attributes: Vec::new(),
+        },
+        ElementSpan {
+          source: None,
+          content: "* Item 2\n",
+          element: Element::ListItem(1),
+          start: 10,
+          end: 19,
+          start_line: 3,
+          start_col: 1,
+          end_line: 4,
+          end_col: 1,
+          children: vec![
+                      ElementSpan {
+                          source: None,
+                          content: "Item 2",
+                          start: 12,
+                          end: 18,
+                          start_line: 3,
+                          start_col: 3,
+                          end_line: 3,
+                          end_col: 9,
+                          element: Element::Paragraph,
+                          children: vec![
+                              ElementSpan {
+                                  source: None,
+                                  content: "Item 2",
+                                  start: 12,
+                                  end: 18,
+                                  start_line: 3,
+                                  start_col: 3,
+                                  end_line: 3,
+                                  end_col: 9,
+                                  element: Element::Text,
+                                  children: vec![],
+                                  positional_attributes: vec![],
+                                  attributes: vec![],
+                              },
+                          ],
+                          positional_attributes: vec![],
+                          attributes: vec![],
+                      },
+                  ],
+          positional_attributes: Vec::new(),
+          attributes: Vec::new(),
+        },
+        ElementSpan {
+          source: None,
+          content: "* Item 3\n",
+          element: Element::ListItem(1),
+          start: 19,
+          end: 28,
+          start_line: 4,
+          start_col: 1,
+          end_line: 5,
+          end_col: 1,
+          children: vec![
+                      ElementSpan {
+                          source: None,
+                          content: "Item 3",
+                          start: 21,
+                          end: 27,
+                          start_line: 4,
+                          start_col: 3,
+                          end_line: 4,
+                          end_col: 9,
+                          element: Element::Paragraph,
+                          children: vec![
+                              ElementSpan {
+                                  source: None,
+                                  content: "Item 3",
+                                  start: 21,
+                                  end: 27,
+                                  start_line: 4,
+                                  start_col: 3,
+                                  end_line: 4,
+                                  end_col: 9,
+                                  element: Element::Text,
+                                  children: vec![],
+                                  positional_attributes: vec![],
+                                  attributes: vec![],
+                              },
+                          ],
+                          positional_attributes: vec![],
+                          attributes: vec![],
+                      },
+                  ],
+          positional_attributes: Vec::new(),
+          attributes: Vec::new(),
+        },
+      ],
+      positional_attributes: Vec::new(),
+      attributes: Vec::new(),
+    }],
+    attributes: Vec::new(),
+  };
+  assert_eq!(ast, asciidoctrine::parse_ast(input)?);
+  Ok(())
+}
+
+#[test]
+fn parse_nested_bullet_list() -> Result<()> {
+  let input = r#"
+* Item 1
+*** Item 2
+** Item 3
+"#;
+
+  let ast = AST {
+    content: input,
+    elements: vec![ElementSpan {
+      source: None,
+      content: input.trim_start(),
+      element: Element::List,
+      start: 1,
+      end: 31,
+      start_line: 2,
+      start_col: 1,
+      end_line: 5,
+      end_col: 1,
+      children: vec![
+        ElementSpan {
+          source: None,
+          content: "* Item 1\n",
+          element: Element::ListItem(1),
+          start: 1,
+          end: 10,
+          start_line: 2,
+          start_col: 1,
+          end_line: 3,
+          end_col: 1,
+          children: vec![
+                      ElementSpan {
+                          source: None,
+                          content: "Item 1",
+                          start: 3,
+                          end: 9,
+                          start_line: 2,
+                          start_col: 3,
+                          end_line: 2,
+                          end_col: 9,
+                          element: Element::Paragraph,
+                          children: vec![
+                              ElementSpan {
+                                  source: None,
+                                  content: "Item 1",
+                                  start: 3,
+                                  end: 9,
+                                  start_line: 2,
+                                  start_col: 3,
+                                  end_line: 2,
+                                  end_col: 9,
+                                  element: Element::Text,
+                                  children: vec![],
+                                  positional_attributes: vec![],
+                                  attributes: vec![],
+                              },
+                          ],
+                          positional_attributes: vec![],
+                          attributes: vec![],
+                      },
+                  ],
+          positional_attributes: Vec::new(),
+          attributes: Vec::new(),
+        },
+        ElementSpan {
+          source: None,
+          content: "*** Item 2\n",
+          element: Element::ListItem(3),
+          start: 10,
+          end: 21,
+          start_line: 3,
+          start_col: 1,
+          end_line: 4,
+          end_col: 1,
+          children: vec![
+                      ElementSpan {
+                          source: None,
+                          content: "Item 2",
+                          start: 14,
+                          end: 20,
+                          start_line: 3,
+                          start_col: 5,
+                          end_line: 3,
+                          end_col: 11,
+                          element: Element::Paragraph,
+                          children: vec![
+                              ElementSpan {
+                                  source: None,
+                                  content: "Item 2",
+                                  start: 14,
+                                  end: 20,
+                                  start_line: 3,
+                                  start_col: 5,
+                                  end_line: 3,
+                                  end_col: 11,
+                                  element: Element::Text,
+                                  children: vec![],
+                                  positional_attributes: vec![],
+                                  attributes: vec![],
+                              },
+                          ],
+                          positional_attributes: vec![],
+                          attributes: vec![],
+                      },
+                  ],
+          positional_attributes: Vec::new(),
+          attributes: Vec::new(),
+        },
+        ElementSpan {
+          source: None,
+          content: "** Item 3\n",
+          element: Element::ListItem(2),
+          start: 21,
+          end: 31,
+          start_line: 4,
+          start_col: 1,
+          end_line: 5,
+          end_col: 1,
+          children: vec![
+                      ElementSpan {
+                          source: None,
+                          content: "Item 3",
+                          start: 24,
+                          end: 30,
+                          start_line: 4,
+                          start_col: 4,
+                          end_line: 4,
+                          end_col: 10,
+                          element: Element::Paragraph,
+                          children: vec![
+                              ElementSpan {
+                                  source: None,
+                                  content: "Item 3",
+                                  start: 24,
+                                  end: 30,
+                                  start_line: 4,
+                                  start_col: 4,
+                                  end_line: 4,
+                                  end_col: 10,
+                                  element: Element::Text,
+                                  children: vec![],
+                                  positional_attributes: vec![],
+                                  attributes: vec![],
+                              },
+                          ],
+                          positional_attributes: vec![],
+                          attributes: vec![],
+                      },
+                  ],
+          positional_attributes: Vec::new(),
+          attributes: Vec::new(),
+        },
+      ],
+      positional_attributes: Vec::new(),
+      attributes: Vec::new(),
+    }],
+    attributes: Vec::new(),
+  };
+  assert_eq!(ast, asciidoctrine::parse_ast(input)?);
+  Ok(())
+}
+
+// Bullet Lists, Numbered Lists, Attribute Lists, Checked Lists
 // List Continuation, Blocks in Lists
 
 // TODO Tables

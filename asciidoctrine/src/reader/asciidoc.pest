@@ -100,12 +100,15 @@ paragraph = ${ (inline | other_inline)+ }
 
 list = { bullet_list | numbered_list }
 
-// Listen elemente können auch blocks enthalten
-list_element = ${ (!bullet ~ !empty_lines ~ (inline | other_list_inline))+ }
+list_element = ${
+  list_paragraph
+}
+list_paragraph = ${ (inline | other_list_inline)+ }
 other_list_inline = @{ (!empty_lines ~ !EOI ~ !inline ~ !(NEWLINE ~ bullet) ~ ANY)+ }
 
 bullet = { ("*"+ | "-"+) }
-bullet_list = { (bullet ~ list_element)+ }
+bullet_list_element = { bullet ~ list_element ~ (NEWLINE | EOI) }
+bullet_list = { bullet_list_element+ }
 
 numbered_list = { "numbered_list" } // TODO
 
@@ -190,7 +193,7 @@ linechar = _{ (!NEWLINE ~ ANY) }
 
 line = { linechar+ ~ ( &NEWLINE | &EOI) }
 
-empty_lines = _{ NEWLINE{2, } }
+empty_lines = _{ NEWLINE{2, } | (NEWLINE ~ EOI) }
 
 ////////////////////////////////////////////////////////////////////////////////
 
