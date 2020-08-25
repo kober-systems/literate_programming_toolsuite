@@ -121,14 +121,14 @@ impl Lisa {
 }
 
 impl Extension for Lisa { // <1>
-  fn transform<'a>(&mut self, mut input: AST<'a>) -> AST<'a> { // <2>
+  fn transform<'a>(&mut self, mut input: AST<'a>) -> anyhow::Result<AST<'a>> { // <2>
     let snippets = self.extract_ast(&input).unwrap(); // <3>
 
     self.calculate_snippet_ordering(&snippets); // <5>
 
-    self.generate_outputs(snippets, &input); // <4>
+    self.generate_outputs(snippets, &input)?; // <4>
 
-    input
+    Ok(input)
   }
 }
 ----
@@ -1716,7 +1716,10 @@ engine.register_type_with_name::<LisaWrapper>("LisaType");
 engine.register_fn("store", LisaWrapper::store);
 engine.register_fn("get_snippet", LisaWrapper::get_snippet);
 
-engine.eval_with_scope::<()>(&mut scope, &snippet.content);
+engine.eval_with_scope::<()>(&mut scope, &snippet.content)
+  .unwrap_or_else(|e| {
+    error!("Piping of snippet failed:\n {}", e);
+  });
 ----
 
 Wir übergeben dem Interpreter eine Funktionsumgebung, welche die grundlegenden Funktionen zulässt.

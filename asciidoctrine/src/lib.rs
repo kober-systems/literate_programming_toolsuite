@@ -37,9 +37,8 @@ pub trait Reader {
 }
 
 pub trait Extension {
-  // TODO Result zuürckgeben
   // TODO Options (Kann auch über Attributes in AST gemacht werden)
-  fn transform<'a>(&mut self, input: AST<'a>) -> AST<'a>;
+  fn transform<'a>(&mut self, input: AST<'a>) -> anyhow::Result<AST<'a>>;
 }
 
 pub trait Writer<T: io::Write> {

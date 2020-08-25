@@ -393,7 +393,10 @@ impl Lisa {
             engine.register_fn("store", LisaWrapper::store);
             engine.register_fn("get_snippet", LisaWrapper::get_snippet);
 
-            engine.eval_with_scope::<()>(&mut scope, &snippet.content);
+            engine.eval_with_scope::<()>(&mut scope, &snippet.content)
+              .unwrap_or_else(|e| {
+                error!("Piping of snippet failed:\n {}", e);
+              });
           }
         }
       }
@@ -404,13 +407,13 @@ impl Lisa {
 }
 
 impl Extension for Lisa {
-  fn transform<'a>(&mut self, mut input: AST<'a>) -> AST<'a> {
+  fn transform<'a>(&mut self, input: AST<'a>) -> anyhow::Result<AST<'a>> {
     let snippets = self.extract_ast(&input).unwrap();
 
     self.calculate_snippet_ordering(&snippets);
 
-    self.generate_outputs(snippets, &input);
+    self.generate_outputs(snippets, &input)?;
 
-    input
+    Ok(input)
   }
 }
