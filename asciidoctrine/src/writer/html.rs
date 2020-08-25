@@ -29,7 +29,7 @@ fn write_html<T: io::Write>(input: &ElementSpan, out: &mut T) -> Result<()> {
         &format!(
           "<h{}>{}</h{}>\n",
           level,
-          input.get_attribute("name").unwrap_or("".to_string()),
+          input.get_attribute("name").unwrap_or(""),
           level
         )
         .as_bytes(),

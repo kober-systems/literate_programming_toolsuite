@@ -41,12 +41,12 @@ pub struct ElementSpan<'a> {
 }
 
 impl ElementSpan<'_> {
-  pub fn get_attribute(&self, name: &str) -> Option<String> {
+  pub fn get_attribute(&self, name: &str) -> Option<&str> {
     for attribute in self.attributes.iter() {
       if &attribute.key == name {
         return match &attribute.value {
-          AttributeValue::Ref(value) => Some(value.to_string()),
-          AttributeValue::String(value) => Some(value.clone()),
+          AttributeValue::Ref(value) => Some(value),
+          AttributeValue::String(value) => Some(value.as_str()),
         };
       }
     }

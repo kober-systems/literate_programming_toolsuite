@@ -100,7 +100,7 @@ impl LisaWrapper {
       name,
       Snippet {
         kind: SnippetType::Plain,
-        content: content,
+        content: content.to_string(),
         children: Vec::new(),
         depends_on: Vec::new(),
         raw: true,
@@ -154,26 +154,26 @@ impl Lisa {
         if let Some(value) = args.next()  {
           match &value {
             AttributeValue::Ref(value) => {
-              interpreter = Some(value.to_string());
+              interpreter = Some(*value);
             },
             AttributeValue::String(value) => {
-              interpreter = Some(value.clone());
+              interpreter = Some(value.as_str());
             }
           }
         }
 
         let title = input.get_attribute("title");
-        let path = input.get_attribute("path").or(title.clone());
+        let path = input.get_attribute("path").or(title);
 
         let id = input.get_attribute("anchor").unwrap_or(
-          "_id_".to_string() + &input.start.to_string() + &"_".to_string() + &input.end.to_string(),
-        ); // TODO Vielleicht Datei + Zeile?
+          &("_id_".to_string() + &input.start.to_string() + &"_".to_string() + &input.end.to_string()),
+        ).to_string(); // TODO Vielleicht Datei + Zeile?
 
         let interpreter = input.get_attribute("interpreter").or(interpreter);
         let mut raw = false;
         let join_str = input
           .get_attribute("lisa-join")
-          .unwrap_or("\n\n".to_string())
+          .unwrap_or("\n\n")
           .replace("\\\\", "\\")
           .replace("\\n", "\n")
           .replace("\\t", "\t");
@@ -183,15 +183,12 @@ impl Lisa {
         for argument in args {
           match argument {
             AttributeValue::Ref("save") => {
-              let path = match &path {
-                Some(path) => path.clone(),
-                None => id.clone(),
-              };
-              kind = SnippetType::Save(path);
+              let path = path.unwrap_or(id.as_str());
+              kind = SnippetType::Save(path.to_string());
             }
             AttributeValue::Ref("eval") => {
-              let interpreter = interpreter.clone().unwrap_or("interpreter_missing".to_string());
-              kind = SnippetType::Eval(interpreter);
+              let interpreter = interpreter.clone().unwrap_or("interpreter_missing");
+              kind = SnippetType::Eval(interpreter.to_string());
             }
             AttributeValue::Ref("pipe") => {
               kind = SnippetType::Pipe;
@@ -205,16 +202,16 @@ impl Lisa {
 
         let content = input
           .get_attribute("content")
-          .unwrap_or(input.content.to_string());
+          .unwrap_or(input.content);
         let mut dependencies = Vec::new();
-        for dependency in codeblock_parser::get_dependencies(content.as_str()).iter() {
+        for dependency in codeblock_parser::get_dependencies(content).iter() {
           dependencies.push(dependency.to_string());
         }
         snippets.store(
-          id,
+          id.to_string(),
           Snippet {
             kind: kind,
-            content: content,
+            content: content.to_string(),
             children: Vec::new(),
             depends_on: dependencies,
             raw: raw,
