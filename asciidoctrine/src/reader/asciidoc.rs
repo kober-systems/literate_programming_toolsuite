@@ -211,6 +211,20 @@ fn process_inline<'a>(
       Rule::xref => {
         base = process_xref(element, base);
       }
+      Rule::monospaced => {
+        base.element = Element::Styled;
+        base.attributes.push(Attribute {
+          key: "style".to_string(),
+          value: AttributeValue::Ref("monospaced"),
+        });
+
+        if let Some(content) = concat_elements(element, Rule::linechar, "") {
+          base.attributes.push(Attribute {
+            key: "content".to_string(),
+            value: AttributeValue::String(content),
+          });
+        };
+      }
       _ => {
         base.element = Element::Error("Not implemented".to_string());
       }

@@ -3,7 +3,6 @@ asciidoc = _{ (NEWLINE* ~ block)*  ~ NEWLINE* ~ EOI }
 block = {
   header |
   // admonition |
-  // comment |
   // example |
   // fenced |
   // listing |
@@ -171,7 +170,7 @@ xref = !{ "<<" ~ identifier ~ (NEWLINE? ~ "," ~ NEWLINE? ~ word+)? ~ ">>" }
 
 strong = @{ "*" ~ (!"*" ~ linechar)+ ~ "*" }
 emphasized = @{ "_" ~ (!"_" ~ linechar)+ ~ "_" }
-monospaced = @{ ("+" ~ (!"+" ~ linechar)+ ~ "+") | ("`" ~ (!"`" ~ linechar)+ ~ "`") }
+monospaced = ${ ("+" ~ (!"+" ~ linechar)+ ~ "+") | ("`" ~ (!"`" ~ linechar)+ ~ "`") }
 quoted = @{ inline_attribute_list ~ "#" ~ (!"#" ~ linechar)+ ~ "#" }
 
 // TODO Damit werden keine Kommentare zu Beginn eines Paragraphen angezeigt
@@ -189,7 +188,7 @@ identifier = @{ (ASCII_ALPHANUMERIC | "_") ~ (ASCII_ALPHANUMERIC | "_" | "-" | "
 word = @{ (LETTER | NUMBER | "_" | "-")+ }
 path = @{ (LETTER | NUMBER | "_" | "-" | "." | "/" | "~" )+ }
 
-linechar = _{ (!NEWLINE ~ ANY) }
+linechar = { (!NEWLINE ~ ANY) }
 
 line = { linechar+ ~ ( &NEWLINE | &EOI) }
 

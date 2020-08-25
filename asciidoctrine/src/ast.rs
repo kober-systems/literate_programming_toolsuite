@@ -88,6 +88,8 @@ pub enum Element<'a> {
   /// The following variants are inline elements nested
   /// inside a conainer element
 
+  /// Element with a special style. The attributes define the kind of style
+  Styled,
   /// A chunk of text.
   Text,
   /// An internal reference or link
