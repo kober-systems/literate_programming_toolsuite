@@ -48,7 +48,7 @@ fn main() -> Result<()> {
     if extension == "lisa" {
       // TODO Lisa ist vordefiniert
       let mut lisa = Lisa::new();
-      ast = lisa.transform(ast);
+      ast = lisa.transform(ast)?;
     }
     // TODO Ansicht
     else {
