@@ -147,12 +147,30 @@ fn process_blocktitle<'a>(
   base
 }
 
+fn concat_elements<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  filter: asciidoc::Rule,
+  join: &str,
+) -> Option<String> {
+  let elements: Vec<_> = element
+    .into_inner()
+    .filter(|e| e.as_rule() == filter)
+    .map(|e| e.as_str())
+    .collect();
+
+  if elements.len() > 0 {
+    Some(elements.join(join))
+  } else {
+    None
+  }
+}
+
 fn process_xref<'a>(
   element: Pair<'a, asciidoc::Rule>,
   mut base: ElementSpan<'a>,
 ) -> ElementSpan<'a> {
   base.element = Element::XRef;
-  for element in element.into_inner() {
+  for element in element.clone().into_inner() {
     match element.as_rule() {
       Rule::identifier => {
         base.attributes.push(Attribute {
@@ -160,11 +178,18 @@ fn process_xref<'a>(
           value: AttributeValue::Ref(element.as_str()),
         });
       }
-      _ => {
-        base.element = Element::Error("Not implemented".to_string());
-      }
+      Rule::word => {}
+      _ => (),
     };
   }
+
+  if let Some(content) = concat_elements(element, Rule::word, " ") {
+    base.attributes.push(Attribute {
+      key: "content".to_string(),
+      value: AttributeValue::String(content),
+    });
+  };
+
   base
 }
 
@@ -448,6 +473,12 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>) -> Option<ElementSpan<
           Rule::delimited_source => {
             base.element = Element::TypedBlock {
               kind: BlockType::Listing,
+            };
+            base = process_delimited_inner(subelement, base);
+          }
+          Rule::delimited_comment => {
+            base.element = Element::TypedBlock {
+              kind: BlockType::Comment,
             };
             base = process_delimited_inner(subelement, base);
           }
