@@ -11,14 +11,12 @@ use asciidoctrine::*;
 use std::collections::HashMap;
 use std::collections::hash_map;
 use topological_sort::TopologicalSort;
-use std::fs;
-use std::path::Path;
-use std::str::FromStr;
 use std::io::Write;
 use std::process::{Command, Stdio};
 use rhai::RegisterFn;
 use core::cell::RefCell;
 use std::rc::Rc;
+use asciidoctrine::util::Environment;
 #[macro_use]
 extern crate log;
 
@@ -123,6 +121,8 @@ impl LisaWrapper {
 pub enum Error {
   #[error("a nessessary attribute is missing")]
   Missing,
+  #[error(transparent)]
+  Asciidoctrine(#[from] asciidoctrine::AsciidoctrineError),
   #[error("io problem")]
   Io(#[from] std::io::Error),
   #[error("Child process stdin has not been captured!")]
@@ -131,12 +131,14 @@ pub enum Error {
 
 pub struct Lisa {
   dependencies: TopologicalSort<String>,
+  env: asciidoctrine::util::Env,
 }
 
 impl Lisa {
   pub fn new() -> Self {
     Lisa {
       dependencies: TopologicalSort::new(),
+      env: util::Env::Io(util::Io::new()),
     }
   }
 
@@ -253,27 +255,14 @@ impl Lisa {
   }
 
   /// Saves a Snippet to a file
-  pub fn save(&self, path: String, content: String) -> Result<(), Error> {
+  pub fn save(&mut self, path: &str, content: &str) -> Result<(), Error> {
     let content = content.lines()
                          .map(|line| { String::from(line.trim_end()) + "\n" })
                          .collect::<String>();
 
     // TODO Allow directory prefix from options
 
-    let path = Path::new(&path);
-    if let Some(path) = path.parent() {
-      if !path.exists() {
-        fs::create_dir_all(path)?;
-      }
-    }
-
-    if path.exists() {
-      let old_content = fs::read_to_string(path)?;
-      if old_content == content {
-        return Ok(());
-      }
-    }
-    fs::write(path, content)?;
+    self.env.write(path, &content)?;
 
     Ok(())
   }
@@ -310,6 +299,17 @@ impl Lisa {
     }
 
     Ok(())
+  }
+
+  pub fn from_env(env: util::Env) -> Self {
+    let mut base = Lisa::new();
+    base.env = env;
+
+    base
+  }
+
+  pub fn into_cache(self) -> Option<HashMap<String, String>> {
+    self.env.get_cache()
   }
 
   /// Gets all snippets from the ast
@@ -373,8 +373,7 @@ impl Lisa {
           }
           SnippetType::Plain => {}
           SnippetType::Save(path) => {
-            let path = String::from_str(&path).unwrap();
-            self.save(path, snippet.content)?;
+            self.save(path, &snippet.content)?;
           }
           SnippetType::Pipe => {
             let mut engine = rhai::Engine::new();

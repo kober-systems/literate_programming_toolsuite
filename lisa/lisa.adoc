@@ -1844,5 +1844,8 @@ edition = "2018"
 
 [dependencies]
 <<cargo_dependencies>>
+
+[dev-dependencies]
+pretty_assertions = "0.6.1"
 ----
 
