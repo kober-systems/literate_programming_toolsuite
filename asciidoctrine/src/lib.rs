@@ -13,6 +13,7 @@ use thiserror::Error;
 mod ast;
 pub use ast::*;
 pub mod options;
+pub mod util;
 pub mod reader;
 pub use reader::asciidoc::AsciidocReader;
 pub use reader::json::JsonReader;

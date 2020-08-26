@@ -1506,7 +1506,7 @@ match &snippet.kind {
   SnippetType::Plain => {}
   SnippetType::Save(path) => {
     <<get_filepath>>
-    self.save(path, snippet.content)?;
+    self.save(path, &snippet.content)?;
   }
   SnippetType::Pipe => {
     <<do_pipe>>
@@ -1522,65 +1522,29 @@ Um eine Datei zu speichern haben wir eine eigene Funktion.
 [source, rust]
 ----
 /// Saves a Snippet to a file
-pub fn save(&self, path: String, content: String) -> Result<(), Error> {
+pub fn save(&mut self, path: &str, content: &str) -> Result<(), Error> {
   <<strip_all_lines_in_content>>
 
   // TODO Allow directory prefix from options
   <<check_path_not_allready_used_by_lisa>>
-  <<add_path_to_the_list_of_outputs>>
 
-  let path = Path::new(&path);
-  if let Some(path) = path.parent() {  // <1>
-    if !path.exists() {
-      fs::create_dir_all(path)?;
-    }
-  }
-
-  if path.exists() {
-    let old_content = fs::read_to_string(path)?; // <2>
-    if old_content == content {
-      return Ok(());
-    }
-  }
-  fs::write(path, content)?;
+  self.env.write(path, &content)?;
 
   Ok(())
 }
 ----
-<1> Wenn der Ordner, in dem sich die Datei befindet, nicht existiert, muss er
-    zuerst erzeugt werden. Sonst käme es beim schreiben der Datei zu einer
-    Fehlermeldung.
-<2> Dateien sollten nur dann geschrieben werden, wenn sich der Inhalt
-    vom zu schreibenden Inhalt unterscheidet. Das kann Kompile Zeiten
-    in nachfolgenden Prozressen stark verkürzen.
 
-Dafür müssen wir noch den `std::fs` crate einbinden.
+Um Dateien schreiben zu können müssen wir auf die <<side-effects, Betriebsystem-Umgebung>> zugreifen.
 
-[[crate_usages]]
-[source, rust]
-----
-use std::fs;
-use std::path::Path;
-use std::str::FromStr;
-----
-
-Dabei können natürlich einige IO Fehler auftreten.
+Fehler, die dabei auftreten können, müssen wir abfangen.
 
 [[errors]]
 [source, rust]
 ----
+#[error(transparent)]
+Asciidoctrine(#[from] asciidoctrine::AsciidoctrineError),
 #[error("io problem")]
 Io(#[from] std::io::Error),
-----
-
-Wir verwenden sie unter anderem bei der Snippet Verarbeitung. Hier übernehmen
-den Dateipfad und übergeben ihn an die Funktion. (TODO link oder anders
-sortieren).
-
-[[get_filepath]]
-[source, rust]
-----
-let path = String::from_str(&path).unwrap(); // TODO unwrap durch check ersetzen
 ----
 
 In einer Datei kann es sehr nervig sein, Whithespaces an den Zeilenenden zu
@@ -1765,6 +1729,56 @@ impl LisaWrapper {
 ----
 use core::cell::RefCell;
 use std::rc::Rc;
+----
+
+[[side-effects]]
+=== Seiteneffekte (Zugriff auf die Betriebsystem-Umgebung)
+Lisa kann Seiteneffekte nutzen (Das ist sogar eine der Hauptaufgaben von `lisa`). Das bedeutet es erzeugt und nutzt Ein- und Ausgaben welche nicht direkt als Parameter übergeben wurden.
+
+Das Schreiben von Dateien im Dateisystem, das Ausführen von Scripten durch externe Interpreter, usw sind alles Seiteneffekte.
+
+Das ist sehr schön und einer der Gründe, warum Lisa so mächtig ist, doch in manchen Situationen kann es auch zu Problemen führen:
+
+* Beim Testen (TODO link) müssen wir wissen welche Seiteneffekte genutzt werden (und auf welche Art).
+* Wollen wir `lisa` in eingeschränkten Umgebungen nutzen (embedded Kontext, WASM) stehen uns viele dieser betriebssystemabhängigen Seiteneffekte nicht zur Verfügung und wir müssen Alternative Wege finden sie zu implementieren.
+
+[[lisa_internal_variables]]
+[source, rust]
+----
+env: asciidoctrine::util::Env,
+----
+
+[[lisa_init_variables]]
+[source, rust]
+----
+env: util::Env::Io(util::Io::new()),
+----
+
+[[crate_usages]]
+[source, rust]
+----
+use asciidoctrine::util::Environment;
+----
+
+Manchmal (insbesondere bei Tests TODO link) müssen wir auf die Seiteneffekte zugreifen können. Dafür verwenden wir eine spezielle Funktion, welche das Environment bei der Initialisierung überschreibt.
+
+[[internal_functions]]
+[source, rust]
+----
+pub fn from_env(env: util::Env) -> Self {
+  let mut base = Lisa::new();
+  base.env = env;
+
+  base
+}
+----
+
+[[internal_functions]]
+[source, rust]
+----
+pub fn into_cache(self) -> Option<HashMap<String, String>> {
+  self.env.get_cache()
+}
 ----
 
 === Fehlerbehandlung
