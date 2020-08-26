@@ -1,5 +1,6 @@
 use anyhow::Result;
 use asciidoctrine::{self, *};
+use asciidoctrine::reader::asciidoc;
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -9,7 +10,7 @@ fn parse_empty_document() -> Result<()> {
     elements: Vec::new(),
     attributes: Vec::new(),
   };
-  assert_eq!(ast, asciidoctrine::parse_ast("")?);
+  assert_eq!(ast, asciidoc::parse_ast("")?);
   Ok(())
 }
 
@@ -20,7 +21,7 @@ fn parse_whitespace_only() -> Result<()> {
     elements: Vec::new(),
     attributes: Vec::new(),
   };
-  assert_eq!(ast, asciidoctrine::parse_ast("  ")?);
+  assert_eq!(ast, asciidoc::parse_ast("  ")?);
   Ok(())
 }
 
@@ -51,8 +52,8 @@ fn parse_basic_header() -> Result<()> {
     }],
     attributes: Vec::new(),
   };
-  //assert_eq!(ast, asciidoctrine::parse_ast("= test")); // TODO
-  assert_eq!(ast, asciidoctrine::parse_ast("= test\n")?);
+  //assert_eq!(ast, asciidoc::parse_ast("= test")); // TODO
+  assert_eq!(ast, asciidoc::parse_ast("= test\n")?);
 
   // TODO author_info, attributes, etc
   Ok(())
@@ -87,7 +88,7 @@ fn parse_title_with_anchor() -> Result<()> {
     }],
     attributes: Vec::new(),
   };
-  assert_eq!(ast, asciidoctrine::parse_ast("[[test-anchor]]\n== test\n")?);
+  assert_eq!(ast, asciidoc::parse_ast("[[test-anchor]]\n== test\n")?);
   Ok(())
 }
 
@@ -114,7 +115,7 @@ fn parse_atx_header() -> Result<()> {
     }],
     attributes: Vec::new(),
   };
-  assert_eq!(ast, asciidoctrine::parse_ast("== test\n")?);
+  assert_eq!(ast, asciidoc::parse_ast("== test\n")?);
   Ok(())
 }
 
@@ -141,7 +142,7 @@ fn parse_setext_header() -> Result<()> {
     }],
     attributes: Vec::new(),
   };
-  assert_eq!(ast, asciidoctrine::parse_ast("test\n====\n")?);
+  assert_eq!(ast, asciidoc::parse_ast("test\n====\n")?);
 
   // TODO Andere Titel
   Ok(())
@@ -194,7 +195,7 @@ require "mytestmodule"
     }],
     attributes: Vec::new(),
   };
-  assert_eq!(ast, asciidoctrine::parse_ast(input)?);
+  assert_eq!(ast, asciidoc::parse_ast(input)?);
   Ok(())
 }
 
@@ -311,7 +312,7 @@ it has an internal <<reference>>. Both should be parsed.
     }],
     attributes: Vec::new(),
   };
-  assert_eq!(ast, asciidoctrine::parse_ast(input)?);
+  assert_eq!(ast, asciidoc::parse_ast(input)?);
   Ok(())
 }
 // TODO Link, References
@@ -482,7 +483,7 @@ fn parse_bullet_list() -> Result<()> {
     }],
     attributes: Vec::new(),
   };
-  assert_eq!(ast, asciidoctrine::parse_ast(input)?);
+  assert_eq!(ast, asciidoc::parse_ast(input)?);
   Ok(())
 }
 
@@ -645,7 +646,7 @@ fn parse_nested_bullet_list() -> Result<()> {
     }],
     attributes: Vec::new(),
   };
-  assert_eq!(ast, asciidoctrine::parse_ast(input)?);
+  assert_eq!(ast, asciidoc::parse_ast(input)?);
   Ok(())
 }
 

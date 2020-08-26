@@ -8,6 +8,11 @@ use std::io::{self, Read};
 fn main() -> Result<()> {
   let opts = options::from_args();
 
+  let reader: Box<dyn Reader> = match opts.readerfmt {
+    options::Reader::Asciidoc => Box::new(AsciidocReader::new()),
+    options::Reader::Json => Box::new(JsonReader::new()),
+  };
+
   // read the input
   let input = match &opts.input {
     Some(input) => fs::read_to_string(input).context("Could not read in file")?,
@@ -19,8 +24,8 @@ fn main() -> Result<()> {
       input
     }
   };
-  // TODO Den Text parsen
-  let ast = asciidoctrine::parse_ast(&input)?;
+
+  let ast = reader.parse(&input)?;
 
   // TODO Wenn Erweiterungen in den Kommandozeilenparametern angegeben sind
   // diese in einer Schleife den AST manipulieren lassen
