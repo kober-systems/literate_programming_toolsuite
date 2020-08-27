@@ -199,6 +199,69 @@ require "mytestmodule"
   Ok(())
 }
 
+#[test]
+fn parse_embedded_code_block() -> Result<()> {
+  let input = r#"
+[source, asciidoc]
+.this is a test snippet
+....
+this is an embedded asciidoc snippet
+
+[source, lua]
+.this is a embedded snippet
+----------------------------------------
+require "mytestmodule"
+
+----------------------------------------
+
+asciidoctrine dont sees it.
+....
+"#;
+
+  let code = r#"this is an embedded asciidoc snippet
+
+[source, lua]
+.this is a embedded snippet
+----------------------------------------
+require "mytestmodule"
+
+----------------------------------------
+
+asciidoctrine dont sees it."#;
+
+  let ast = AST {
+    content: input,
+    elements: vec![ElementSpan {
+      source: None,
+      content: input.trim_start(),
+      element: Element::TypedBlock {
+        kind: BlockType::Listing,
+      },
+      start: 1,
+      end: 269,
+      start_line: 2,
+      start_col: 1,
+      end_line: 16,
+      end_col: 1,
+      children: Vec::new(),
+      positional_attributes: vec![AttributeValue::Ref("source"), AttributeValue::Ref("asciidoc")],
+      attributes: vec![
+        Attribute {
+          key: "title".to_string(),
+          value: AttributeValue::Ref("this is a test snippet"),
+        },
+        Attribute {
+          key: "content".to_string(),
+          value: AttributeValue::Ref(code),
+        },
+      ],
+    }],
+    attributes: Vec::new(),
+  };
+  assert_eq!(ast, asciidoc::parse_ast(input)?);
+  Ok(())
+}
+
 // --------------------------------------------------------------------------
 // Paragraphs
 // --------------------------------------------------------------------------

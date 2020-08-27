@@ -136,7 +136,7 @@ inner_attribute_value = { ( "\\\"" | (!"\"" ~ ANY))* }
 anchor = { inline_anchor ~ NEWLINE }
 inline_anchor = { "[[" ~ (identifier | path) ~ "]]" }
 
-blocktitle = { "." ~ line ~ NEWLINE }
+blocktitle = { "." ~ !"." ~ line ~ NEWLINE }
 
 ////////////////////////////////////////////////////////////////////////////////
 // inline elements

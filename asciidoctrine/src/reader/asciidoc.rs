@@ -476,6 +476,12 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>) -> Option<ElementSpan<
             };
             base = process_delimited_inner(subelement, base);
           }
+          Rule::delimited_literal => {
+            base.element = Element::TypedBlock {
+              kind: BlockType::Listing,
+            };
+            base = process_delimited_inner(subelement, base);
+          }
           Rule::delimited_comment => {
             base.element = Element::TypedBlock {
               kind: BlockType::Comment,
