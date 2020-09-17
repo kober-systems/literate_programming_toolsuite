@@ -168,3 +168,48 @@ while true; do
 done
 ----
 
+[[dockerfile]]
+== Dockerfile
+To use `lisa` in ci-scripts (at least thats my usecase) it is very handy to have a docker image at hand. However when it comes to docker images size is key. For this reason we use to https://docs.docker.com/develop/develop-images/multistage-build/[multiple different stages] in our Dockerfile:
+
+* one that builds our software and has all the build dependencies
+* one that only holds our final binaries and minimal runtime dependencies to enable a small image size.
+
+[source, Dockerfile, save]
+.Dockerfile
+----
+<<docker_build_step>>
+
+<<docker_final_image_step>>
+----
+
+To build binaries that later have minimal runtime dependencies we use the https://musl.libc.org/[musl] target which lets us build statically compiled binaries. To do this we use the rust docker image based on https://www.alpinelinux.org/[alpine]
+
+[[docker_build_step]]
+[source, Dockerfile]
+----
+FROM rust:alpine AS builder
+
+RUN apk --no-cache add g++ # <1>
+
+WORKDIR /home/rust/
+COPY . .
+RUN cargo test
+RUN cargo build --release
+
+RUN strip target/release/lisa # <2>
+----
+<1> We can only compile on this system if we have `g++` installed for some weird reason I don't understand (see the related bug https://github.com/rust-lang/cargo/issues/7563[here]).
+<2> After building the binaries we can shrink down the size significantly by striping them.
+
+After we build our program we take a fresh image based on alpine (becase it's small) and copy only our binaries over.
+
+[[docker_final_image_step]]
+[source, Dockerfile]
+----
+FROM alpine:latest
+WORKDIR /home/lisa
+COPY --from=builder /home/rust/target/release/lisa .
+ENV PATH="${PATH}:/home/lisa"
+----
+
