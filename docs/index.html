@@ -449,12 +449,12 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="toctitle">Table of Contents</div>
 <ul class="sectlevel1">
 <li><a href="#_basic_design_decisions">Basic design decisions</a></li>
-<li><a href="#_build">Build</a></li>
+<li><a href="#_build">Build</a>
+<ul class="sectlevel2">
 <li><a href="#_check_if_generated_files_are_untouched_in_vcs">Check if generated files are untouched in VCS</a></li>
 <li><a href="#_generate_source_files">Generate source files</a></li>
 <li><a href="#_build_and_test">Build and test</a></li>
-<li><a href="#_build_websites_for_github_pages">Build websites for github pages</a>
-<ul class="sectlevel2">
+<li><a href="#_build_websites_for_github_pages">Build websites for github pages</a></li>
 <li><a href="#_ask_for_checkin_into_the_vcs">Ask for checkin into the VCS</a></li>
 <li><a href="#_install_the_tools_on_our_computer">Install the tools on our computer</a></li>
 </ul>
@@ -463,6 +463,15 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="https://github.com/lammermann/literate_programming_toolsuite">Repo</a>
+<span class="image"><a class="image" href="https://github.com/lammermann/literate_programming_toolsuite/actions"><img src="https://img.shields.io/github/workflow/status/lammermann/literate_programming_toolsuite/Rust?style=flat-square" alt="Rust?style=flat square"></a></span>
+<span class="image"><a class="image" href="https://hub.docker.com/r/lammermann/lisa"><img src="https://img.shields.io/docker/image-size/lammermann/lisa/bleeding?label=docker&amp;style=flat-square" alt="bleeding?label=docker&amp;style=flat square"></a></span></p>
+</div>
+</div>
+</div>
 <div class="sect1">
 <h2 id="_basic_design_decisions">Basic design decisions</h2>
 <div class="sectionbody">
@@ -566,9 +575,8 @@ toolsuite locally.</td>
 </div>
 </div>
 </div>
-<div class="sect1">
-<h2 id="_generate_source_files">Generate source files</h2>
-<div class="sectionbody">
+<div class="sect2">
+<h3 id="_generate_source_files">Generate source files</h3>
 <div id="generate_sources" class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-nb">echo</span> <span class="tok-s2">&quot;Start generating source files ...&quot;</span>
@@ -602,20 +610,16 @@ we need to refresh the build script regulary.</td>
 </table>
 </div>
 </div>
-</div>
-<div class="sect1">
-<h2 id="_build_and_test">Build and test</h2>
-<div class="sectionbody">
+<div class="sect2">
+<h3 id="_build_and_test">Build and test</h3>
 <div id="build_and_test" class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span>cargo <span class="tok-nb">test</span> <span class="tok-o">||</span> <span class="tok-nb">exit</span> <span class="tok-m">1</span></code></pre>
 </div>
 </div>
 </div>
-</div>
-<div class="sect1">
-<h2 id="_build_websites_for_github_pages">Build websites for github pages</h2>
-<div class="sectionbody">
+<div class="sect2">
+<h3 id="_build_websites_for_github_pages">Build websites for github pages</h3>
 <div class="paragraph">
 <p>TODO later we want to do this with <code>asciidoctrine</code> alone.</p>
 </div>
@@ -654,6 +658,7 @@ asciidoctor <span class="tok-se">\</span>
 -a <span class="tok-nv">icons</span><span class="tok-o">=</span>font <span class="tok-se">\</span>
 -a <span class="tok-nv">toclevels</span><span class="tok-o">=</span><span class="tok-m">4</span> <span class="tok-se">\</span>
 -a data-uri <span class="tok-se">\</span></code></pre>
+</div>
 </div>
 </div>
 <div class="sect2">
@@ -710,7 +715,7 @@ changing the included chunks in another shell).</td>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-02-23 12:25:50 +0100
+Last updated 2020-09-17 13:41:41 +0200
 </div>
 </div>
 <style>
