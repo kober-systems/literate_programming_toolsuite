@@ -79,6 +79,7 @@ pub struct Snippet {
   /// List of all keys the snippet depends on
   /// before it can be processed
   pub depends_on: Vec<String>,
+  pub attributes: HashMap<String, String>,
   pub raw: bool,
   pub join_str: String,
 }
@@ -89,31 +90,61 @@ struct LisaWrapper {
 }
 
 impl LisaWrapper {
-  pub fn store(&mut self, name: String, content: String) {
+  pub fn store(&mut self, name: &str, content: &str) {
     let mut snippets = self.snippets.borrow_mut();
 
-    snippets.pop(&name);
+    snippets.pop(name);
 
     snippets.store(
-      name,
+      name.to_string(),
       Snippet {
         kind: SnippetType::Plain,
         content: content.to_string(),
         children: Vec::new(),
         depends_on: Vec::new(),
+        attributes: HashMap::default(),
         raw: true,
         join_str: "".to_string(),
       },
     );
   }
 
-  pub fn get_snippet(&mut self, name: String) -> String {
+  pub fn get_snippet(&mut self, name: &str) -> rhai::Dynamic {
     let snippets = self.snippets.borrow_mut();
 
-    match snippets.get(&name) {
-      Some(snippet) => snippet.content.clone(),
-      None => "".to_string(),
+    match snippets.get(name) {
+      Some(snippet) => {
+        let mut attributes: HashMap<rhai::ImmutableString, rhai::Dynamic> = HashMap::default();
+        for (k,v) in snippet.attributes.clone().drain() {
+          attributes.insert(k.into(), v.into());
+        }
+
+        let mut out: HashMap<rhai::ImmutableString, rhai::Dynamic> = HashMap::default();
+        out.insert("content".into(), snippet.content.clone().into());
+        out.insert("attrs".into(), attributes.into());
+
+        out.into()
+      },
+      None => rhai::Dynamic::from(()),
     }
+  }
+
+  pub fn get_snippet_names(&mut self) -> rhai::Array {
+    let mut snippets = self.snippets.borrow_mut();
+
+    let mut out = rhai::Array::new();
+
+    let mut keys = snippets
+      .iter()
+      .map(|(key, _)| { key.to_string() })
+      .collect::<Vec<_>>();
+    keys.sort();
+    let out: rhai::Array = keys
+      .into_iter()
+      .map(|key| { key.into() })
+      .collect();
+
+    out
   }
 }
 
@@ -202,6 +233,12 @@ impl Lisa {
           }
         }
 
+        let mut attributes: HashMap<String, String> = HashMap::default();
+
+        for key in input.attributes.iter().map(|attr|{ attr.key.clone() }) {
+          attributes.insert(key.clone(), input.get_attribute(&key).unwrap().to_string());
+        }
+
         let content = input
           .get_attribute("content")
           .unwrap_or(input.content);
@@ -216,6 +253,7 @@ impl Lisa {
             content: content.to_string(),
             children: Vec::new(),
             depends_on: dependencies,
+            attributes: attributes,
             raw: raw,
             join_str: join_str,
           },
@@ -388,6 +426,7 @@ impl Lisa {
             engine.register_type_with_name::<LisaWrapper>("LisaType");
             engine.register_fn("store", LisaWrapper::store);
             engine.register_fn("get_snippet", LisaWrapper::get_snippet);
+            engine.register_fn("get_snippet_names", LisaWrapper::get_snippet_names);
 
             engine.eval_with_scope::<()>(&mut scope, &snippet.content)
               .unwrap_or_else(|e| {

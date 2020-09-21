@@ -219,7 +219,8 @@ Die verschiedenen Codeschnipsel kann man in anderen Codeschnipseln einbinden.
 Dafür verwendet man einfach eine `cross reference` auf den `anchor` des
 jeweiligen Schnipsels:
 
-[source, asciidoc, lisa-raw]
+[[unittest_sample1_input]]
+[source, asciidoc, lisa-raw, outputs="unittest_sample1_output", name="use_snippets"]
 ....
 We need the testmodule for this project.
 
@@ -245,6 +246,7 @@ print(testmodule.version)
 
 Das Ergebnis wäre eine Datei:
 
+[[unittest_sample1_output]]
 [source, lua]
 .sample1.lua
 ----
@@ -255,7 +257,8 @@ print(testmodule.version)
 
 Die Reihenfolge ist dabei egal.
 
-[source, asciidoc, lisa-raw]
+[[unittest_sample2_input]]
+[source, asciidoc, lisa-raw, outputs="unittest_sample2_output", name="handle_snippet_order"]
 ....
 First we give a short outline of the program. It imports the required modules
 and then prints out its version.
@@ -280,6 +283,7 @@ require "testmodule"
 In diesem Beispiel haben wir den Schnipsel `sample2_required_modules` erst nach dem
 importierenden Schnipsel geschrieben. Die Ausgabe bleibt aber die gleiche:
 
+[[unittest_sample2_output]]
 [source, lua]
 .sample2.lua
 ----
@@ -291,7 +295,8 @@ print(testmodule.version)
 Außerdem kann man einen Codeschnipsel beliebig oft in einem oder mehreren
 anderen Codeschnipseln einfügen.
 
-[source, asciidoc, lisa-raw]
+[[unittest_sample3_input]]
+[source, asciidoc, lisa-raw, outputs="unittest_sample3_output1,unittest_sample3_output2", name="use_snippet_multiple_times"]
 ....
 Lets assume we want to use the following snippet in multiple places.
 
@@ -327,6 +332,7 @@ print(testmodule.version .. "my other snippet")
 
 In diesem Fall würden die folgenden beiden Dateien generiert.
 
+[[unittest_sample3_output1]]
 [source, lua]
 .sample3-1.lua
 ----
@@ -337,6 +343,7 @@ print(testmodule.version)
 require "testmodule"
 ----
 
+[[unittest_sample3_output2]]
 [source, lua]
 .sample3-2.lua
 ----
@@ -572,6 +579,7 @@ TODO Während der Ausführung könnte `lisa` leicht überprüfen, ob `pipe`
 tatsächlich alle ids speichert, die es in `provides` definiert und ob es keine
 weiteres definiert.
 
+[[usage_create_userguides]]
 Benutzerdokumentation erstellen
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Viele Kommentare über Literate Programming habe ich so verstanden, dass der
@@ -856,6 +864,7 @@ pub struct Snippet {
   /// List of all keys the snippet depends on
   /// before it can be processed
   pub depends_on: Vec<String>, // <3>
+  pub attributes: HashMap<String, String>,
   pub raw: bool,
   pub join_str: String,
 }
@@ -1009,6 +1018,18 @@ for argument in args {
 Missing,
 ----
 
+Alle weiteren Attribute werden in einer HashMap abgelegt, die später von der Pipe (TODO link verarbeitet werden kann).
+
+[[extract_attributes]]
+[source, rust]
+----
+let mut attributes: HashMap<String, String> = HashMap::default();
+
+for key in input.attributes.iter().map(|attr|{ attr.key.clone() }) {
+  attributes.insert(key.clone(), input.get_attribute(&key).unwrap().to_string());
+}
+----
+
 ===== Snippets in der Datenbank speichern
 
 Ist ein Snippet aus dem AST herausgefilter worden, können wir es in der
@@ -1024,6 +1045,7 @@ snippets.store(
     content: content.to_string(),
     children: Vec::new(),
     depends_on: dependencies,
+    attributes: attributes,
     raw: raw,
     join_str: join_str,
   },
@@ -1352,7 +1374,7 @@ use topological_sort::TopologicalSort;
 ----
 
 Die entsprechende Klasse (Trait, wieauchimmer) nehmen wir in die internen
-Variablen auf, denn es ergänzt unser Snippet Datenbank (TODO link).
+Variablen auf, denn es ergänzt unsere Snippet Datenbank (TODO link).
 
 [[lisa_internal_variables]]
 [source, rust]
@@ -1656,7 +1678,7 @@ use rhai::RegisterFn;
 [[cargo_dependencies]]
 [source, toml]
 ----
-rhai = "0.13.0"
+rhai = "0.18.2"
 ----
 
 Jede `pipe` bekommt ihre eigene Script Umgebung.
@@ -1676,6 +1698,7 @@ scope.push_constant("lisa", wrapper);
 engine.register_type_with_name::<LisaWrapper>("LisaType");
 engine.register_fn("store", LisaWrapper::store);
 engine.register_fn("get_snippet", LisaWrapper::get_snippet);
+engine.register_fn("get_snippet_names", LisaWrapper::get_snippet_names);
 
 engine.eval_with_scope::<()>(&mut scope, &snippet.content)
   .unwrap_or_else(|e| {
@@ -1694,31 +1717,61 @@ struct LisaWrapper {
 }
 
 impl LisaWrapper {
-  pub fn store(&mut self, name: String, content: String) {
+  pub fn store(&mut self, name: &str, content: &str) {
     let mut snippets = self.snippets.borrow_mut();
 
-    snippets.pop(&name); // <1>
+    snippets.pop(name); // <1>
 
     snippets.store(
-      name,
+      name.to_string(),
       Snippet {
         kind: SnippetType::Plain,
         content: content.to_string(),
         children: Vec::new(),
         depends_on: Vec::new(),
+        attributes: HashMap::default(),
         raw: true,
         join_str: "".to_string(),
       },
     );
   }
 
-  pub fn get_snippet(&mut self, name: String) -> String {
+  pub fn get_snippet(&mut self, name: &str) -> rhai::Dynamic {
     let snippets = self.snippets.borrow_mut();
 
-    match snippets.get(&name) {
-      Some(snippet) => snippet.content.clone(),
-      None => "".to_string(),
+    match snippets.get(name) {
+      Some(snippet) => {
+        let mut attributes: HashMap<rhai::ImmutableString, rhai::Dynamic> = HashMap::default();
+        for (k,v) in snippet.attributes.clone().drain() {
+          attributes.insert(k.into(), v.into());
+        }
+
+        let mut out: HashMap<rhai::ImmutableString, rhai::Dynamic> = HashMap::default();
+        out.insert("content".into(), snippet.content.clone().into());
+        out.insert("attrs".into(), attributes.into());
+
+        out.into()
+      },
+      None => rhai::Dynamic::from(()),
     }
+  }
+
+  pub fn get_snippet_names(&mut self) -> rhai::Array {
+    let mut snippets = self.snippets.borrow_mut();
+
+    let mut out = rhai::Array::new();
+
+    let mut keys = snippets
+      .iter()
+      .map(|(key, _)| { key.to_string() })
+      .collect::<Vec<_>>();
+    keys.sort();
+    let out: rhai::Array = keys
+      .into_iter()
+      .map(|key| { key.into() })
+      .collect();
+
+    out
   }
 }
 ----
@@ -1823,6 +1876,125 @@ Das resultierende `lisa` executable soll allerdings alle Arten von Fehlern abfan
 anyhow = "1.0"
 ----
 
+[[unit-tests]]
+=== Tests
+Um `lisa` zu testen verwenden wir die in diesem Dokument beschriebenen Beispiele aus der <<usage, Bedienungsanleitung>> und überprüfen, ob die Ergebnisse wirklich generiert werden.
+
+Ein Test hat dabei grundsätzlich folgenden Aufbau:
+
+[[unit-test-template]]
+[source, rust]
+.Grundlegender Aufbau eines Unit Tests
+----
+#[test]
+fn {test_name}() -> Result<()> {
+  let content = r#"{asciidoc_content}"#;
+  let reader = AsciidocReader::new();
+  let ast = reader.parse(content)?;
+
+  let mut lisa = Lisa::from_env(util::Env::Cache(util::Cache::new()));
+  let _ast = lisa.transform(ast)?;
+
+  // TODO ast vergleichen
+
+  let mut outputs = lisa.into_cache().unwrap();
+
+  {compare_outputs}
+
+  assert!(outputs.is_empty()); // <1>
+
+  Ok(())
+}
+----
+<1> Nachdem wir unsere erzeugten Dateien überprüft haben, müssen wir noch überprüfen, ob keine weiteren Dateien erzeugt wurden welche von unserem Test nicht abgedeckt wurden.
+
+Das Überprüfen des Inhaltes einer erzeugten Datei läuft immer gleich ab: Wir holen den erzeugten Text aus dem Ausgabepuffer mit dem entsprechenden Dateinamen und vergleichen ihn mit dem dazugeörigen Snippet aus der Dokumentation.
+
+[[unit-test-compare_outputs-template]]
+[source, rust]
+.Den Inhalt eines generierten Textes überprüfen
+----
+assert_eq!(
+  outputs.remove("{filepath}").unwrap(),
+  r#"{expected_content}"#
+);
+----
+
+Unsere Tests packen wir in eine Test Umgebung, welche alle wichtigen crates bereits importiert.
+
+[source, rust, save]
+.tests/lisa_test.rs
+----
+use anyhow::Result;
+use asciidoctrine::{self, *};
+use lisa::*;
+use pretty_assertions::assert_eq;
+
+<<lisa-unit-tests>>
+----
+
+Um nun die eigentlichen Tests zu erzeugen müssen wir nur noch alle Beschreibungen (Snippets) aus der Benutzerdokumentation extrahrieren und überprüfen, ob die dort versprochenen AUsgaben auch wirklich erzeugt wurden. Um die entsprechenden Snippets zu finden haben wir sie im Asciidoc Text mit Attributen gekennzeichnet.
+
+[[lisa-unit-tests]]
+[source, js, pipe]
+----
+let template = lisa.get_snippet("unit-test-template").content;
+let compare_template = lisa.get_snippet("unit-test-compare_outputs-template").content;
+let tests = "";
+
+fn split(input, seperator) {
+  let out = [];
+  let start = 0;
+  let idx = input.index_of(seperator);
+  while idx > -1 {
+    let chunk = input.sub_string(start, idx - start);
+    out.push(chunk);
+
+    start = idx + 1;
+    idx = input.index_of(seperator, start);
+  };
+  out.push(input.sub_string(start));
+  return out;
+}
+
+for name in lisa.get_snippet_names() {
+  if name.contains("unittest_") && name.contains("_input") {
+    let out_template = template;
+    let compare_out = "";
+
+    let snippet = lisa.get_snippet(name);
+    out_template.replace("{test_name}", snippet.attrs.name);
+    let asciidoc_content = "\n" + snippet.content + "\n";
+    asciidoc_content.replace(" -- <1>", "");
+    asciidoc_content.replace(" -- <2>", "");
+    out_template.replace("{asciidoc_content}", asciidoc_content);
+    let outputs_names = snippet.attrs.outputs;
+
+    for output_name in split(outputs_names, ",") {
+      let compare_out_template = compare_template;
+      let output_snippet = lisa.get_snippet(output_name);
+      compare_out_template.replace("{expected_content}", output_snippet.content + "\n");
+      compare_out_template.replace("{filepath}", output_snippet.attrs.title);
+      compare_out += compare_out_template + "\n";
+    }
+
+    out_template.replace("{compare_outputs}", compare_out);
+    tests += out_template;
+    tests += "\n\n";
+  }
+}
+
+lisa.store("lisa-unit-tests", tests);
+----
+
+Um schönere diffs angezeigt zu bekommen sobald ein Fehler auftritt verwenden wir den https://github.com/colin-kiegel/rust-pretty-assertions[pretty_assertions] crate.
+
+[[cargo_dev_dependencies]]
+[source, toml]
+----
+pretty_assertions = "0.6.1"
+----
+
 Installation
 ------------
 
@@ -1844,6 +2016,6 @@ edition = "2018"
 <<cargo_dependencies>>
 
 [dev-dependencies]
-pretty_assertions = "0.6.1"
+<<cargo_dev_dependencies>>
 ----
 

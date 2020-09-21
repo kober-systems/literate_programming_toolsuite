@@ -4,14 +4,12 @@ version = "0.2.0"
 authors = ["Benjamin Kober <k.o.b.e.r@web.de>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 asciidoctrine = { path = "../asciidoctrine" }
 pest = "2.1.0"
 pest_derive = "2.1.0"
 topological-sort = "0.1.0"
-rhai = "0.13.0"
+rhai = "0.18.2"
 thiserror = "1.0"
 log = "0.4.8"
 simple_logger = "1.6.0"
