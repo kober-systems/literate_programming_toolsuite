@@ -37,26 +37,26 @@ entschlossen `lisa` als asciidoctrine-extension zu implementieren.
 
 [[required_crates]]
 [source, rust, lisa-join="\n"]
---------------------------------------------------------------------------------
+----
 extern crate asciidoctrine;
---------------------------------------------------------------------------------
+----
 
 [[crate_usages]]
 [source, rust, lisa-join="\n"]
---------------------------------------------------------------------------------
+----
 use asciidoctrine::*;
---------------------------------------------------------------------------------
+----
 
 [[cargo_dependencies]]
 [source, toml, lisa-join="\n"]
---------------------------------------------------------------------------------
+----
 asciidoctrine = { path = "../asciidoctrine" }
---------------------------------------------------------------------------------
+----
 
 [[lisa-overview]]
 [ditaa]
 .Aufbau von lisa
---------------------------------------------------------------------------------
+----
 
          /-----\   +-------+   /-----\
          |     |   | {io}  |   |     |
@@ -70,7 +70,7 @@ asciidoctrine = { path = "../asciidoctrine" }
                            | (Sourcecode,etc) | |
                            \------------------/-/
 
---------------------------------------------------------------------------------
+----
 
 `lisa` arbeitet direkt auf einem asciidoc https://en.wikipedia.org/wiki/Abstract_syntax_tree[AST] und erzeugt aus den darin enthaltenen Quelltext-Snippets (TODO link) Sourcecode Dateien (und manchmal auch weitere Dateien). Im AST fügt es einige zusätzliche Informationen hinzu (vor allem Referenzen, wo Code-Snippets verwendet werden TODO interner link).
 
@@ -1839,8 +1839,6 @@ name = "lisa"
 version = "0.2.0"
 authors = ["Benjamin Kober <k.o.b.e.r@web.de>"]
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 <<cargo_dependencies>>
