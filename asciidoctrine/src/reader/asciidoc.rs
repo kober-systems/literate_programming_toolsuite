@@ -440,22 +440,26 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>) -> Option<ElementSpan<
     }
     Rule::bullet_list_element => {
       for subelement in element.into_inner() {
-        if subelement.as_rule() == Rule::bullet {
-          base.element = Element::ListItem(subelement.as_str().trim().len() as u32);
-        } else {
-          if let Some(e) = process_element(subelement) {
+        match subelement.as_rule() {
+          Rule::bullet => {
+            base.element = Element::ListItem(subelement.as_str().trim().len() as u32);
+          }
+          Rule::list_element => {
+            for subelement in subelement.into_inner() {
+              if let Some(e) = process_element(subelement) {
+                base.children.push(e);
+              }
+            }
+          }
+          _ => {
+            let mut e = set_span(&subelement);
+            e.element = Element::Error("Not implemented".to_string());
             base.children.push(e);
           }
         }
       }
 
       Some(base)
-    }
-    Rule::list_element => {
-      match element.into_inner().next() {
-        Some(subelement) => process_element(subelement),
-        None => None,
-      }
     }
     Rule::delimited_block => {
       for subelement in element.into_inner() {
@@ -510,12 +514,7 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>) -> Option<ElementSpan<
       base.element = Element::Text;
       Some(base)
     }
-    Rule::delimited_source => {
-      None // TODO
-    }
-    Rule::delimited_inner => {
-      None // TODO
-    }
+    Rule::continuation => None,
     Rule::EOI => None,
     _ => {
       base.element = Element::Error("Not implemented".to_string()); // TODO

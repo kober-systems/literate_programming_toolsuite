@@ -100,10 +100,13 @@ paragraph = ${ (inline | other_inline)+ }
 list = { bullet_list | numbered_list }
 
 list_element = ${
-  list_paragraph
+  (
+    list_paragraph |
+    (continuation ~ delimited_block)
+  )+
 }
 list_paragraph = ${ (inline | other_list_inline)+ }
-other_list_inline = @{ (!empty_lines ~ !EOI ~ !inline ~ !(NEWLINE ~ bullet) ~ ANY)+ }
+other_list_inline = @{ (!empty_lines ~ !EOI ~ !inline ~ !(NEWLINE ~ bullet) ~ !(continuation ~ delimited_block) ~ ANY)+ }
 
 bullet = { ("*"+ | "-"+) }
 bullet_list_element = { bullet ~ list_element ~ (NEWLINE | EOI) }
@@ -151,8 +154,7 @@ inline = {
     quoted |
     footnote |
     footnoteref |
-    xref |
-    continuation
+    xref
   )
 }
 other_inline = @{ (!empty_lines ~ !EOI ~ !inline ~ ANY)+ }
@@ -176,7 +178,6 @@ quoted = @{ inline_attribute_list ~ "#" ~ (!"#" ~ linechar)+ ~ "#" }
 // TODO Damit werden keine Kommentare zu Beginn eines Paragraphen angezeigt
 comment = { NEWLINE ~ "//" ~ (!NEWLINE ~ ANY)* ~ &NEWLINE }
 
-// TODO Should accept blocks
 continuation = { NEWLINE ~ "+" ~ NEWLINE }
 
 ////////////////////////////////////////////////////////////////////////////////
