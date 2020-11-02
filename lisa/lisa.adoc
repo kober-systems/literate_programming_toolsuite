@@ -358,6 +358,138 @@ aneinandergefügt. Auf diese Weise kann man leicht Erklärungen in einen
 Quelltext einfügen oder an verschiedenen Stellen Ergänzungen zu einem
 Codebereich hinzufügen (z.B. die Imports erweitern).
 
+[[unittest_sample4_input]]
+[source, asciidoc, lisa-raw, outputs="unittest_sample4_output", name="append_snippets"]
+....
+We do some thing in our code.
+
+[source, lua, save]
+.sample4.lua
+----
+<<some_process>>
+
+print(result_of_someprocess)
+----
+
+To do this we need to do something with a variable.
+
+[[some_process]]
+[source, lua]
+----
+variable = 42
+variable = variable + 42
+----
+
+But something else has also to be done. For exaple we need to set the result.
+
+[[some_process]]
+[source, lua]
+----
+result_of_someprocess = variable * variable
+----
+
+Now lets go on to another thing ...
+....
+
+In der Ergebnisdatei sind nun die beiden Schnipsel hintereinandergehängt.
+
+[[unittest_sample4_output]]
+[source, lua]
+.sample4.lua
+----
+variable = 42
+variable = variable + 42
+result_of_someprocess = variable * variable
+
+print(result_of_someprocess)
+----
+
+Nicht immer möchte man einfach einen Zeilenumbruch zwischen den Snippets haben. Manchmal ist es z.B. schöner eine Leerzeile zu haben. Bei Aufzählungen ist oft ein Komma das beste.
+
+In diesem Fall kann man an der einfügenden Stelle festlegen, welche Trennzeichen einem am besten gefallen.
+
+[[unittest_sample5_input]]
+[source, asciidoc, lisa-raw, outputs="unittest_sample5_output", name="append_snippets_with_customized_join"]
+....
+Let's imagine we need some rust struct.
+
+[[mystruct]]
+[source, rust]
+----
+pub struct MyStruct { <<mystruct_fields|join=", ">> }
+----
+
+In our main process we need to define the struct an d initialize it.
+
+[source, rust, save]
+.sample5.rs
+----
+<<mystruct>>
+
+impl MyStruct {
+  pub fn new {
+    MyStruct {
+      <<init_fields|join=",\n">>
+    }
+  }
+}
+----
+
+In our struct we have variable x
+
+[[mystruct_fields]]
+[source, rust]
+----
+x: String
+----
+
+And we initialize it properly
+
+[[init_fields]]
+[source, rust]
+----
+x: "this is the x text".to_string()
+----
+
+Now we can talk about all the functions that use x...
+
+After some time we may have a function that use some other variable y.
+
+[[mystruct_fields]]
+[source, rust]
+----
+y: u8
+----
+
+And how is it initialized? You know the answer:
+
+[[init_fields]]
+[source, rust]
+----
+y: 42
+----
+
+And so on ...
+....
+
+Das Ergebnis ist eine Datei, die die beiden Snippet-Listen unterschiedlich zusammenfügt.
+
+[[unittest_sample5_output]]
+[source, rust]
+.sample5.rs
+----
+pub struct MyStruct { x: String, y: u8 }
+
+impl MyStruct {
+  pub fn new {
+    MyStruct {
+      x: "this is the x text".to_string(),
+      y: 42
+    }
+  }
+}
+----
+
 Wird eine `cross reference` im Quelltext eingerückt, so wird der ganze
 importierte Quelltext ebenfalls um die gleiche Höhe eingerückt (im Grunde wird
 vor jedem Zeilenbeginn der Text vor der `cross reference` wieder eingefügt).
@@ -866,7 +998,10 @@ pub struct Snippet {
   pub depends_on: Vec<String>, // <3>
   pub attributes: HashMap<String, String>,
   pub raw: bool,
-  pub join_str: String,
+}
+
+impl Snippet {
+  <<snippet_functions>>
 }
 ----
 <1> Ein Snippet kann aus mehreren aneinandergehängten Snippets bestehen (TODO
@@ -973,12 +1108,6 @@ Außerdem gehen wir alle Attribute durch und überschreiben unsere Standardwerte
 ----
 let interpreter = input.get_attribute("interpreter").or(interpreter);
 let mut raw = false;
-let join_str = input
-  .get_attribute("lisa-join")
-  .unwrap_or("\n\n")
-  .replace("\\\\", "\\")
-  .replace("\\n", "\n")
-  .replace("\\t", "\t");
 ----
 
 Ebenso benötigen wir einen Snippet Typ (TODO link). Er wird in den
@@ -1047,7 +1176,6 @@ snippets.store(
     depends_on: dependencies,
     attributes: attributes,
     raw: raw,
-    join_str: join_str,
   },
 );
 ----
@@ -1066,8 +1194,7 @@ pub fn store(&mut self, name: String, snippet: Snippet) {
         let other = base.clone();
         &base.children.push(other);
       }
-      base.content.push_str(base.join_str.as_str()); // <4>
-      base.content.push_str(snippet.content.as_str());
+      <<copy_dependencies_to_base_snippet>>
       base.children.push(snippet);
     }
     None => { // <3>
@@ -1078,9 +1205,18 @@ pub fn store(&mut self, name: String, snippet: Snippet) {
 ----
 <1> Zunächst wird geprüft, ob bereits ein Snippet mit dieser Id gespeichert
     wurde.
-<2> Falls ja wird es an das bestehende angehängt.
+<2> Falls ja wird es an das Bestehende angehängt.
 <3> Falls nicht kann man es einfach abspeichern.
-<4> Standardmäßig fügen wir zwischen aneinandergehängten Snippets eine Leerzeile ein. Das kann aber mit `lisa-join` konfiguriert werden.
+
+Der Schnipsel ist natürlich abhängig von allen Referenzen der Sub-Schnipsel. Deshalb müssen diese Abhängigkeiten in den Hauptschnipsel übertagen werden.
+
+[[copy_dependencies_to_base_snippet]]
+[source, rust]
+----
+for dependency in snippet.depends_on.clone().into_iter() {
+  base.depends_on.push(dependency);
+}
+----
 
 === Referenzen in einem Snippet finden
 Wir möchten, die referenzierten Snippets später einbinden. Dazu müssen sie
@@ -1181,14 +1317,13 @@ comment = { <<comment>> }
 <<internal_gramma_elements>>
 ----
 
-Eine Referenz wird durch eine von doppelten spitzen Klammern umrahmten id
-dargestellt.
+Eine Referenz wird durch eine von doppelten spitzen Klammern umrahmten id dargestellt. Es ist möglich auch noch Attribute mit zu übergeben um die Art, wie der Schnipsel eingebunden wird zu modifizieren.
 
 [[reference]]
 [source, pest]
 .reference
 ----
-"<<" ~ identifier ~ ">>"
+"<<" ~ identifier ~ ("|" ~ attributes)? ~ ">>"
 ----
 
 Wobei eine id nur aus ASCII Buchstaben, Unterstrich und Verbindungsstrich
@@ -1200,6 +1335,16 @@ nicht den wie eine Minus Expression zu wirken (und damit Verwirrung zu stiften).
 .identifier
 ----
 identifier = @{ (ASCII_ALPHANUMERIC | "_") ~ (ASCII_ALPHANUMERIC | "_" | "-" )* }
+----
+
+Attribute bestehen aus einem Namen und dem dazugehörigen Inhalt (oder Wert) die durch ein = Zeichen verbunden werden. Der Name ist eine Id und der Inhalt wird in Hochkommata (") eingerahmt. Es können beliebig viele Attribute übergeben werden. Diese müssen durch Kommas getrennt werden.
+
+[[internal_gramma_elements]]
+[source, pest]
+----
+attributes = { attribute ~ ("," ~ attribute)* }
+attribute = { identifier ~ "=" ~ "\"" ~ value ~ "\"" }
+value = @{ ( !"\"" ~ ANY | "\\\"")* }
 ----
 
 Bei einer eingerückten Referenz definieren wir die Einrückung seperat um sie
@@ -1252,9 +1397,20 @@ tatsächlichen Inhalte ersetzt werden. Dazu benutzen wir die Funktion
 [[merge_snippet_content]]
 [source, rust]
 ----
-let content = snippet.content.clone();
-let content = codeblock_parser::merge_dependencies(content.as_str(), &snippets);
-snippet.content = content.clone();
+if snippet.children.len() > 0 {
+  let mut children = Vec::new();
+  for mut child in snippet.children.clone().into_iter() {
+    let content = child.content.clone();
+    let content = codeblock_parser::merge_dependencies(content.as_str(), &snippets);
+    child.content = content;
+    children.push(child);
+  }
+  snippet.children = children;
+} else {
+  let content = snippet.content.clone();
+  let content = codeblock_parser::merge_dependencies(content.as_str(), &snippets);
+  snippet.content = content;
+}
 ----
 
 In dieser Funktion wird ein String erzeugt, die Referenzen im Snippet durch den
@@ -1271,12 +1427,14 @@ for element in ast {
   match element.as_rule() {
     Rule::reference => {
       let identifier = extract_identifier(&element);
+      let join_str = extract_join_str(&element)
+        .replace("\\n", "\n");
       // TODO Den passenden snippet suchen
       let snippet = snippets.get(identifier);
       // TODO Den snippet einfügen
       match snippet {
         Some(snippet) => {
-          output.push_str(&snippet.content);
+          output.push_str(&snippet.get_content(&join_str));
         }
         None => {
           // TODO Fehlermeldung? Müsste vorher bereits abgefangen sein.
@@ -1285,13 +1443,15 @@ for element in ast {
     }
     Rule::indented_reference => {
       let identifier = extract_identifier(&element);
+      let join_str = extract_join_str(&element)
+        .replace("\\n", "\n");
       let indentation = extract_indentation(&element);
       // TODO Den passenden snippet suchen
       let snippet = snippets.get(identifier);
       // TODO Den snippet einfügen und indentation beruecksichtigen
       match snippet {
         Some(snippet) => {
-          for line in snippet.content.lines() {
+          for line in snippet.get_content(&join_str).lines() {
             output.push_str("\n");
             output.push_str(indentation);
             output.push_str(line);
@@ -1335,6 +1495,63 @@ fn extract_identifier<'a>(element: &pest::iterators::Pair<'a, codeblock_parser::
   }
 }
 
+fn extract_join_str<'a>(element: &pest::iterators::Pair<'a, codeblock_parser::Rule>) -> &'a str {
+  match element.as_rule() {
+    Rule::reference => {
+      match element.clone().into_inner()
+        .find(|element| {
+          match element.as_rule() {
+            Rule::attributes => true,
+            _ => false
+          }
+        }) {
+        Some(element) => {
+          extract_join_str(&element)
+        }
+        None => "\n"
+      }
+    }
+    Rule::attributes => {
+      match element.clone().into_inner()
+        .find(|element| {
+          match element.as_rule() {
+            Rule::attribute => {
+              let mut attribute = element.clone().into_inner();
+              let key = attribute.next().unwrap();
+
+              key.as_str() == "join"
+            },
+            _ => false
+          }
+        }) {
+        Some(element) => {
+          let mut attribute = element.clone().into_inner();
+          attribute.next();
+          let value = attribute.next().unwrap();
+
+          value.as_str()
+        }
+        None => "\n"
+      }
+    }
+    Rule::indented_reference => {
+      match element.clone().into_inner()
+        .find(|element| {
+          match element.as_rule() {
+            Rule::reference => true,
+            _ => false,
+          }
+        }) {
+        Some(element) => {
+          extract_join_str(&element)
+        }
+        None => "\n"
+      }
+    }
+    _ => "\n",
+  }
+}
+
 fn extract_indentation<'a>(element: &pest::iterators::Pair<'a, codeblock_parser::Rule>) -> &'a str {
   let mut output = "";
   for element in element.clone().into_inner() {
@@ -1347,6 +1564,26 @@ fn extract_indentation<'a>(element: &pest::iterators::Pair<'a, codeblock_parser:
     }
   }
   output
+}
+----
+
+Hierfür müssen wir den Inhalt eines Snippets genereieren können.
+
+[[snippet_functions]]
+[source, rust]
+----
+fn get_content(&self, join_str: &str) -> String {
+  if self.children.len() > 0 {
+    let mut iter = self.children.iter();
+    let start = iter.next().unwrap().content.clone();
+    iter.fold(start, |mut base, snippet| {
+      base.push_str(join_str);
+      base.push_str(&snippet.content);
+      base
+    })
+  } else {
+    self.content.to_string()
+  }
 }
 ----
 
@@ -1464,10 +1701,10 @@ let snippets = Rc::clone(&db);
 
 loop {
   let key = self.dependencies.pop(); // <1>
-  let snippet = match key {
+  let snippet = match &key {
     Some(key) => {
       let mut snippets = snippets.borrow_mut();
-      let snippet = snippets.pop(&key.clone());
+      let snippet = snippets.pop(&key);
 
       match snippet {
         Some(mut snippet) => {
@@ -1475,7 +1712,7 @@ loop {
             <<merge_snippet_content>>
           };
 
-          snippets.store(key, snippet.clone());
+          snippets.store(key.to_string(), snippet.clone());
           Some(snippet)
         }
         None => { // <4>
@@ -1731,7 +1968,6 @@ impl LisaWrapper {
         depends_on: Vec::new(),
         attributes: HashMap::default(),
         raw: true,
-        join_str: "".to_string(),
       },
     );
   }
