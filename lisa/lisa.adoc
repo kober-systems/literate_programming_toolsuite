@@ -36,19 +36,19 @@ eigenen asciidoc Interpreter in rust geschrieben habe, habe ich mich
 entschlossen `lisa` als asciidoctrine-extension zu implementieren.
 
 [[required_crates]]
-[source, rust, lisa-join="\n"]
+[source, rust]
 ----
 extern crate asciidoctrine;
 ----
 
 [[crate_usages]]
-[source, rust, lisa-join="\n"]
+[source, rust]
 ----
 use asciidoctrine::*;
 ----
 
 [[cargo_dependencies]]
-[source, toml, lisa-join="\n"]
+[source, toml]
 ----
 asciidoctrine = { path = "../asciidoctrine" }
 ----
@@ -85,7 +85,7 @@ Die Hauptdatei hat dabei folgendes Gerüst:
 
 <<crate_usages>>
 
-<<internal_structs>>
+<<internal_structs|join="\n\n">>
 
 pub struct Lisa {
   <<lisa_internal_variables>>
@@ -98,7 +98,7 @@ impl Lisa {
     }
   }
 
-  <<internal_functions>>
+  <<internal_functions|join="\n\n">>
 
   /// Gets all snippets from the ast
   pub fn extract_ast(&mut self, input: &AST) -> Result<SnippetDB, Error> { // <3>
@@ -1022,7 +1022,7 @@ pub fn extract(&mut self, mut snippets: SnippetDB, input: &ElementSpan) -> Snipp
       kind: BlockType::Listing,
     } => { // <1>
       <<check_is_lisa_code_block>>
-      <<extract_attributes>>
+      <<extract_attributes|join="\n\n">>
       <<find_references>>
       <<store_snippet_in_internal_db>>
 
@@ -1141,7 +1141,7 @@ for argument in args {
 ----
 
 [[errors]]
-[source, rust, lisa-join="\n"]
+[source, rust]
 ----
 #[error("a nessessary attribute is missing")]
 Missing,
@@ -1331,7 +1331,7 @@ bestehen darf. Zudem darf sie nicht mit einem Verbindungsstrich beginnen, um
 nicht den wie eine Minus Expression zu wirken (und damit Verwirrung zu stiften).
 
 [[internal_gramma_elements]]
-[source, pest, lisa-join="\n"]
+[source, pest]
 .identifier
 ----
 identifier = @{ (ASCII_ALPHANUMERIC | "_") ~ (ASCII_ALPHANUMERIC | "_" | "-" )* }
