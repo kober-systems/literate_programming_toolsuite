@@ -13,8 +13,8 @@ use thiserror::Error;
 mod ast;
 pub use ast::*;
 pub mod options;
-pub mod util;
 pub mod reader;
+pub mod util;
 pub use reader::asciidoc::AsciidocReader;
 pub use reader::json::JsonReader;
 mod writer;
@@ -47,4 +47,3 @@ pub trait Writer<T: io::Write> {
   // TODO Options
   fn write<'a>(&self, ast: AST, out: T) -> Result<()>;
 }
-

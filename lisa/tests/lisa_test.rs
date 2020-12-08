@@ -23,7 +23,7 @@ This is the importing file. We could print out the version.
 
 print(testmodule.version)
 ----
-  "#;
+"#;
   let reader = AsciidocReader::new();
   let opts = options::Opts::from_iter(vec![""].into_iter());
   let ast = reader.parse(content, &opts)?;
@@ -36,13 +36,14 @@ print(testmodule.version)
   let mut outputs = lisa.into_cache().unwrap();
 
   assert_eq!(
-    outputs.remove("sample1.lua").unwrap(),
-    r#"require "testmodule"
+  outputs.remove("sample1.lua").unwrap(),
+  r#"require "testmodule"
 
 print(testmodule.version)
 "#
-  );
-  assert!(outputs.is_empty());
+);
+
+  assert!(outputs.is_empty()); // <1>
 
   Ok(())
 }
@@ -68,7 +69,7 @@ We need the testmodule for this project.
 ----
 require "testmodule"
 ----
-  "#;
+"#;
   let reader = AsciidocReader::new();
   let opts = options::Opts::from_iter(vec![""].into_iter());
   let ast = reader.parse(content, &opts)?;
@@ -81,13 +82,14 @@ require "testmodule"
   let mut outputs = lisa.into_cache().unwrap();
 
   assert_eq!(
-    outputs.remove("sample2.lua").unwrap(),
-    r#"require "testmodule"
+  outputs.remove("sample2.lua").unwrap(),
+  r#"require "testmodule"
 
 print(testmodule.version)
 "#
-  );
-  assert!(outputs.is_empty());
+);
+
+  assert!(outputs.is_empty()); // <1>
 
   Ok(())
 }
@@ -125,7 +127,7 @@ And we could even use it again in another snippet.
 print(testmodule.version .. "my other snippet")
 ----
 
-  "#;
+"#;
   let reader = AsciidocReader::new();
   let opts = options::Opts::from_iter(vec![""].into_iter());
   let ast = reader.parse(content, &opts)?;
@@ -138,22 +140,23 @@ print(testmodule.version .. "my other snippet")
   let mut outputs = lisa.into_cache().unwrap();
 
   assert_eq!(
-    outputs.remove("sample3-1.lua").unwrap(),
-    r#"require "testmodule"
+  outputs.remove("sample3-1.lua").unwrap(),
+  r#"require "testmodule"
 
 print(testmodule.version)
 
 require "testmodule"
 "#
-  );
-  assert_eq!(
-    outputs.remove("sample3-2.lua").unwrap(),
-    r#"require "testmodule"
+);
+assert_eq!(
+  outputs.remove("sample3-2.lua").unwrap(),
+  r#"require "testmodule"
 
 print(testmodule.version .. "my other snippet")
 "#
-  );
-  assert!(outputs.is_empty());
+);
+
+  assert!(outputs.is_empty()); // <1>
 
   Ok(())
 }

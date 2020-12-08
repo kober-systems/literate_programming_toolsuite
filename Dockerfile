@@ -6,6 +6,7 @@ WORKDIR /home/rust/
 COPY . .
 RUN cargo test
 RUN cargo build --release
+
 RUN strip target/release/lisa
 
 FROM alpine:latest

@@ -527,15 +527,9 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>) -> Option<ElementSpan<
       }
       Some(base)
     }
-    Rule::paragraph => {
-      Some(process_paragraph(element, base))
-    }
-    Rule::list_paragraph => {
-      Some(process_paragraph(element, base))
-    }
-    Rule::inline => {
-      Some(process_inline(element, base))
-    }
+    Rule::paragraph => Some(process_paragraph(element, base)),
+    Rule::list_paragraph => Some(process_paragraph(element, base)),
+    Rule::inline => Some(process_inline(element, base)),
     Rule::other_list_inline => {
       base.element = Element::Text;
       Some(base)
