@@ -24,7 +24,7 @@ pub use writer::json::JsonWriter;
 #[derive(Error, Debug)]
 pub enum AsciidoctrineError {
   #[error("could not parse input")]
-  Parse(String),
+  Parse(#[from] pest::error::Error<reader::asciidoc::Rule>),
   #[error(transparent)]
   Json(#[from] serde_json::Error),
   #[error(transparent)]

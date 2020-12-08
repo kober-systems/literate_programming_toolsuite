@@ -526,11 +526,9 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>) -> Option<ElementSpan<
 }
 
 // TODO Add Options
-// TODO Add Result
 pub fn parse_ast(input: &str) -> Result<AST> {
   // TODO Den Text parsen
-  // TODO Result auswerten
-  let ast = AsciidocParser::parse(Rule::asciidoc, input).expect("couldn't parse input.");
+  let ast = AsciidocParser::parse(Rule::asciidoc, input)?;
 
   let mut attributes = Vec::new();
   let mut elements = Vec::new();
