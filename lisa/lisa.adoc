@@ -31,7 +31,7 @@ gedacht asciidoc Texte in Programmcode und in Programmdokumentation
 umzuwandeln. Letzteres ist nicht schwer, denn das ist ja ohnehin die
 Hauptaufgabe von asciidoc. Mit http://asciidoctor.org/[Asciidoctor] besteht
 bereits ein hervoragendes Programm zu diesem Zweck. Da ich aber
-https://www.rust-lang.org/[rust] besser kennenlernen will und mit asciidoctrine (TODO link) einen
+https://www.rust-lang.org/[rust] besser kennenlernen will und mit <<../asciidoctrine/asciidoctrine.adoc#, asciidoctrine>> einen
 eigenen asciidoc Interpreter in rust geschrieben habe, habe ich mich
 entschlossen `lisa` als asciidoctrine-extension zu implementieren.
 
@@ -132,7 +132,7 @@ impl Extension for Lisa { // <1>
   }
 }
 ----
-<1> Da `lisa` eine asciidoctrine Erweiterung (TODO link) ist, implementiert das
+<1> Da `lisa` eine <<../asciidoctrine/asciidoctrine.adoc#, asciidoctrine>> Erweiterung ist, implementiert das
     Programm die dafür erforderliche Schnittstelle.
 <2> Als erste Funktion aller Erweiterungen wird immer die Funktion `transform`
     aufgerufen. Sie bekommt den von asciidoctrine vorverarbeiteten AST sowie
@@ -142,7 +142,7 @@ impl Extension for Lisa { // <1>
 <3> Die grundlegende Aufgabe zu Beginn der Transformation ist das Extrahieren
     des Quellcodes aus der Datei.
 <4> Zum Schluss können alle Dateien generiert und Scripte ausgeführt werden.
-<5> Oftmals ist die Reihenfolge der Abarbeitung der Code-Schnipsel entscheidend (TODO link). Diese wird vor der Abarbeitung festgelegt.
+<5> Oftmals ist die <<snippet_topo_sort, Reihenfolge der Abarbeitung der Code-Schnipsel>> entscheidend. Diese wird vor der Abarbeitung festgelegt.
 
 [[usage]]
 == Benutzung
@@ -1587,6 +1587,7 @@ fn get_content(&self, join_str: &str) -> String {
 }
 ----
 
+[[snippet_topo_sort]]
 === Die Verarbeitungsreihenfolge der Snippets festlegen
 Eines der wichtigsten Features von `lisa` (und das, welches, wie ich glaube, es am stärksten von vergleichbaren Tools unterscheidet), ist, dass man den <<usage_control_flow,Kontrollfluss bestimmen kann>>. Dadurch wird es in gewissem Sinne zu einer https://en.wikipedia.org/wiki/Dataflow_programming[Dataflow Sprache].
 
@@ -1692,6 +1693,7 @@ depends_on_ids
 ----
 
 === Ausgaben erzeugen
+Um Ausgaben erzeugen zu können holen wir die Code-Schnipsel in <<snippet_topo_sort, der topologisch sortierten Reihenfolge>> ab und verarbeiten sie anschließend gemäß ihrem jeweiligen Typ.
 
 [[generate_outputs]]
 [source, rust]
