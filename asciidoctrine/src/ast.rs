@@ -7,6 +7,21 @@ pub struct AST<'a> {
   pub attributes: Vec<Attribute<'a>>,
 }
 
+impl AST<'_> {
+  pub fn get_attribute(&self, name: &str) -> Option<&str> {
+    for attribute in self.attributes.iter() {
+      if &attribute.key == name {
+        return match &attribute.value {
+          AttributeValue::Ref(value) => Some(value),
+          AttributeValue::String(value) => Some(value.as_str()),
+        };
+      }
+    }
+
+    None
+  }
+}
+
 /// The basic element of a document
 ///
 /// This is meant to form a tree of document element.
