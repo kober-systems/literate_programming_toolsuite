@@ -35,7 +35,7 @@ fn main() -> Result<()> {
     }
   };
 
-  let mut ast = reader.parse(&input)?;
+  let mut ast = reader.parse(&input, &opts)?;
 
   // TODO bei diesem Programm gehen wir davon aus,
   // das lisa gewünscht ist.

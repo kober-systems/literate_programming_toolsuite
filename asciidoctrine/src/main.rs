@@ -25,7 +25,7 @@ fn main() -> Result<()> {
     }
   };
 
-  let ast = reader.parse(&input)?;
+  let ast = reader.parse(&input, &opts)?;
 
   // TODO Wenn Erweiterungen in den Kommandozeilenparametern angegeben sind
   // diese in einer Schleife den AST manipulieren lassen

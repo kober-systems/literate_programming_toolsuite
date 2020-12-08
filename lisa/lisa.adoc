@@ -2126,7 +2126,8 @@ Ein Test hat dabei grundsätzlich folgenden Aufbau:
 fn {test_name}() -> Result<()> {
   let content = r#"{asciidoc_content}"#;
   let reader = AsciidocReader::new();
-  let ast = reader.parse(content)?;
+  let opts = options::Opts::from_iter(vec![""].into_iter());
+  let ast = reader.parse(content, &opts)?;
 
   let mut lisa = Lisa::from_env(util::Env::Cache(util::Cache::new()));
   let _ast = lisa.transform(ast)?;

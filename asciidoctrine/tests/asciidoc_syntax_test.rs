@@ -1,6 +1,6 @@
 use anyhow::Result;
+use asciidoctrine::reader::asciidoc::AsciidocReader;
 use asciidoctrine::{self, *};
-use asciidoctrine::reader::asciidoc;
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -10,7 +10,10 @@ fn parse_empty_document() -> Result<()> {
     elements: Vec::new(),
     attributes: Vec::new(),
   };
-  assert_eq!(ast, asciidoc::parse_ast("")?);
+
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::from_iter(vec![""].into_iter());
+  assert_eq!(ast, reader.parse("", &opts)?);
   Ok(())
 }
 
@@ -21,7 +24,10 @@ fn parse_whitespace_only() -> Result<()> {
     elements: Vec::new(),
     attributes: Vec::new(),
   };
-  assert_eq!(ast, asciidoc::parse_ast("  ")?);
+
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::from_iter(vec![""].into_iter());
+  assert_eq!(ast, reader.parse("  ", &opts)?);
   Ok(())
 }
 
@@ -52,8 +58,11 @@ fn parse_basic_header() -> Result<()> {
     }],
     attributes: Vec::new(),
   };
+
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::from_iter(vec![""].into_iter());
   //assert_eq!(ast, asciidoc::parse_ast("= test")); // TODO
-  assert_eq!(ast, asciidoc::parse_ast("= test\n")?);
+  assert_eq!(ast, reader.parse("= test\n", &opts)?);
 
   // TODO author_info, attributes, etc
   Ok(())
@@ -88,7 +97,10 @@ fn parse_title_with_anchor() -> Result<()> {
     }],
     attributes: Vec::new(),
   };
-  assert_eq!(ast, asciidoc::parse_ast("[[test-anchor]]\n== test\n")?);
+
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::from_iter(vec![""].into_iter());
+  assert_eq!(ast, reader.parse("[[test-anchor]]\n== test\n", &opts)?);
   Ok(())
 }
 
@@ -115,7 +127,10 @@ fn parse_atx_header() -> Result<()> {
     }],
     attributes: Vec::new(),
   };
-  assert_eq!(ast, asciidoc::parse_ast("== test\n")?);
+
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::from_iter(vec![""].into_iter());
+  assert_eq!(ast, reader.parse("== test\n", &opts)?);
   Ok(())
 }
 
@@ -142,7 +157,10 @@ fn parse_setext_header() -> Result<()> {
     }],
     attributes: Vec::new(),
   };
-  assert_eq!(ast, asciidoc::parse_ast("test\n====\n")?);
+
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::from_iter(vec![""].into_iter());
+  assert_eq!(ast, reader.parse("test\n====\n", &opts)?);
 
   // TODO Andere Titel
   Ok(())
@@ -195,7 +213,10 @@ require "mytestmodule"
     }],
     attributes: Vec::new(),
   };
-  assert_eq!(ast, asciidoc::parse_ast(input)?);
+
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::from_iter(vec![""].into_iter());
+  assert_eq!(ast, reader.parse(input, &opts)?);
   Ok(())
 }
 
@@ -244,7 +265,10 @@ asciidoctrine dont sees it."#;
       end_line: 16,
       end_col: 1,
       children: Vec::new(),
-      positional_attributes: vec![AttributeValue::Ref("source"), AttributeValue::Ref("asciidoc")],
+      positional_attributes: vec![
+        AttributeValue::Ref("source"),
+        AttributeValue::Ref("asciidoc"),
+      ],
       attributes: vec![
         Attribute {
           key: "title".to_string(),
@@ -258,7 +282,10 @@ asciidoctrine dont sees it."#;
     }],
     attributes: Vec::new(),
   };
-  assert_eq!(ast, asciidoc::parse_ast(input)?);
+
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::from_iter(vec![""].into_iter());
+  assert_eq!(ast, reader.parse(input, &opts)?);
   Ok(())
 }
 
@@ -375,9 +402,13 @@ it has an internal <<reference>>. Both should be parsed.
     }],
     attributes: Vec::new(),
   };
-  assert_eq!(ast, asciidoc::parse_ast(input)?);
+
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::from_iter(vec![""].into_iter());
+  assert_eq!(ast, reader.parse(input, &opts)?);
   Ok(())
 }
+
 // TODO Link, References
 // TODO Links mit Leerzeichen in der Attribut Liste (Würde ich das auch in anderen Attribut Listen zulassen?)
 // TODO bold, italian, auch ob es in einem Wort ignoriert wird
@@ -546,7 +577,10 @@ fn parse_bullet_list() -> Result<()> {
     }],
     attributes: Vec::new(),
   };
-  assert_eq!(ast, asciidoc::parse_ast(input)?);
+
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::from_iter(vec![""].into_iter());
+  assert_eq!(ast, reader.parse(input, &opts)?);
   Ok(())
 }
 
@@ -709,7 +743,10 @@ fn parse_nested_bullet_list() -> Result<()> {
     }],
     attributes: Vec::new(),
   };
-  assert_eq!(ast, asciidoc::parse_ast(input)?);
+
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::from_iter(vec![""].into_iter());
+  assert_eq!(ast, reader.parse(input, &opts)?);
   Ok(())
 }
 

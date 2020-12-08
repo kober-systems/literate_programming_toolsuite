@@ -34,7 +34,7 @@ pub enum AsciidoctrineError {
 type Result<T> = std::result::Result<T, AsciidoctrineError>;
 
 pub trait Reader {
-  fn parse<'a>(&self, input: &'a str) -> Result<AST<'a>>;
+  fn parse<'a>(&self, input: &'a str, args: &options::Opts) -> Result<AST<'a>>;
 }
 
 pub trait Extension {

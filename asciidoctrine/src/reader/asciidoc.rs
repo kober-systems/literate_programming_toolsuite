@@ -1,4 +1,5 @@
 pub use crate::ast::*;
+use crate::options::Opts;
 use crate::reader::*;
 use crate::Result;
 use pest::iterators::Pair;
@@ -13,8 +14,33 @@ impl AsciidocReader {
 }
 
 impl crate::Reader for AsciidocReader {
-  fn parse<'a>(&self, input: &'a str) -> Result<AST<'a>> {
-    parse_ast(input)
+  fn parse<'a>(&self, input: &'a str, args: &Opts) -> Result<AST<'a>> {
+    let ast = AsciidocParser::parse(Rule::asciidoc, input)?;
+
+    let mut attributes = Vec::new();
+    if let Some(path) = &args.input {
+      if let Some(path) = path.to_str() {
+        attributes.push(Attribute {
+          key: "source".to_string(),
+          value: AttributeValue::String(path.to_string()),
+        });
+      }
+    }
+
+    let mut elements = Vec::new();
+
+    for element in ast {
+      //println!("{:#?}", element); // TODO entfernen
+      if let Some(element) = process_element(element) {
+        elements.push(element);
+      }
+    }
+
+    Ok(AST {
+      content: input,
+      elements: elements,
+      attributes: attributes,
+    })
   }
 }
 
@@ -523,26 +549,4 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>) -> Option<ElementSpan<
   };
 
   element
-}
-
-// TODO Add Options
-pub fn parse_ast(input: &str) -> Result<AST> {
-  // TODO Den Text parsen
-  let ast = AsciidocParser::parse(Rule::asciidoc, input)?;
-
-  let mut attributes = Vec::new();
-  let mut elements = Vec::new();
-
-  for element in ast {
-    //println!("{:#?}", element); // TODO entfernen
-    if let Some(element) = process_element(element) {
-      elements.push(element);
-    }
-  }
-
-  Ok(AST {
-    content: input,
-    elements: elements,
-    attributes: attributes,
-  })
 }
