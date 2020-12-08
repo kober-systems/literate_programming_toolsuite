@@ -40,8 +40,9 @@ impl SnippetDB {
           let other = base.clone();
           &base.children.push(other);
         }
-        base.content.push_str(base.join_str.as_str());
-        base.content.push_str(snippet.content.as_str());
+        for dependency in snippet.depends_on.clone().into_iter() {
+          base.depends_on.push(dependency);
+        }
         base.children.push(snippet);
       }
       None => {
@@ -81,7 +82,22 @@ pub struct Snippet {
   pub depends_on: Vec<String>,
   pub attributes: HashMap<String, String>,
   pub raw: bool,
-  pub join_str: String,
+}
+
+impl Snippet {
+  fn get_content(&self, join_str: &str) -> String {
+    if self.children.len() > 0 {
+      let mut iter = self.children.iter();
+      let start = iter.next().unwrap().content.clone();
+      iter.fold(start, |mut base, snippet| {
+        base.push_str(join_str);
+        base.push_str(&snippet.content);
+        base
+      })
+    } else {
+      self.content.to_string()
+    }
+  }
 }
 
 #[derive(Clone)]
@@ -104,7 +120,6 @@ impl LisaWrapper {
         depends_on: Vec::new(),
         attributes: HashMap::default(),
         raw: true,
-        join_str: "".to_string(),
       },
     );
   }
@@ -204,12 +219,6 @@ impl Lisa {
 
         let interpreter = input.get_attribute("interpreter").or(interpreter);
         let mut raw = false;
-        let join_str = input
-          .get_attribute("lisa-join")
-          .unwrap_or("\n\n")
-          .replace("\\\\", "\\")
-          .replace("\\n", "\n")
-          .replace("\\t", "\t");
 
         let mut kind = SnippetType::Plain;
 
@@ -255,7 +264,6 @@ impl Lisa {
             depends_on: dependencies,
             attributes: attributes,
             raw: raw,
-            join_str: join_str,
           },
         );
 
@@ -377,12 +385,23 @@ impl Lisa {
           match snippet {
             Some(mut snippet) => {
               if !snippet.raw {
-                let content = snippet.content.clone();
-                let content = codeblock_parser::merge_dependencies(content.as_str(), &snippets);
-                snippet.content = content.clone();
+                if snippet.children.len() > 0 {
+                  let mut children = Vec::new();
+                  for mut child in snippet.children.clone().into_iter() {
+                    let content = child.content.clone();
+                    let content = codeblock_parser::merge_dependencies(content.as_str(), &snippets);
+                    child.content = content;
+                    children.push(child);
+                  }
+                  snippet.children = children;
+                } else {
+                  let content = snippet.content.clone();
+                  let content = codeblock_parser::merge_dependencies(content.as_str(), &snippets);
+                  snippet.content = content;
+                }
               };
 
-              snippets.store(key, snippet.clone());
+              snippets.store(key.to_string(), snippet.clone());
               Some(snippet)
             }
             None => {

@@ -26,6 +26,63 @@ fn extract_identifier<'a>(element: &pest::iterators::Pair<'a, codeblock_parser::
   }
 }
 
+fn extract_join_str<'a>(element: &pest::iterators::Pair<'a, codeblock_parser::Rule>) -> &'a str {
+  match element.as_rule() {
+    Rule::reference => {
+      match element.clone().into_inner()
+        .find(|element| {
+          match element.as_rule() {
+            Rule::attributes => true,
+            _ => false
+          }
+        }) {
+        Some(element) => {
+          extract_join_str(&element)
+        }
+        None => "\n"
+      }
+    }
+    Rule::attributes => {
+      match element.clone().into_inner()
+        .find(|element| {
+          match element.as_rule() {
+            Rule::attribute => {
+              let mut attribute = element.clone().into_inner();
+              let key = attribute.next().unwrap();
+
+              key.as_str() == "join"
+            },
+            _ => false
+          }
+        }) {
+        Some(element) => {
+          let mut attribute = element.clone().into_inner();
+          attribute.next();
+          let value = attribute.next().unwrap();
+
+          value.as_str()
+        }
+        None => "\n"
+      }
+    }
+    Rule::indented_reference => {
+      match element.clone().into_inner()
+        .find(|element| {
+          match element.as_rule() {
+            Rule::reference => true,
+            _ => false,
+          }
+        }) {
+        Some(element) => {
+          extract_join_str(&element)
+        }
+        None => "\n"
+      }
+    }
+    _ => "\n",
+  }
+}
+
 fn extract_indentation<'a>(element: &pest::iterators::Pair<'a, codeblock_parser::Rule>) -> &'a str {
   let mut output = "";
   for element in element.clone().into_inner() {
@@ -71,12 +128,14 @@ pub fn merge_dependencies(input: &str, snippets: &SnippetDB) -> String {
     match element.as_rule() {
       Rule::reference => {
         let identifier = extract_identifier(&element);
+        let join_str = extract_join_str(&element)
+          .replace("\\n", "\n");
         // TODO Den passenden snippet suchen
         let snippet = snippets.get(identifier);
         // TODO Den snippet einfügen
         match snippet {
           Some(snippet) => {
-            output.push_str(&snippet.content);
+            output.push_str(&snippet.get_content(&join_str));
           }
           None => {
             // TODO Fehlermeldung? Müsste vorher bereits abgefangen sein.
@@ -85,13 +144,15 @@ pub fn merge_dependencies(input: &str, snippets: &SnippetDB) -> String {
       }
       Rule::indented_reference => {
         let identifier = extract_identifier(&element);
+        let join_str = extract_join_str(&element)
+          .replace("\\n", "\n");
         let indentation = extract_indentation(&element);
         // TODO Den passenden snippet suchen
         let snippet = snippets.get(identifier);
         // TODO Den snippet einfügen und indentation beruecksichtigen
         match snippet {
           Some(snippet) => {
-            for line in snippet.content.lines() {
+            for line in snippet.get_content(&join_str).lines() {
               output.push_str("\n");
               output.push_str(indentation);
               output.push_str(line);
