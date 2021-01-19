@@ -170,7 +170,7 @@ footnote = { "footnote:" ~ inline_attribute_list }
 footnoteref = { "footnoteref:" ~ inline_attribute_list }
 xref = !{ "<<" ~ identifier ~ (NEWLINE? ~ "," ~ NEWLINE? ~ word+)? ~ ">>" }
 
-strong = @{ "*" ~ (!"*" ~ linechar)+ ~ "*" }
+strong = ${ "*" ~ (!"*" ~ linechar)+ ~ "*" }
 emphasized = @{ "_" ~ (!"_" ~ linechar)+ ~ "_" }
 monospaced = ${ ("+" ~ (!"+" ~ linechar)+ ~ "+") | ("`" ~ (!"`" ~ linechar)+ ~ "`") }
 quoted = @{ inline_attribute_list ~ "#" ~ (!"#" ~ linechar)+ ~ "#" }

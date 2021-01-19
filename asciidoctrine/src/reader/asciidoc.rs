@@ -276,6 +276,20 @@ fn process_inline<'a>(
           });
         };
       }
+      Rule::strong => {
+        base.element = Element::Styled;
+        base.attributes.push(Attribute {
+          key: "style".to_string(),
+          value: AttributeValue::Ref("strong"),
+        });
+
+        if let Some(content) = concat_elements(element, Rule::linechar, "") {
+          base.attributes.push(Attribute {
+            key: "content".to_string(),
+            value: AttributeValue::String(content),
+          });
+        };
+      }
       _ => {
         base.element = Element::Error("Not implemented".to_string());
       }
