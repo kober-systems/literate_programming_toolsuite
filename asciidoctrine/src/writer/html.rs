@@ -1,20 +1,63 @@
 pub use crate::ast::*;
-use crate::Result;
+use crate::util::Environment;
+use crate::{options, Result};
 use std::io;
+use tera::{Context, Tera};
 
-pub struct HtmlWriter {}
+pub struct HtmlWriter {
+  io: crate::util::Env,
+}
 
 impl HtmlWriter {
   pub fn new() -> Self {
-    HtmlWriter {}
+    HtmlWriter {
+      io: crate::util::Env::Io(crate::util::Io::new()),
+    }
   }
 }
 
 impl<T: io::Write> crate::Writer<T> for HtmlWriter {
-  fn write<'a>(&self, ast: AST, mut out: T) -> Result<()> {
+  fn write<'a>(&mut self, ast: AST, args: &options::Opts, mut out: T) -> Result<()> {
+    let mut buf = io::BufWriter::new(Vec::new());
+
     for element in ast.elements.iter() {
-      write_html(element, &mut out)?;
+      write_html(element, &mut buf)?;
     }
+    let bytes = buf.into_inner()?;
+
+    let mut context = Context::new();
+    context.insert("lang", "en");
+    context.insert("doctitle", "");
+    match &args.stylesheet {
+      Some(path) => {
+        let path = path.to_str().expect("path to stylesheet unreadable");
+        let stylesheet = self.io.read_to_string(path)?;
+        context.insert("stylesheet", &stylesheet);
+      }
+      None => {
+        context.insert("stylesheet", include_str!("assets/asciidoctor.css"));
+      }
+    }
+    context.insert("body_class", "article toc2 toc-left");
+    context.insert("body", std::str::from_utf8(&bytes)?);
+
+    let mut tera = Tera::default();
+    tera.autoescape_on(vec![]);
+    match &args.template {
+      Some(path) => {
+        let path = path.to_str().expect("path to stylesheet unreadable");
+        let template = self.io.read_to_string(path)?;
+        tera
+          .add_raw_template("default.html", &template)
+          .expect("couldn't load default template");
+      }
+      None => {
+        tera
+          .add_raw_template("default.html", include_str!("assets/template.html"))
+          .expect("couldn't load default template");
+      }
+    }
+    out.write_all(tera.render("default.html", &context)?.as_bytes())?;
     out.flush()?;
 
     Ok(())

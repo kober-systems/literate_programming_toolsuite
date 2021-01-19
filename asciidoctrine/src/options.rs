@@ -52,6 +52,10 @@ pub struct Opts {
   pub writerfmt: Writer,
   #[structopt(short = "e", long = "extension")]
   pub extensions: Vec<String>,
+  #[structopt(long, parse(from_os_str))]
+  pub template: Option<PathBuf>,
+  #[structopt(long, parse(from_os_str))]
+  pub stylesheet: Option<PathBuf>,
   #[structopt(short = "a", long = "attribute", parse(try_from_str = parse_key_val), number_of_values = 1)]
   defines: Vec<(String, String)>,
   #[structopt(name = "FILE", parse(from_os_str))]

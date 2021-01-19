@@ -29,6 +29,12 @@ pub enum AsciidoctrineError {
   Json(#[from] serde_json::Error),
   #[error(transparent)]
   Io(#[from] std::io::Error),
+  #[error(transparent)]
+  BufWriter(#[from] io::IntoInnerError<io::BufWriter<Vec<u8>>>),
+  #[error(transparent)]
+  Template(#[from] tera::Error),
+  #[error(transparent)]
+  Utf8(#[from] std::str::Utf8Error),
 }
 
 type Result<T> = std::result::Result<T, AsciidoctrineError>;
@@ -44,6 +50,5 @@ pub trait Extension {
 
 pub trait Writer<T: io::Write> {
   // TODO Result zurückgeben mit Fehler oder Liste der Geschriebenen Dateien
-  // TODO Options
-  fn write<'a>(&self, ast: AST, out: T) -> Result<()>;
+  fn write<'a>(&mut self, ast: AST, args: &options::Opts, out: T) -> Result<()>;
 }
