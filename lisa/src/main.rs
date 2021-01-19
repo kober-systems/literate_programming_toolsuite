@@ -17,7 +17,7 @@ fn main() -> Result<()> {
     options::Reader::Json => Box::new(JsonReader::new()),
   };
 
-  let writer: Box<dyn Writer<BufWriter<Box<dyn Write>>>> = match opts.writerfmt {
+  let mut writer: Box<dyn Writer<BufWriter<Box<dyn Write>>>> = match opts.writerfmt {
     options::Writer::Html5 => Box::new(HtmlWriter::new()),
     options::Writer::Json => Box::new(JsonWriter::new()),
     _ => bail!("not yet supported"),
@@ -70,7 +70,7 @@ fn main() -> Result<()> {
     None => Box::new(io::stdout()),
   };
   let output = BufWriter::new(output);
-  writer.write(ast, output)?;
+  writer.write(ast, &opts, output)?;
 
   Ok(())
 }
