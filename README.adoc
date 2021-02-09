@@ -16,7 +16,7 @@ we have a `<name>.adoc` file which is the main source for that subcrate.
 
 The subrates are:
 
-asciidoctrine:: An extensible asciidoc interpreter. (TODO links to the file). It
+asciidoctrine:: An extensible <<asciidoctrine/asciidoctrine.adoc#, asciidoc interpreter>>. It
   isn't very mature right now.
 lisa:: A flexible <<lisa/lisa.adoc#,literate programming tool>> for both tangle
   and weave. It has some basic functionality right now.
@@ -60,6 +60,10 @@ TODO
 [source, sh]
 ----
 echo "Start generating source files ..."
+
+cd asciidoctrine/
+lisa -o /dev/null asciidoctrine.adoc
+cd ..
 
 cd lisa
 lisa lisa.adoc # <1>
@@ -111,6 +115,10 @@ asciidoctor \
             <<asciidoctor-styles>>
             -D docs/ansicht \
             ansicht/ansicht.adoc
+asciidoctor \
+            <<asciidoctor-styles>>
+            -D docs/dolmetscher \
+            dolmetscher/dolmetscher.adoc
 
 echo "Generating html files done!"
 

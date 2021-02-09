@@ -1,0 +1,1756 @@
+ASCIIdoctrine
+=============
+Benjamin Kober <k.o.b.e.r@web.de>
+:toc: left
+// In diesem Dokument wird der ganze Quelltext angezeigt.
+:code:
+
+Eine asciidoc Implementierung in rust.
+
+ASCIIdoctrine will möglichst kompatibel zur asciidoc Interpretation von http://asciidoctor.org[asciidoctor] sein, so dass es als Drop-in Ersatz genutzt werden kann. Allerdings ist es in https://www.rust-lang.org/[rust] geschrieben und hat das Ziel flexibeler und leichter zu portieren zu sein.
+
+== Einstieg
+Je nach Interessenlage und Beweggrund zum lesen dieses Artikels wird man
+unterschiedlich an ihn herangehen.
+
+* Will man einfach Texte mit `asciidoc` Markup verfassen sollte man zum
+  <<asciidoc-syntax, ASCIIdoc Syntax>> Abschnitt gehen oder zur Beschreibung
+  der <<cmd-api, Kommandozeilenparameter>>.
+* Will man wissen wie das Programm funktioniert oder es anpassen kann man
+  einfach weiterlesen.
+
+== Übersicht
+Dieses Programm ist im https://en.wikipedia.org/wiki/Literate_programming[literate programming] Stil geschrieben. Gie Grundidee ist eine ASCIIdoc Benutzeranleitung so umzuarbeiten, dass sie sich automatisch zu einem ausführbaren Programm mit Tests kompilieren lässt.
+
+Dazu verwenden wir https://lammermann.github.io/literate_programming_toolsuite/lisa/lisa.html[lisa] (welches im gleichen Repo verwaltet wird) als Werkzeug.
+
+=== Motivation und Hintergrund
+Das Programm http://jgm.github.io/lunamark/doc/lunamark.html[lunamark] hat
+ursprünglich mein Interesse für http://www.lua.org[lua],
+http://www.inf.puc-rio.br/~roberto/lpeg/[lpeg] und die Implementierung von
+Parsern im Allgemeinen geweckt. Ich war begeistert wie der Eingabetext mit
+Mustern abgesucht und umgewandelt wurde (vorher kannte ich nur
+https://en.wikipedia.org/wiki/Regular_expression[regular expressions] und wäre
+bei solch komplexen Aufgaben sofort an Grenzen gestoßen).
+
+Ich fing an einen asciidoc parser für lunamark zu schreiben. Nach einiger Zeit
+stellten sich ein paar Probleme heraus:
+
+* lunamark ist für https://daringfireball.net/projects/markdown/[markdown]
+  geschrieben und das ist nicht für beliebig komplexe Dokumente geeignet.
+* Der Eingabetext wird sofort in das Ausgabeformat umgewandelt und nicht in
+  einen https://en.wikipedia.org/wiki/Abstract_syntax_tree[AST].
+
+Das zweite Problem ist in meinem Fall problematischer als das erste, da ich das Werkzeug nicht nur benutzen will um Dokumente zu erstellen. Hat man einen AST kann man nach belieben filtern, umsortieren, bearbeiten und in völlig andere Formate einbauen.
+
+=== Programmarchitektur
+Aus diesem Grund soll dieses Programm mehrschrittig vorgehen und alle Dateien
+zunächst in einen AST umwandeln:
+
+[[dataflow-outline]]
+[ditaa]
+.Module und Datenstrom in asciidoctrine
+----
+
+                         /-/-------------\                   /-/-----------\
+                         | |             |                   | |           |
+                         | | Steuerungs- +-=----+            | | Styles    +------+
+                         | | dateien ... |      |            | | (css,...) |      |
+                         \-\-------------/      |            \-\-----------/      |
+                                                v                                 v
+  /----------\   +--------+   /-----\   +---------------+   /-----\   +------------------+   /----------------\
+  |          |   | {io}   |   |     |   | {io}          |   |     |   | {io}             |   |                |
+  | Eingabe- +-->| Reader +-->| AST +-->| Erweiterungen +-->| AST +-->| Output Processor |-->| Ausgabedateien |
+  | Datei    |   |        |   |     |   | ...           |   |     |   | (Writer)         |   | (html,pdf,...) |
+  \----------/   +--------+   \-----/   +------+--+-----+   \-----/   +------------------+   \----------------/
+                                 ^             |  :
+                                 |     ...     |  |   /----------------\-\
+                                 +-=-----------+  |   | optionale      | |
+                                                  +-->| Ausgabedateien | |
+                                                      | (png,svg,...)  | |
+                                                      \----------------/-/
+
+----
+
+So kann man einerseits leicht unterschiedliche <<generate-output, Ausgabeformate>> unterstützen und andererseits eine <<api>> zur Verfügung stellen, die Zugriff auf die gesamte Dokumentstruktur gibt.
+
+Der generelle Ablauf ist folgendermaßen:
+
+Die Eingabedatei(en) wird(werden) eingelesen::
+  * Diese wird von einem <<reader>> eingelesen und in einen AST umgewandelt.
+  * Der <<reader>> wird nur einmal ausgewählt und ist (im Fall von mehreren
+    Eingabedateien) für alle Eingabedateien gleich.
+  * Das standardmäßige Eingabeformat ist <<asciidoc-syntax>>.
+Der AST wird von einer oder mehreren Erweiterungen modifiziert::
+  * Jede <<extensions, Erweiterung>> bekommt einen AST als Parameter übergeben
+    und gibt einen AST zurück.
+  * Erweiterungen können über die <<cmd, Kommandozeile>> oder die <<api>>
+    weitere Parameter und Steuerungsdateien (von beliebigem Format) übergeben
+    werden.
+  * Es können beliebig viele Erweiterungen in beliebiger Reihenfolge
+    hintereinander geschaltet werden.
+  * Ob eine Erweiterung eigene Ausgabedateien erzeugt, bleibt ihr selbst
+    überlassen.
+  * Standardmäßig sind keine Erweiterungen aktiviert.
+Ein Output Prozessor (Writer) wandelt den AST in eine Ausgabedatei um::
+  * Der Writer kann über die <<cmd, Komandozeile>> oder die <<api>> Parameter
+    oder Styledateien (wie css-Stylesheets etc) übergeben bekommen.
+  * Das standardmäßige Ausgabeformat ist <<html5>>.
+
+== Implementierung
+`asciidoctrine` ist ein rust Programm. Der Hauptteil des Programms ist in einer
+Bibliothek implementiert. Ein kleiner Teil ist ein Kommandozeilenprogramm
+welches diese Bibliothek benutzt und die Parameter übergibt.
+
+[source, rust, save]
+.src/lib.rs
+----
+<<crate_usages>>
+
+<<internal_modules>>
+
+<<public_structs>>
+
+<<interfaces|join="\n\n">>
+----
+
+Die Bibliothek wiederum teilt den Großteil ihrer Aufgaben einigen abgetrennten
+Modulen zu:
+
+[[internal_modules]]
+[source, rust]
+.Module innerhalb des crates
+----
+mod ast;         // <1>
+pub use ast::*;
+pub mod options;
+pub mod util;
+pub mod reader;
+pub use reader::asciidoc::AsciidocReader;
+pub use reader::json::JsonReader;
+mod writer;
+pub use writer::html::HtmlWriter;
+pub use writer::json::JsonWriter;
+----
+<1> `ast` definiert das allgemeine Zwischenformat für alle Dokumente.
+
+[[public_structs]]
+[source, rust]
+.Fehlerbehandlung
+----
+#[derive(Error, Debug)]
+pub enum AsciidoctrineError {
+  #[error("could not parse input")]
+  Parse(#[from] pest::error::Error<reader::asciidoc::Rule>),
+  #[error(transparent)]
+  Json(#[from] serde_json::Error),
+  #[error(transparent)]
+  Io(#[from] std::io::Error),
+  #[error(transparent)]
+  BufWriter(#[from] io::IntoInnerError<io::BufWriter<Vec<u8>>>),
+  #[error(transparent)]
+  Template(#[from] tera::Error),
+  #[error(transparent)]
+  Utf8(#[from] std::str::Utf8Error),
+}
+
+type Result<T> = std::result::Result<T, AsciidoctrineError>;
+----
+
+[[crate_usages]]
+[source, rust]
+----
+extern crate pest;
+#[macro_use]
+extern crate pest_derive;
+
+use std::io;
+pub use structopt::StructOpt;
+use thiserror::Error;
+----
+
+[[input-format]]
+=== Eingabeformate
+
+[source, rust, save]
+.src/reader/mod.rs
+----
+pub mod asciidoc;
+pub mod json;
+----
+
+:leveloffset: +1
+
+[[asciidoc-syntax]]
+include::asciidoc-syntax.adoc[]
+
+Wir verwenden https://pest.rs/[pest] um die Syntax zu parsen. Es verwendet https://pest.rs/book/grammars/peg.html[Parsing Expression Grammars] um Daten zu parsen.
+
+TODO TOML Eintrag
+
+Die grundlegende Syntax definieren wir in einer eigenen Datei welche wir in unserer PEG DSL schreiben.
+
+[source, rust, save]
+.src/reader/asciidoc.pest
+----
+asciidoc = _{ (NEWLINE* ~ block)*  ~ NEWLINE* ~ EOI }
+
+block = {
+  header |
+  // admonition |
+  // example |
+  // fenced |
+  // listing |
+  // literal |
+  // open |
+  // passthrough |
+  // quote |
+  // sidebar |
+  // source |
+  // stem |
+  // table |
+  // verse |
+  include_macro |
+  delimited_block |
+  list |
+  attribute_entry_block |
+  // Title is nearly the last because it could prevent correct match of others
+  title_block |
+  // paragraph is the last because all others should be checked first
+  paragraph |
+  (!EOI ~ ANY)+
+}
+
+<<blocks|join="\n\n">>
+
+////////////////////////////////////////////////////////////////////////////////
+// often resused elements
+
+<<peg_building_blocks>>
+
+////////////////////////////////////////////////////////////////////////////////
+// inline elements
+
+inline = {
+  !empty_lines ~ !EOI ~
+  ( comment |
+    link |
+    strong |
+    emphasized |
+    monospaced |
+    quoted |
+    footnote |
+    footnoteref |
+    xref
+  )
+}
+other_inline = @{ (!empty_lines ~ !EOI ~ !inline ~ ANY)+ }
+
+<<inline_elements|join="\n\n">>
+
+////////////////////////////////////////////////////////////////////////////////
+// generics
+
+<<generic_pegs|join="\n\n">>
+
+////////////////////////////////////////////////////////////////////////////////
+
+// Implicit whitespace rule
+WHITESPACE = _{ " " | "\t" }
+----
+
+Damit können wir die Syntax in einer relativ formalen Sprache definieren welche das parsen erleichtert. Diesem, noch eher groben AST, weisen wir dann eine semantische Bedeutung zu. Den Code dazu definieren wir in einem eigenen Rust Modul mit dem Namen `asciidoc.rs`.
+
+[source, rust, save]
+.src/reader/asciidoc.rs
+----
+pub use crate::ast::*;
+use crate::options::Opts;
+use crate::reader::*;
+use crate::Result;
+use pest::iterators::Pair;
+use pest::Parser;
+
+pub struct AsciidocReader {}
+
+impl AsciidocReader {
+  pub fn new() -> Self {
+    AsciidocReader {}
+  }
+}
+
+impl crate::Reader for AsciidocReader {
+  fn parse<'a>(&self, input: &'a str, args: &Opts) -> Result<AST<'a>> {
+    let ast = AsciidocParser::parse(Rule::asciidoc, input)?;
+
+    let mut attributes = Vec::new();
+    if let Some(path) = &args.input {
+      if let Some(path) = path.to_str() {
+        attributes.push(Attribute {
+          key: "source".to_string(),
+          value: AttributeValue::String(path.to_string()),
+        });
+      }
+    }
+
+    let mut elements = Vec::new();
+
+    for element in ast {
+      //println!("{:#?}", element); // TODO entfernen
+      if let Some(element) = process_element(element) {
+        elements.push(element);
+      }
+    }
+
+    Ok(AST {
+      content: input,
+      elements: elements,
+      attributes: attributes,
+    })
+  }
+}
+
+#[derive(Parser, Debug, Copy, Clone)]
+#[grammar = "reader/asciidoc.pest"]
+pub struct AsciidocParser;
+
+fn process_anchor<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+) -> ElementSpan<'a> {
+  for element in element.into_inner() {
+    match element.as_rule() {
+      Rule::inline_anchor => {
+        for subelement in element.into_inner() {
+          match subelement.as_rule() {
+            Rule::identifier => {
+              base.attributes.push(Attribute {
+                key: "anchor".to_string(),
+                value: AttributeValue::Ref(subelement.as_str()),
+              });
+            }
+            // TODO Fehler abfangen und anzeigen
+            _ => (),
+          }
+        }
+      }
+      _ => (),
+    };
+  }
+  base
+}
+
+fn process_inline_attribute_list<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+) -> ElementSpan<'a> {
+  for subelement in element.into_inner() {
+    match subelement.as_rule() {
+      Rule::attribute => {
+        for subelement in subelement.into_inner() {
+          match subelement.as_rule() {
+            Rule::attribute_value => {
+              // TODO Wir müssen unterschiedlich damit umgehen, ob ein oder mehrere
+              // identifier existieren
+              base
+                .positional_attributes
+                .push(AttributeValue::Ref(subelement.as_str()));
+            }
+            Rule::named_attribute => {
+              let mut key = None;
+              let mut value = None;
+
+              for subelement in subelement.into_inner() {
+                match subelement.as_rule() {
+                  Rule::identifier => key = Some(subelement.as_str()),
+                  Rule::attribute_value => {
+                    value = Some(subelement.into_inner().concat());
+                  }
+                  // TODO Fehler abfangen und anzeigen
+                  _ => (),
+                }
+              }
+
+              base.attributes.push(Attribute {
+                key: key.unwrap().to_string(),
+                value: AttributeValue::String(value.unwrap()),
+              });
+            }
+            // TODO Fehler abfangen und anzeigen
+            _ => (),
+          }
+        }
+      }
+      // TODO Fehler abfangen und anzeigen
+      _ => (),
+    }
+  }
+  base
+}
+
+fn process_attribute_list<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+) -> ElementSpan<'a> {
+  for element in element.into_inner() {
+    match element.as_rule() {
+      Rule::inline_attribute_list => {
+        base = process_inline_attribute_list(element, base);
+      }
+      _ => (),
+    };
+  }
+  base
+}
+
+fn process_delimited_inner<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+) -> ElementSpan<'a> {
+  for element in element.into_inner() {
+    match element.as_rule() {
+      Rule::delimited_inner => {
+        base.attributes.push(Attribute {
+          key: "content".to_string(), // TODO
+          value: AttributeValue::Ref(element.as_str()),
+        });
+      }
+      _ => (),
+    };
+  }
+  base
+}
+
+fn process_blocktitle<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+) -> ElementSpan<'a> {
+  for element in element.into_inner() {
+    match element.as_rule() {
+      Rule::line => {
+        base.attributes.push(Attribute {
+          key: "title".to_string(), // TODO
+          value: AttributeValue::Ref(element.as_str()),
+        });
+      }
+      _ => (),
+    };
+  }
+  base
+}
+
+fn concat_elements<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  filter: asciidoc::Rule,
+  join: &str,
+) -> Option<String> {
+  let elements: Vec<_> = element
+    .into_inner()
+    .filter(|e| e.as_rule() == filter)
+    .map(|e| e.as_str())
+    .collect();
+
+  if elements.len() > 0 {
+    Some(elements.join(join))
+  } else {
+    None
+  }
+}
+
+fn process_xref<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+) -> ElementSpan<'a> {
+  base.element = Element::XRef;
+  for element in element.clone().into_inner() {
+    match element.as_rule() {
+      Rule::identifier => {
+        base.attributes.push(Attribute {
+          key: "id".to_string(),
+          value: AttributeValue::Ref(element.as_str()),
+        });
+      }
+      Rule::word => {}
+      _ => (),
+    };
+  }
+
+  if let Some(content) = concat_elements(element, Rule::word, " ") {
+    base.attributes.push(Attribute {
+      key: "content".to_string(),
+      value: AttributeValue::String(content),
+    });
+  };
+
+  base
+}
+
+fn process_link<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+) -> ElementSpan<'a> {
+  base.element = Element::Link;
+  for element in element.into_inner() {
+    match element.as_rule() {
+      Rule::url => {
+        base.attributes.push(Attribute {
+          key: "url".to_string(),
+          value: AttributeValue::Ref(element.as_str()),
+        });
+        let element = element.into_inner().next().unwrap(); // TODO Fehler möglich?
+        base.attributes.push(Attribute {
+          key: "protocol".to_string(),
+          value: AttributeValue::Ref(element.as_str()),
+        });
+      }
+      Rule::inline_attribute_list => {
+        base = process_inline_attribute_list(element, base);
+      }
+      _ => {
+        let mut sub = set_span(&element);
+        sub.element = Element::Error("Not implemented".to_string());
+        base.children.push(sub);
+      }
+    };
+  }
+  base
+}
+
+fn process_inline<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+) -> ElementSpan<'a> {
+  for element in element.into_inner() {
+    match element.as_rule() {
+      Rule::link => {
+        base = process_link(element, base);
+      }
+      Rule::xref => {
+        base = process_xref(element, base);
+      }
+      Rule::monospaced => {
+        base.element = Element::Styled;
+        base.attributes.push(Attribute {
+          key: "style".to_string(),
+          value: AttributeValue::Ref("monospaced"),
+        });
+
+        if let Some(content) = concat_elements(element, Rule::linechar, "") {
+          base.attributes.push(Attribute {
+            key: "content".to_string(),
+            value: AttributeValue::String(content),
+          });
+        };
+      }
+      Rule::strong => {
+        base.element = Element::Styled;
+        base.attributes.push(Attribute {
+          key: "style".to_string(),
+          value: AttributeValue::Ref("strong"),
+        });
+
+        if let Some(content) = concat_elements(element, Rule::linechar, "") {
+          base.attributes.push(Attribute {
+            key: "content".to_string(),
+            value: AttributeValue::String(content),
+          });
+        };
+      }
+      _ => {
+        base.element = Element::Error("Not implemented".to_string());
+      }
+    };
+  }
+  base
+}
+
+fn process_title<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+) -> Option<ElementSpan<'a>> {
+  match element.as_rule() {
+    Rule::title => {
+      for subelement in element.into_inner() {
+        match subelement.as_rule() {
+          Rule::atx_title_style => {
+            base.element = Element::Title {
+              level: subelement.as_str().trim().len() as u32,
+            };
+          }
+          Rule::setext_title_style => {
+            let ch = subelement.as_str().chars().next().unwrap(); // TODO Check None?
+            let level;
+
+            match ch {
+              '=' => {
+                level = 1;
+              }
+              '-' => {
+                level = 2;
+              }
+              '~' => {
+                level = 3;
+              }
+              '^' => {
+                level = 4;
+              }
+              _ => {
+                base.element = Element::Error("Unsupported title formatting".to_string());
+                break;
+              }
+            }
+            base.element = Element::Title {
+              level: level as u32,
+            };
+          }
+          Rule::line => {
+            base.attributes.push(Attribute {
+              key: "name".to_string(),
+              value: AttributeValue::Ref(subelement.as_str()),
+            });
+          }
+          // We just take the attributes at the beginning
+          // of the element.
+          _ => {
+            break; // TODO Error
+          } // TODO improve matching
+        }
+      }
+    }
+    _ => {
+      base.element = Element::Error("Not implemented".to_string());
+    } // TODO
+  };
+
+  Some(base)
+}
+
+fn set_span<'a>(element: &Pair<'a, asciidoc::Rule>) -> ElementSpan<'a> {
+  let (start_line, start_col) = element.as_span().start_pos().line_col();
+  let (end_line, end_col) = element.as_span().end_pos().line_col();
+
+  ElementSpan {
+    element: Element::Error("Root".to_string()),
+    source: None, // TODO
+    content: element.as_str(),
+    children: Vec::new(),
+    attributes: Vec::new(),
+    positional_attributes: Vec::new(),
+    start: element.as_span().start(),
+    end: element.as_span().end(),
+    start_line: start_line,
+    start_col: start_col,
+    end_line: end_line,
+    end_col: end_col,
+  }
+}
+
+fn process_paragraph<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+) -> ElementSpan<'a> {
+  base.element = Element::Paragraph;
+
+  for subelement in element.into_inner() {
+    let mut sub = set_span(&subelement);
+    match subelement.as_rule() {
+      Rule::other_inline => {
+        sub.element = Element::Text;
+        // TODO Newlines entfernen? Als Attribut?
+      }
+      Rule::other_list_inline => {
+        sub.element = Element::Text;
+      }
+      Rule::inline => {
+        sub = process_inline(subelement, sub);
+      }
+      _ => {
+        sub.element = Element::Error("Not implemented!".to_string());
+      }
+    }
+    base.children.push(sub);
+  }
+
+  base
+}
+
+fn process_element<'a>(element: Pair<'a, asciidoc::Rule>) -> Option<ElementSpan<'a>> {
+  let mut base = set_span(&element);
+
+  let element = match element.as_rule() {
+    Rule::header => {
+      for subelement in element.into_inner() {
+        match subelement.as_rule() {
+          Rule::title => {
+            if let Some(e) = process_title(subelement, base.clone()) {
+              base = e;
+            }
+          }
+          // We just take the attributes at the beginning
+          // of the element.
+          _ => {
+            break;
+          } // TODO improve matching
+        }
+      }
+      // TODO
+      Some(base)
+    }
+    Rule::title => process_title(element, base),
+    Rule::title_block => {
+      for subelement in element.into_inner() {
+        match subelement.as_rule() {
+          Rule::title => {
+            if let Some(e) = process_title(subelement, base.clone()) {
+              base = e;
+            }
+          }
+          Rule::anchor => {
+            base = process_anchor(subelement, base);
+          }
+          // We just take the attributes at the beginning
+          // of the element.
+          _ => {
+            break;
+          } // TODO improve matching
+        }
+      }
+      Some(base)
+    }
+    Rule::block => {
+      for subelement in element.into_inner() {
+        if let Some(e) = process_element(subelement) {
+          base = e;
+        }
+      }
+      Some(base)
+    }
+    Rule::list => {
+      for subelement in element.into_inner() {
+        if let Some(e) = process_element(subelement) {
+          base = e;
+        }
+      }
+      Some(base)
+    }
+    Rule::bullet_list => {
+      base.element = Element::List;
+
+      for subelement in element.into_inner() {
+        if let Some(e) = process_element(subelement) {
+          base.children.push(e);
+        }
+      }
+
+      Some(base)
+    }
+    Rule::bullet_list_element => {
+      for subelement in element.into_inner() {
+        match subelement.as_rule() {
+          Rule::bullet => {
+            base.element = Element::ListItem(subelement.as_str().trim().len() as u32);
+          }
+          Rule::list_element => {
+            for subelement in subelement.into_inner() {
+              if let Some(e) = process_element(subelement) {
+                base.children.push(e);
+              }
+            }
+          }
+          _ => {
+            let mut e = set_span(&subelement);
+            e.element = Element::Error("Not implemented".to_string());
+            base.children.push(e);
+          }
+        }
+      }
+
+      Some(base)
+    }
+    Rule::delimited_block => {
+      for subelement in element.into_inner() {
+        match subelement.as_rule() {
+          Rule::anchor => {
+            base = process_anchor(subelement, base);
+          }
+          Rule::attribute_list => {
+            base = process_attribute_list(subelement, base);
+          }
+          Rule::blocktitle => {
+            base = process_blocktitle(subelement, base);
+          }
+          // TODO wir müssen die anderen delimitets verarbeiten
+          Rule::delimited_source => {
+            base.element = Element::TypedBlock {
+              kind: BlockType::Listing,
+            };
+            base = process_delimited_inner(subelement, base);
+          }
+          Rule::delimited_literal => {
+            base.element = Element::TypedBlock {
+              kind: BlockType::Listing,
+            };
+            base = process_delimited_inner(subelement, base);
+          }
+          Rule::delimited_comment => {
+            base.element = Element::TypedBlock {
+              kind: BlockType::Comment,
+            };
+            base = process_delimited_inner(subelement, base);
+          }
+          // We just take the attributes at the beginning
+          // of the element.
+          _ => {
+            break;
+          } // TODO improve matching
+        }
+      }
+      Some(base)
+    }
+    Rule::paragraph => Some(process_paragraph(element, base)),
+    Rule::list_paragraph => Some(process_paragraph(element, base)),
+    Rule::inline => Some(process_inline(element, base)),
+    Rule::other_list_inline => {
+      base.element = Element::Text;
+      Some(base)
+    }
+    Rule::continuation => None,
+    Rule::EOI => None,
+    _ => {
+      base.element = Element::Error("Not implemented".to_string()); // TODO
+      Some(base)
+    }
+  };
+
+  element
+}
+----
+
+== Grundlegender Aufbau eines Asciidoc Dokuments
+TODO
+
+=== Wichtige Konzepte
+TODO Attribut Listen etc
+
+== Document Header
+TODO
+
+[[blocks]]
+[source, pest]
+----
+header = {
+  title ~
+  (NEWLINE ~ author_info)? ~
+  (NEWLINE ~ revision_info)? ~
+  ( (NEWLINE ~ attribute_entry) |
+    (NEWLINE ~ "//" ~ (!EOI ~ !NEWLINE ~ ANY)* ~ &NEWLINE ) // TODO Comment entfernen
+  )*
+  ~ &NEWLINE{2,}
+}
+----
+
+[[blocks]]
+[source, pest]
+----
+title_block = { anchor* ~ title }
+title = {
+  (line ~ NEWLINE ~ setext_title_style ) |
+  (atx_title_style ~ line)
+}
+setext_title_style = { ("="{4,} | "-"{4,} | "~"{4,} | "^"{4,} ) ~ &NEWLINE }
+atx_title_style = { "="+ }
+
+revision_info = { identifier } // TODO
+
+author_info = { word+ ~ email? ~ &NEWLINE }
+
+email = { "<" ~ (LETTER | "." )+ ~ "@" ~ (LETTER | "." )+ ~ ">" }
+----
+
+== Überschriften
+TODO
+
+== Absätze
+TODO
+
+== Listen
+
+=== Unnummerierte Listen
+TODO
+
+=== Nummerierte Listen
+TODO
+
+=== Abhacklisten
+TODO
+
+=== Benannte Listen (Description Lists)
+TODO
+
+== Links
+TODO
+
+== Querverweise
+TODO
+
+== Fußnoten
+TODO
+
+== Bilder
+TODO
+
+== Tabellen
+TODO
+
+[[peg_building_blocks]]
+[source, pest]
+----
+attribute_list = { inline_attribute_list ~ NEWLINE }
+
+inline_attribute_list = {
+  "[" ~ (attribute ~ ("," ~ attribute)* )? ~ "]"
+}
+
+attribute = { named_attribute | attribute_value }
+named_attribute = { identifier ~ "=" ~ attribute_value }
+attribute_value = {
+  ("\"" ~ inner_attribute_value ~ "\"") |
+  ( (!"," ~ !"]" ~ ANY)+ )
+}
+inner_attribute_value = { ( "\\\"" | (!"\"" ~ ANY))* }
+
+anchor = { inline_anchor ~ NEWLINE }
+inline_anchor = { "[[" ~ (identifier | path) ~ "]]" }
+
+blocktitle = { "." ~ !"." ~ line ~ NEWLINE }
+----
+
+[[blocks]]
+[source, pest]
+----
+attribute_entry = { ":" ~ identifier ~ ":" ~ identifier? ~ &NEWLINE }
+attribute_entry_block = { attribute_entry ~ NEWLINE }
+
+delimited_block = {
+  (anchor | attribute_list | blocktitle)* ~
+  (
+    //delimited_admonition |
+    delimited_comment |
+    //delimited_example |
+    //delimited_fenced |
+    //delimited_listing |
+    delimited_literal |
+    //delimited_open |
+    //delimited_passthrough |
+    //delimited_quote |
+    //delimited_sidebar |
+    delimited_source |
+    //delimited_stem |
+    //delimited_table |
+    delimited_verse
+  )
+}
+
+delimited_inner = @{ (!(NEWLINE ~ PEEK) ~ ANY)* }
+
+delimited_comment = {
+  PUSH("/"{4,} ~ NEWLINE) ~
+  delimited_inner ~
+  NEWLINE ~ POP
+}
+
+delimited_literal = {
+  PUSH("."{4,} ~ NEWLINE) ~
+  delimited_inner ~
+  NEWLINE ~ POP
+}
+
+delimited_source = {
+  PUSH("-"{4,} ~ NEWLINE) ~
+  delimited_inner ~
+  NEWLINE ~ POP
+}
+
+delimited_verse = { "verse" } // TODO
+
+paragraph = ${ (inline | other_inline)+ }
+
+list = { bullet_list | numbered_list | labeled_list }
+
+list_element = ${
+  (
+    list_paragraph |
+    (continuation ~ delimited_block)
+  )+
+}
+list_paragraph = ${ (inline | other_list_inline)+ }
+other_list_inline = @{ (!empty_lines ~ !EOI ~ !inline ~ !(NEWLINE ~ bullet) ~ !(continuation ~ delimited_block) ~ ANY)+ }
+
+bullet = { ("*"+ | "-"+) }
+bullet_list_element = { bullet ~ list_element ~ (NEWLINE | EOI) }
+bullet_list = { bullet_list_element+ }
+
+numbered_list = { "numbered_list" } // TODO
+
+label_bullet = { (!"::" ~ linechar) ~ "::" }
+labeled_list = { (label_bullet ~ list_element)+ }
+
+include_macro = { "include::" ~ path ~ inline_attribute_list }
+----
+
+[[inline_elements]]
+[source, pest]
+----
+link = ${ url ~ inline_attribute_list }
+url = ${proto ~ "://" ~ path}
+proto = ${ ("http" ~ "s"?) |
+           "mailto" |
+           "git"
+         }
+
+footnote = { "footnote:" ~ inline_attribute_list }
+footnoteref = { "footnoteref:" ~ inline_attribute_list }
+xref = !{ "<<" ~ identifier ~ (NEWLINE? ~ "," ~ NEWLINE? ~ word+)? ~ ">>" }
+
+strong = ${ "*" ~ (!"*" ~ linechar)+ ~ "*" }
+emphasized = @{ "_" ~ (!"_" ~ linechar)+ ~ "_" }
+monospaced = ${ ("+" ~ (!"+" ~ linechar)+ ~ "+") | ("`" ~ (!"`" ~ linechar)+ ~ "`") }
+quoted = @{ inline_attribute_list ~ "#" ~ (!"#" ~ linechar)+ ~ "#" }
+
+// TODO Damit werden keine Kommentare zu Beginn eines Paragraphen angezeigt
+comment = { NEWLINE ~ "//" ~ (!NEWLINE ~ ANY)* ~ &NEWLINE }
+
+continuation = { NEWLINE ~ "+" ~ NEWLINE }
+----
+
+[[generic_pegs]]
+[source, pest]
+----
+// TODO Should all unicode letters be matched? Instead of just ascii?
+identifier = @{ (ASCII_ALPHANUMERIC | "_") ~ (ASCII_ALPHANUMERIC | "_" | "-" | ".")* }
+
+word = @{ (LETTER | NUMBER | "_" | "-")+ }
+path = @{ (LETTER | NUMBER | "_" | "-" | "." | "/" | "~" )+ }
+
+linechar = { (!NEWLINE ~ ANY) }
+
+line = { linechar+ ~ ( &NEWLINE | &EOI) }
+
+empty_lines = _{ NEWLINE{2, } | (NEWLINE ~ EOI) }
+----
+
+//include::src/json-syntax.adoc[]
+
+:leveloffset: -1
+
+[[output-format]]
+=== Ausgabeformate
+Der ganze Sinn des Programmes besteht darin, aus einer einzigen Datenquelle
+verschiedene Ausgabedateien zu erzeugen. Diese können noch eigenen
+Vorstellungen oder Vorgaben formatiert und abgelegt werden. `asciidoctrine`
+unterstützt verschiedene Ausgabeformate, die in den folgenden Abschnitten
+beschrieben werden (sowie wie man Formatierungsanpassungen vornehmen kann)
+
+:leveloffset: +1
+
+include::src/output/html5.adoc[]
+include::src/output/docbook.adoc[]
+include::src/output/manpage.adoc[]
+include::src/output/pdf.adoc[]
+include::src/output/json-ast.adoc[]
+
+:leveloffset: -1
+
+== asciidoctrine in andere Programme einbinden
+TODO
+
+[[extensions]]
+== asciidoctrine erweitern
+Man kann `asciidoctrine` über eine api Schnittstelle erweitern. Dazu werden für alle wichtigen Funktionen Schnittstellen definiert, welche von der jeweiligen Erweiterung implementiert werden müssen.
+
+[[reader]]
+=== Neue Datenformate einlesen
+Jedes Eingabeformat muss zunächst in einen <<ast>> ungewandelt werden um von asciidoctrine verarebitet werden zu können. Auch alle intern unterstützten Dateiformate implementieren die gleiche Schnittstelle.
+
+[[interfaces]]
+[source, rust]
+----
+pub trait Reader {
+  fn parse<'a>(&self, input: &'a str, args: &options::Opts) -> Result<AST<'a>>;
+}
+----
+
+[[extension]]
+=== Den AST verarbeiten/modifizieren
+Manchmal will man den <<ast>> verarbeiten und daraus Informationen nutzen (lisa TODO link) verwendet ihn z.B. um daraus Quelltext-Dateien zu extrahieren). Das ermöglicht sehr viele Anwendungsfälle:
+
+* Daten extrahieren und Prüfungen oder Statistiken damit durchführen
+* Rechtschreibprüfung durchführen
+* Mehrere Dokumente vereinen
+* etc
+
+Für alle diese Funktionen definieren wir eine Schnittstelle welche einen AST einließt und am Ende einen AST ausgibt. Wie er zwischendurch verarbeitet wird und ob er modifiziert wird bleibt vollständig der Erweiterung überlassen.
+
+[[interfaces]]
+[source, rust]
+----
+pub trait Extension {
+  // TODO Options (Kann auch über Attributes in AST gemacht werden)
+  fn transform<'a>(&mut self, input: AST<'a>) -> anyhow::Result<AST<'a>>;
+}
+----
+
+[[writer]]
+=== Neue Ausgabeformate unterstützen
+Um ein weiteres Ausgabeformat zu implementieren muss die entsprechende Schnittstelle implementiert werden. Sie konsumiert einen <<ast>> und ist dafür verantwortlich eine Datei zu erstellen, welche das Ausgabeformat verwendet.
+
+[[interfaces]]
+[source, rust]
+----
+pub trait Writer<T: io::Write> {
+  // TODO Result zurückgeben mit Fehler oder Liste der Geschriebenen Dateien
+  fn write<'a>(&mut self, ast: AST, args: &options::Opts, out: T) -> Result<()>;
+}
+----
+
+[[ast]]
+=== Der Abstract Syntax Tree
+Alle Schnittstellen basieren auf der gleichen Datenstrucktur. Diese bildet ein Dokument vollständig ab.
+
+[source, rust, save]
+.src/ast.rs
+----
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+pub struct AST<'a> {
+  pub content: &'a str,
+  pub elements: Vec<ElementSpan<'a>>,
+  pub attributes: Vec<Attribute<'a>>,
+}
+
+<<ast_structs>>
+----
+
+[[ast_structs]]
+[source, rust]
+----
+impl AST<'_> {
+  pub fn get_attribute(&self, name: &str) -> Option<&str> {
+    for attribute in self.attributes.iter() {
+      if &attribute.key == name {
+        return match &attribute.value {
+          AttributeValue::Ref(value) => Some(value),
+          AttributeValue::String(value) => Some(value.as_str()),
+        };
+      }
+    }
+
+    None
+  }
+}
+
+/// The basic element of a document
+///
+/// This is meant to form a tree of document element.
+/// Every element holds references to its source, it
+/// subelements and the attributes defined on it.
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+pub struct ElementSpan<'a> {
+  // The source document. Could be empty if
+  // e.g. it's the same as the source of it's
+  // parent
+  pub source: Option<String>,
+  // A string reference to the source
+  pub content: &'a str,
+  // TODO Add start and end point
+  pub start: usize,
+  pub end: usize,
+  /// We count the lines for usage in other tools
+  pub start_line: usize,
+  pub start_col: usize,
+  pub end_line: usize,
+  pub end_col: usize,
+
+  pub element: Element<'a>,
+  /// The subelements of a nodes
+  pub children: Vec<ElementSpan<'a>>,
+  /// The attributes applying to that node and
+  /// all children
+  pub positional_attributes: Vec<AttributeValue<'a>>,
+  /// The attributes applying to that node and
+  /// all children
+  pub attributes: Vec<Attribute<'a>>,
+}
+
+impl ElementSpan<'_> {
+  pub fn get_attribute(&self, name: &str) -> Option<&str> {
+    for attribute in self.attributes.iter() {
+      if &attribute.key == name {
+        return match &attribute.value {
+          AttributeValue::Ref(value) => Some(value),
+          AttributeValue::String(value) => Some(value.as_str()),
+        };
+      }
+    }
+
+    None
+  }
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+pub enum Element<'a> {
+  Attribute(#[serde(borrow)] Attribute<'a>),
+  /// A section of ignored text
+  Comment,
+  /// A text paragraph
+  Paragraph,
+  /// A header section
+  Title {
+    level: u32,
+  },
+  Table,
+  List,
+  Image,
+  Anchor,
+  /// Holds all blocks with special content and the type
+  /// TODO Could be done with ExternalContent and all known
+  /// Types here direktly
+  TypedBlock {
+    kind: BlockType,
+  },
+  /// Holds content which is not przessed direktly by
+  /// asciidoctrine. It can be anything. Outputs or
+  /// postprocessors could use or ignore it at their
+  /// will (e.g. videos)
+  ExternalContent,
+  /// Holds a reference to the include statement
+  /// and a document inside
+  IncludeElement(IncludeElement<'a>),
+
+  /// The following variants are inline elements nested
+  /// inside a conainer element
+
+  /// Element with a special style. The attributes define the kind of style
+  Styled,
+  /// A chunk of text.
+  Text,
+  /// An internal reference or link
+  XRef,
+  /// An external link
+  Link,
+  /// A list item
+  ListItem(u32),
+  /// A table row
+  TableRow,
+  /// A table cell
+  TableCell,
+  /// A wrong formatted text
+  Error(String),
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+pub enum BlockType {
+  Comment,
+  Passtrough,
+  Listing,
+  Literal,
+  Sidebar,
+  Quote,
+  Example,
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+pub enum AttributeValue<'a> {
+  String(String),
+  Ref(&'a str),
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+pub struct Attribute<'a> {
+  pub key: String,
+  #[serde(borrow)]
+  pub value: AttributeValue<'a>,
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+pub struct IncludeElement<'a> {
+  #[serde(borrow)]
+  pub inner: AST<'a>,
+}
+----
+
+Jedes Dokument ist im Großen und Ganzen eine Ansammlung von hintereinander liegenden Strukturelementen (wie Überschriften, Texten, etc). In unserem Fall hat ein Dokument zusätzlich noch Eigenschaften welche ihm zugewiesen werden können.
+
+== tmp Implementierung
+
+[source, rust, save]
+.src/options.rs
+----
+extern crate clap;
+
+use clap::arg_enum;
+use std::error::Error;
+use std::path::PathBuf;
+pub use structopt::StructOpt;
+
+/// Parse a single key-value pair
+fn parse_key_val<T, U>(s: &str) -> Result<(T, U), Box<dyn Error>>
+where
+  T: std::str::FromStr,
+  T::Err: Error + 'static,
+  U: std::str::FromStr,
+  U::Err: Error + 'static,
+{
+  let pos = s
+    .find('=')
+    .ok_or_else(|| format!("invalid KEY=value: no `=` found in `{}`", s))?;
+  Ok((s[..pos].parse()?, s[pos + 1..].parse()?))
+}
+
+arg_enum! {
+  #[derive(StructOpt, Debug)]
+  pub enum Reader {
+    Asciidoc,
+    Json,
+  }
+}
+
+arg_enum! {
+  #[derive(StructOpt, Debug)]
+  pub enum Writer {
+    Html5,
+    Docbook,
+    Pdf,
+    Json,
+    // The asciidoc output makes it possible
+    // to use this tool as a preprocessor for
+    // other asciidoc tools while it is maturing
+    Asciidoc,
+  }
+}
+
+#[derive(StructOpt, Debug)]
+#[structopt(name = "asciidoctrine")]
+pub struct Opts {
+  #[structopt(short = "r", long = "reader-format", default_value = "asciidoc")]
+  #[structopt(possible_values = &Reader::variants(), case_insensitive = true)]
+  pub readerfmt: Reader,
+  #[structopt(short = "w", long = "writer-format", default_value = "html5")]
+  #[structopt(possible_values = &Writer::variants(), case_insensitive = true)]
+  pub writerfmt: Writer,
+  #[structopt(short = "e", long = "extension")]
+  pub extensions: Vec<String>,
+  #[structopt(long, parse(from_os_str))]
+  pub template: Option<PathBuf>,
+  #[structopt(long, parse(from_os_str))]
+  pub stylesheet: Option<PathBuf>,
+  #[structopt(short = "a", long = "attribute", parse(try_from_str = parse_key_val), number_of_values = 1)]
+  defines: Vec<(String, String)>,
+  #[structopt(name = "FILE", parse(from_os_str))]
+  pub input: Option<PathBuf>,
+  #[structopt(short = "o", parse(from_os_str))]
+  pub output: Option<PathBuf>,
+}
+
+pub fn from_args() -> Opts {
+  Opts::from_args()
+}
+----
+
+[source, rust, save]
+.src/util.rs
+----
+use std::collections::HashMap;
+use std::fs;
+use std::io::{self, ErrorKind};
+use std::path::Path;
+
+pub trait Environment {
+  fn read_to_string(&mut self, path: &str) -> crate::Result<String>;
+  fn write(&mut self, path: &str, content: &str) -> crate::Result<()>;
+}
+
+pub struct Io {}
+
+impl Io {
+  pub fn new() -> Self {
+    Io {}
+  }
+}
+
+impl Environment for Io {
+  fn read_to_string(&mut self, path: &str) -> crate::Result<String> {
+    Ok(fs::read_to_string(path)?)
+  }
+
+  fn write(&mut self, path: &str, content: &str) -> crate::Result<()> {
+    let path = Path::new(path);
+    if let Some(path) = path.parent() {
+      if !path.exists() {
+        fs::create_dir_all(path)?;
+      }
+    }
+
+    if path.exists() {
+      let old_content = fs::read_to_string(path)?;
+      if old_content == content {
+        return Ok(());
+      }
+    }
+    fs::write(path, content)?;
+
+    Ok(())
+  }
+}
+
+pub struct Cache {
+  files: HashMap<String, String>,
+}
+
+impl Cache {
+  pub fn new() -> Self {
+    Cache {
+      files: HashMap::default(),
+    }
+  }
+
+  pub fn get_files(self) -> HashMap<String, String> {
+    self.files
+  }
+}
+
+impl Environment for Cache {
+  fn read_to_string(&mut self, path: &str) -> crate::Result<String> {
+    Ok(self.files.remove(path).ok_or(io::Error::new(
+      ErrorKind::NotFound,
+      "file not found in cache",
+    ))?)
+  }
+
+  fn write(&mut self, path: &str, content: &str) -> crate::Result<()> {
+    self.files.insert(path.to_string(), content.to_string());
+
+    Ok(())
+  }
+}
+
+pub enum Env {
+  Io(Io),
+  Cache(Cache),
+}
+
+impl Env {
+  pub fn get_cache(self) -> Option<HashMap<String, String>> {
+    match self {
+      Env::Io(_) => None,
+      Env::Cache(env) => Some(env.get_files()),
+    }
+  }
+}
+
+impl Environment for Env {
+  fn read_to_string(&mut self, path: &str) -> crate::Result<String> {
+    match self {
+      Env::Io(env) => env.read_to_string(path),
+      Env::Cache(env) => env.read_to_string(path),
+    }
+  }
+
+  fn write(&mut self, path: &str, content: &str) -> crate::Result<()> {
+    match self {
+      Env::Io(env) => env.write(path, content),
+      Env::Cache(env) => env.write(path, content),
+    }
+  }
+}
+----
+
+[source, rust, save]
+.src/reader/json.rs
+----
+pub use crate::ast::*;
+use crate::options::Opts;
+use crate::Result;
+
+pub struct JsonReader {}
+
+impl JsonReader {
+  pub fn new() -> Self {
+    JsonReader {}
+  }
+}
+
+impl crate::Reader for JsonReader {
+  fn parse<'a>(&self, input: &'a str, _args: &Opts) -> Result<AST<'a>> {
+    let ast = serde_json::from_str(input)?;
+
+    Ok(ast)
+  }
+}
+----
+
+[source, rust, save]
+.src/writer/mod.rs
+----
+pub mod html;
+pub mod json;
+----
+
+[source, rust, save]
+.src/writer/html.rs
+----
+pub use crate::ast::*;
+use crate::util::Environment;
+use crate::{options, Result};
+use std::io;
+use tera::{Context, Tera};
+
+pub struct HtmlWriter {
+  io: crate::util::Env,
+}
+
+impl HtmlWriter {
+  pub fn new() -> Self {
+    HtmlWriter {
+      io: crate::util::Env::Io(crate::util::Io::new()),
+    }
+  }
+}
+
+impl<T: io::Write> crate::Writer<T> for HtmlWriter {
+  fn write<'a>(&mut self, ast: AST, args: &options::Opts, mut out: T) -> Result<()> {
+    let mut buf = io::BufWriter::new(Vec::new());
+
+    for element in ast.elements.iter() {
+      write_html(element, &mut buf)?;
+    }
+    let bytes = buf.into_inner()?;
+
+    let mut context = Context::new();
+    context.insert("lang", "en");
+    context.insert("doctitle", "");
+    match &args.stylesheet {
+      Some(path) => {
+        let path = path.to_str().expect("path to stylesheet unreadable");
+        let stylesheet = self.io.read_to_string(path)?;
+        context.insert("stylesheet", &stylesheet);
+      }
+      None => {
+        context.insert("stylesheet", include_str!("assets/asciidoctor.css"));
+      }
+    }
+    context.insert("body_class", "article toc2 toc-left");
+    context.insert("body", std::str::from_utf8(&bytes)?);
+
+    let mut tera = Tera::default();
+    tera.autoescape_on(vec![]);
+    match &args.template {
+      Some(path) => {
+        let path = path.to_str().expect("path to stylesheet unreadable");
+        let template = self.io.read_to_string(path)?;
+        tera
+          .add_raw_template("default.html", &template)
+          .expect("couldn't load default template");
+      }
+      None => {
+        tera
+          .add_raw_template("default.html", include_str!("assets/template.html"))
+          .expect("couldn't load default template");
+      }
+    }
+    out.write_all(tera.render("default.html", &context)?.as_bytes())?;
+    out.flush()?;
+
+    Ok(())
+  }
+}
+
+fn escape_text(input: &str) -> String {
+  input.replace("<", "&lt;").replace(">", "&gt;")
+}
+
+// TODO Styles etc
+fn write_html<T: io::Write>(input: &ElementSpan, out: &mut T) -> Result<()> {
+  match &input.element {
+    Element::Title { level } => {
+      let title = input.get_attribute("name").unwrap_or("");
+
+      out.write_all(&format!("<h{}", level).as_bytes())?;
+
+      if level > &1 {
+        let id = match input.get_attribute("anchor") {
+          Some(id) => id.to_string(),
+          None => "_".to_string() + &title.replace(" ", "_").to_lowercase(),
+        };
+        out.write_all(&format!(" id=\"{}\"", id).as_bytes())?;
+      };
+
+      out.write_all(&format!(">{}</h{}>\n", title, level).as_bytes())?;
+    }
+    Element::Paragraph => {
+      out.write_all(b"<p>")?;
+      for element in input.children.iter() {
+        write_html(element, out)?;
+      }
+      out.write_all(b"</p>\n")?;
+    }
+    Element::Text => {
+      out.write_all(input.content.as_bytes())?;
+    }
+    Element::Link => {
+      let url = input.get_attribute("url").unwrap_or("");
+      let content = match input.positional_attributes.get(0) {
+        Some(value) => match value {
+          AttributeValue::Ref(value) => value.to_string(),
+          AttributeValue::String(value) => value.clone(),
+        },
+        None => "".to_string(),
+      };
+
+      out.write_all(&format!("<a href=\"{}\">{}</a>", url, content).as_bytes())?;
+    }
+    Element::Styled => {
+      let style = input.get_attribute("style").unwrap_or("");
+      let content = input.get_attribute("content").unwrap_or("");
+
+      if style == "monospaced" {
+        out.write_all(b"<code>")?;
+      } else if style == "strong" {
+        out.write_all(b"<strong>")?;
+      }
+
+      out.write_all(content.as_bytes())?;
+
+      if style == "monospaced" {
+        out.write_all(b"</code>")?;
+      } else if style == "strong" {
+        out.write_all(b"</strong>")?;
+      };
+    }
+    Element::XRef => {
+      let id = input.get_attribute("id").unwrap_or("");
+      let content = input.get_attribute("content").unwrap_or(id.clone());
+
+      out.write_all(&format!("<a href=\"#{}\">{}</a>", id, content).as_bytes())?;
+    }
+    Element::List => {
+      let mut level = 1;
+
+      out.write_all(b"<ul>\n")?;
+      for element in input.children.iter() {
+        if let Element::ListItem(item_level) = element.element {
+          if item_level > level {
+            out.write_all(b"<ul>\n")?;
+            level = item_level;
+          } else if item_level < level {
+            out.write_all(b"</ul>\n")?;
+            level = item_level;
+          }
+          write_html(element, out)?;
+        }
+      }
+      out.write_all(b"</ul>\n")?;
+    }
+    Element::ListItem(_level) => {
+      out.write_all(b"<li>\n")?;
+      for element in input.children.iter() {
+        write_html(element, out)?;
+      }
+      out.write_all(b"</li>\n")?;
+    }
+    Element::TypedBlock { kind } => {
+      if kind == &BlockType::Comment {
+        // Comments are not printed in html
+        // TODO provide option to print comments
+        return Ok(());
+      }
+
+      out.write_all(b"<div ")?;
+
+      if let Some(id) = input.get_attribute("anchor") {
+        out.write_all(&format!("id=\"{}\" ", id).as_bytes())?;
+      };
+
+      let class = match kind {
+        BlockType::Listing => "listingblock",
+        _ => "unknown-block",
+      };
+      out.write_all(&format!("class=\"{}\">\n", class).as_bytes())?;
+
+      if let Some(title) = input.get_attribute("title") {
+        out.write_all(&format!("<div class=\"title\">{}</div>\n", title).as_bytes())?;
+      };
+
+      if kind == &BlockType::Listing {
+        out.write_all(b"<pre>")?;
+      }
+
+      let content = input.get_attribute("content").unwrap_or(input.content);
+      out.write_all(escape_text(&content).as_bytes())?;
+
+      if kind == &BlockType::Listing {
+        out.write_all(b"</pre>\n")?;
+      }
+
+      out.write_all(b"</div>\n")?;
+    }
+    _ => {
+      out.write_all(
+        &format!(
+          "<NOT-YET-SUPPORTED:{:?}>{}</NOT-YET-SUPPORTED>\n",
+          input.element, input.content
+        )
+        .as_bytes(),
+      )?;
+    }
+  }
+
+  Ok(())
+}
+----
+
+[source, rust, save]
+.src/writer/json.rs
+----
+pub use crate::ast::*;
+use crate::{options, Result};
+use std::io;
+
+pub struct JsonWriter {}
+
+impl JsonWriter {
+  pub fn new() -> Self {
+    JsonWriter {}
+  }
+}
+
+impl<T: io::Write> crate::Writer<T> for JsonWriter {
+  fn write<'a>(&mut self, ast: AST, _args: &options::Opts, mut out: T) -> Result<()> {
+    out.write_all(serde_json::to_string_pretty(&ast)?.as_bytes())?;
+    out.flush()?;
+
+    Ok(())
+  }
+}
+----
+
+== Installation
+TODO
+
+== Build
+TODO
+
+== Tests
+
+=== Testumgebung
+TODO
+
+== Verwandte Projekte
+Es gibt einige Projekte mit vergleichbaren Zielen und teilweise auch einer vergleichbaren Architektur wie asciidoctrine.
+
+* asciidoc TODO
+* http://asciidoctor.org[asciidoctor] ist der Standard um asciidoc Dokumente zu rendern. Es ist in ruby geschrieben. Da der interne AST aber nicht direkt manipulierbar ist (obwohl es natürlich Möglichkeiten für Erweiterungen und auch viele tolle Plugins gibt) scheint es mir nicht ganz so flexibel wie asciidoctrine zu sein.
+* http://jgm.github.io/lunamark/doc/lunamark.html[lunamark] wurde ja bereits in der Einleitung erwähnt. Es war eine große Quelle der Inspiration für dieses Projekt.
+* https://pandoc.org/[Pandoc] ist ein Projekt mit einem sehr ähnlichen Aufbau. Es ist eine großartige Software und kommt vom gleichen Autor wie lunamark. Es wurde in Haskell geschrieben. Der große Unterschied (und auch der Grund, warum ich die Ziele von asciidoctrine nicht damit erreichen kann) ist, dass es einen https://hackage.haskell.org/package/pandoc-types/docs/Text-Pandoc-Definition.html[simpleren AST] benutzt (denn die Ausgangssprache ist hier Markdown). Daher kann es einiges nicht abbilden was ich gerne in Dokumenten verwende.
+
