@@ -48,6 +48,31 @@ impl crate::Reader for AsciidocReader {
 #[grammar = "reader/asciidoc.pest"]
 pub struct AsciidocParser;
 
+fn process_image<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+) -> ElementSpan<'a> {
+  base.element = Element::Image;
+  for element in element.into_inner().flatten() {
+    match element.as_rule() {
+      Rule::url => {
+        base.attributes.push(Attribute {
+          key: "path".to_string(),
+          value: AttributeValue::Ref(element.as_str()),
+        });
+      }
+      Rule::path => {
+        base.attributes.push(Attribute {
+          key: "path".to_string(),
+          value: AttributeValue::Ref(element.as_str()),
+        });
+      }
+      _ => (),
+    };
+  }
+  base
+}
+
 fn process_anchor<'a>(
   element: Pair<'a, asciidoc::Rule>,
   mut base: ElementSpan<'a>,
@@ -412,6 +437,7 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>) -> Option<ElementSpan<
   let mut base = set_span(&element);
 
   let element = match element.as_rule() {
+    Rule::image_block => Some(process_image(element, base)),
     Rule::header => {
       for subelement in element.into_inner() {
         match subelement.as_rule() {

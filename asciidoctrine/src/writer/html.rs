@@ -71,6 +71,11 @@ fn escape_text(input: &str) -> String {
 // TODO Styles etc
 fn write_html<T: io::Write>(input: &ElementSpan, out: &mut T) -> Result<()> {
   match &input.element {
+    Element::Image => {
+      if let Some(path) = input.get_attribute("path") {
+        out.write_all(&format!("<img src=\"{}\"></div>\n", path).as_bytes())?;
+      };
+    }
     Element::Title { level } => {
       let title = input.get_attribute("name").unwrap_or("");
 

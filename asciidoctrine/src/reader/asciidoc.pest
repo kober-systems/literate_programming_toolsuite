@@ -15,6 +15,7 @@ block = {
   // stem |
   // table |
   // verse |
+  image_block |
   include_macro |
   delimited_block |
   list |
@@ -49,6 +50,9 @@ revision_info = { identifier } // TODO
 author_info = { word+ ~ email? ~ &NEWLINE }
 
 email = { "<" ~ (LETTER | "." )+ ~ "@" ~ (LETTER | "." )+ ~ ">" }
+
+image_block = { anchor* ~ image }
+image = { "image::" ~ (url | path) ~ inline_attribute_list }
 
 attribute_entry = { ":" ~ identifier ~ ":" ~ identifier? ~ &NEWLINE }
 attribute_entry_block = { attribute_entry ~ NEWLINE }
