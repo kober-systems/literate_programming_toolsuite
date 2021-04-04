@@ -2231,7 +2231,7 @@ Um schönere diffs angezeigt zu bekommen sobald ein Fehler auftritt verwenden wi
 [[cargo_dev_dependencies]]
 [source, toml]
 ----
-pretty_assertions = "0.6.1"
+pretty_assertions = "0.7.1"
 ----
 
 Installation
