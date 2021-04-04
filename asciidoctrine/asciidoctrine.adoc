@@ -196,7 +196,7 @@ Die grundlegende Syntax definieren wir in einer eigenen Datei welche wir in unse
 asciidoc = _{ (NEWLINE* ~ block)*  ~ NEWLINE* ~ EOI }
 
 block = {
-  header |
+  <<block_entries>>
   // admonition |
   // example |
   // fenced |
@@ -317,95 +317,6 @@ pub struct AsciidocParser;
 
 <<asciidoc_parser_functions|join="\n\n">>
 
-fn process_anchor<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-) -> ElementSpan<'a> {
-  for element in element.into_inner() {
-    match element.as_rule() {
-      Rule::inline_anchor => {
-        for subelement in element.into_inner() {
-          match subelement.as_rule() {
-            Rule::identifier => {
-              base.attributes.push(Attribute {
-                key: "anchor".to_string(),
-                value: AttributeValue::Ref(subelement.as_str()),
-              });
-            }
-            // TODO Fehler abfangen und anzeigen
-            _ => (),
-          }
-        }
-      }
-      _ => (),
-    };
-  }
-  base
-}
-
-fn process_inline_attribute_list<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-) -> ElementSpan<'a> {
-  for subelement in element.into_inner() {
-    match subelement.as_rule() {
-      Rule::attribute => {
-        for subelement in subelement.into_inner() {
-          match subelement.as_rule() {
-            Rule::attribute_value => {
-              // TODO Wir müssen unterschiedlich damit umgehen, ob ein oder mehrere
-              // identifier existieren
-              base
-                .positional_attributes
-                .push(AttributeValue::Ref(subelement.as_str()));
-            }
-            Rule::named_attribute => {
-              let mut key = None;
-              let mut value = None;
-
-              for subelement in subelement.into_inner() {
-                match subelement.as_rule() {
-                  Rule::identifier => key = Some(subelement.as_str()),
-                  Rule::attribute_value => {
-                    value = Some(subelement.into_inner().concat());
-                  }
-                  // TODO Fehler abfangen und anzeigen
-                  _ => (),
-                }
-              }
-
-              base.attributes.push(Attribute {
-                key: key.unwrap().to_string(),
-                value: AttributeValue::String(value.unwrap()),
-              });
-            }
-            // TODO Fehler abfangen und anzeigen
-            _ => (),
-          }
-        }
-      }
-      // TODO Fehler abfangen und anzeigen
-      _ => (),
-    }
-  }
-  base
-}
-
-fn process_attribute_list<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-) -> ElementSpan<'a> {
-  for element in element.into_inner() {
-    match element.as_rule() {
-      Rule::inline_attribute_list => {
-        base = process_inline_attribute_list(element, base);
-      }
-      _ => (),
-    };
-  }
-  base
-}
-
 fn process_delimited_inner<'a>(
   element: Pair<'a, asciidoc::Rule>,
   mut base: ElementSpan<'a>,
@@ -415,24 +326,6 @@ fn process_delimited_inner<'a>(
       Rule::delimited_inner => {
         base.attributes.push(Attribute {
           key: "content".to_string(), // TODO
-          value: AttributeValue::Ref(element.as_str()),
-        });
-      }
-      _ => (),
-    };
-  }
-  base
-}
-
-fn process_blocktitle<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-) -> ElementSpan<'a> {
-  for element in element.into_inner() {
-    match element.as_rule() {
-      Rule::line => {
-        base.attributes.push(Attribute {
-          key: "title".to_string(), // TODO
           value: AttributeValue::Ref(element.as_str()),
         });
       }
@@ -488,37 +381,6 @@ fn process_xref<'a>(
   base
 }
 
-fn process_link<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-) -> ElementSpan<'a> {
-  base.element = Element::Link;
-  for element in element.into_inner() {
-    match element.as_rule() {
-      Rule::url => {
-        base.attributes.push(Attribute {
-          key: "url".to_string(),
-          value: AttributeValue::Ref(element.as_str()),
-        });
-        let element = element.into_inner().next().unwrap(); // TODO Fehler möglich?
-        base.attributes.push(Attribute {
-          key: "protocol".to_string(),
-          value: AttributeValue::Ref(element.as_str()),
-        });
-      }
-      Rule::inline_attribute_list => {
-        base = process_inline_attribute_list(element, base);
-      }
-      _ => {
-        let mut sub = set_span(&element);
-        sub.element = Element::Error("Not implemented".to_string());
-        base.children.push(sub);
-      }
-    };
-  }
-  base
-}
-
 fn process_inline<'a>(
   element: Pair<'a, asciidoc::Rule>,
   mut base: ElementSpan<'a>,
@@ -567,67 +429,6 @@ fn process_inline<'a>(
   base
 }
 
-fn process_title<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-) -> Option<ElementSpan<'a>> {
-  match element.as_rule() {
-    Rule::title => {
-      for subelement in element.into_inner() {
-        match subelement.as_rule() {
-          Rule::atx_title_style => {
-            base.element = Element::Title {
-              level: subelement.as_str().trim().len() as u32,
-            };
-          }
-          Rule::setext_title_style => {
-            let ch = subelement.as_str().chars().next().unwrap(); // TODO Check None?
-            let level;
-
-            match ch {
-              '=' => {
-                level = 1;
-              }
-              '-' => {
-                level = 2;
-              }
-              '~' => {
-                level = 3;
-              }
-              '^' => {
-                level = 4;
-              }
-              _ => {
-                base.element = Element::Error("Unsupported title formatting".to_string());
-                break;
-              }
-            }
-            base.element = Element::Title {
-              level: level as u32,
-            };
-          }
-          Rule::line => {
-            base.attributes.push(Attribute {
-              key: "name".to_string(),
-              value: AttributeValue::Ref(subelement.as_str()),
-            });
-          }
-          // We just take the attributes at the beginning
-          // of the element.
-          _ => {
-            break; // TODO Error
-          } // TODO improve matching
-        }
-      }
-    }
-    _ => {
-      base.element = Element::Error("Not implemented".to_string());
-    } // TODO
-  };
-
-  Some(base)
-}
-
 fn set_span<'a>(element: &Pair<'a, asciidoc::Rule>) -> ElementSpan<'a> {
   let (start_line, start_col) = element.as_span().start_pos().line_col();
   let (end_line, end_col) = element.as_span().end_pos().line_col();
@@ -648,127 +449,17 @@ fn set_span<'a>(element: &Pair<'a, asciidoc::Rule>) -> ElementSpan<'a> {
   }
 }
 
-fn process_paragraph<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-) -> ElementSpan<'a> {
-  base.element = Element::Paragraph;
-
-  for subelement in element.into_inner() {
-    let mut sub = set_span(&subelement);
-    match subelement.as_rule() {
-      Rule::other_inline => {
-        sub.element = Element::Text;
-        // TODO Newlines entfernen? Als Attribut?
-      }
-      Rule::other_list_inline => {
-        sub.element = Element::Text;
-      }
-      Rule::inline => {
-        sub = process_inline(subelement, sub);
-      }
-      _ => {
-        sub.element = Element::Error("Not implemented!".to_string());
-      }
-    }
-    base.children.push(sub);
-  }
-
-  base
-}
-
 fn process_element<'a>(element: Pair<'a, asciidoc::Rule>) -> Option<ElementSpan<'a>> {
   let mut base = set_span(&element);
 
   let element = match element.as_rule() {
     <<asciidoc_element_rules>>
-    Rule::header => {
-      for subelement in element.into_inner() {
-        match subelement.as_rule() {
-          Rule::title => {
-            if let Some(e) = process_title(subelement, base.clone()) {
-              base = e;
-            }
-          }
-          // We just take the attributes at the beginning
-          // of the element.
-          _ => {
-            break;
-          } // TODO improve matching
-        }
-      }
-      // TODO
-      Some(base)
-    }
-    Rule::title => process_title(element, base),
-    Rule::title_block => {
-      for subelement in element.into_inner() {
-        match subelement.as_rule() {
-          Rule::title => {
-            if let Some(e) = process_title(subelement, base.clone()) {
-              base = e;
-            }
-          }
-          Rule::anchor => {
-            base = process_anchor(subelement, base);
-          }
-          // We just take the attributes at the beginning
-          // of the element.
-          _ => {
-            break;
-          } // TODO improve matching
-        }
-      }
-      Some(base)
-    }
     Rule::block => {
       for subelement in element.into_inner() {
         if let Some(e) = process_element(subelement) {
           base = e;
         }
       }
-      Some(base)
-    }
-    Rule::list => {
-      for subelement in element.into_inner() {
-        if let Some(e) = process_element(subelement) {
-          base = e;
-        }
-      }
-      Some(base)
-    }
-    Rule::bullet_list => {
-      base.element = Element::List;
-
-      for subelement in element.into_inner() {
-        if let Some(e) = process_element(subelement) {
-          base.children.push(e);
-        }
-      }
-
-      Some(base)
-    }
-    Rule::bullet_list_element => {
-      for subelement in element.into_inner() {
-        match subelement.as_rule() {
-          Rule::bullet => {
-            base.element = Element::ListItem(subelement.as_str().trim().len() as u32);
-          }
-          Rule::list_element => {
-            for subelement in subelement.into_inner() {
-              if let Some(e) = process_element(subelement) {
-                base.children.push(e);
-              }
-            }
-          }
-          _ => {
-            let mut e = set_span(&subelement);
-            e.element = Element::Error("Not implemented".to_string());
-            base.children.push(e);
-          }
-        }
-      }
-
       Some(base)
     }
     Rule::delimited_block => {
@@ -836,8 +527,179 @@ TODO
 === Wichtige Konzepte
 TODO Attribut Listen etc
 
-== Document Header
+==== Elemente
 TODO
+
+==== Anker
+TODO
+
+[[peg_building_blocks]]
+[source, pest]
+----
+anchor = { inline_anchor ~ NEWLINE }
+inline_anchor = { "[[" ~ (identifier | path) ~ "]]" }
+----
+
+[[asciidoc_parser_functions]]
+[source, rust]
+----
+fn process_anchor<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+) -> ElementSpan<'a> {
+  for element in element.into_inner() {
+    match element.as_rule() {
+      Rule::inline_anchor => {
+        for subelement in element.into_inner() {
+          match subelement.as_rule() {
+            Rule::identifier => {
+              base.attributes.push(Attribute {
+                key: "anchor".to_string(),
+                value: AttributeValue::Ref(subelement.as_str()),
+              });
+            }
+            // TODO Fehler abfangen und anzeigen
+            _ => (),
+          }
+        }
+      }
+      _ => (),
+    };
+  }
+  base
+}
+----
+
+==== Attribute
+TODO
+
+[[peg_building_blocks]]
+[source, pest]
+.Element Attribute
+----
+attribute_list = { inline_attribute_list ~ NEWLINE }
+
+inline_attribute_list = {
+  "[" ~ (attribute ~ ("," ~ attribute)* )? ~ "]"
+}
+
+attribute = { named_attribute | attribute_value }
+named_attribute = { identifier ~ "=" ~ attribute_value }
+attribute_value = {
+  ("\"" ~ inner_attribute_value ~ "\"") |
+  ( (!"," ~ !"]" ~ ANY)+ )
+}
+inner_attribute_value = { ( "\\\"" | (!"\"" ~ ANY))* }
+----
+
+[[asciidoc_parser_functions]]
+[source, rust]
+----
+fn process_inline_attribute_list<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+) -> ElementSpan<'a> {
+  for subelement in element.into_inner() {
+    match subelement.as_rule() {
+      Rule::attribute => {
+        for subelement in subelement.into_inner() {
+          match subelement.as_rule() {
+            Rule::attribute_value => {
+              // TODO Wir müssen unterschiedlich damit umgehen, ob ein oder mehrere
+              // identifier existieren
+              base
+                .positional_attributes
+                .push(AttributeValue::Ref(subelement.as_str()));
+            }
+            Rule::named_attribute => {
+              let mut key = None;
+              let mut value = None;
+
+              for subelement in subelement.into_inner() {
+                match subelement.as_rule() {
+                  Rule::identifier => key = Some(subelement.as_str()),
+                  Rule::attribute_value => {
+                    value = Some(subelement.into_inner().concat());
+                  }
+                  // TODO Fehler abfangen und anzeigen
+                  _ => (),
+                }
+              }
+
+              base.attributes.push(Attribute {
+                key: key.unwrap().to_string(),
+                value: AttributeValue::String(value.unwrap()),
+              });
+            }
+            // TODO Fehler abfangen und anzeigen
+            _ => (),
+          }
+        }
+      }
+      // TODO Fehler abfangen und anzeigen
+      _ => (),
+    }
+  }
+  base
+}
+
+fn process_attribute_list<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+) -> ElementSpan<'a> {
+  for element in element.into_inner() {
+    match element.as_rule() {
+      Rule::inline_attribute_list => {
+        base = process_inline_attribute_list(element, base);
+      }
+      _ => (),
+    };
+  }
+  base
+}
+----
+
+==== Blocktitel (Elementtitel)
+TODO
+
+[[peg_building_blocks]]
+[source, pest]
+----
+blocktitle = { "." ~ !"." ~ line ~ NEWLINE }
+----
+
+[[asciidoc_parser_functions]]
+[source, rust]
+----
+fn process_blocktitle<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+) -> ElementSpan<'a> {
+  for element in element.into_inner() {
+    match element.as_rule() {
+      Rule::line => {
+        base.attributes.push(Attribute {
+          key: "title".to_string(), // TODO
+          value: AttributeValue::Ref(element.as_str()),
+        });
+      }
+      _ => (),
+    };
+  }
+  base
+}
+----
+
+== Document Header
+Viele Dokumente beginnen mit einem Header. Es ist die Hauptüberschrift
+und kann optional noch einige Metadaten enthalten welche sich auf das
+ganze Doument beziehen.
+
+[[block_entries]]
+[source, pest]
+----
+header |
+----
 
 [[blocks]]
 [source, pest]
@@ -856,14 +718,6 @@ header = {
 [[blocks]]
 [source, pest]
 ----
-title_block = { anchor* ~ title }
-title = {
-  (line ~ NEWLINE ~ setext_title_style ) |
-  (atx_title_style ~ line)
-}
-setext_title_style = { ("="{4,} | "-"{4,} | "~"{4,} | "^"{4,} ) ~ &NEWLINE }
-atx_title_style = { "="+ }
-
 revision_info = { identifier } // TODO
 
 author_info = { word+ ~ email? ~ &NEWLINE }
@@ -871,16 +725,257 @@ author_info = { word+ ~ email? ~ &NEWLINE }
 email = { "<" ~ (LETTER | "." )+ ~ "@" ~ (LETTER | "." )+ ~ ">" }
 ----
 
+[[asciidoc_element_rules]]
+[source, rust]
+----
+Rule::header => {
+  for subelement in element.into_inner() {
+    match subelement.as_rule() {
+      Rule::title => {
+        if let Some(e) = process_title(subelement, base.clone()) {
+          base = e;
+        }
+      }
+      // We just take the attributes at the beginning
+      // of the element.
+      _ => {
+        break;
+      } // TODO improve matching
+    }
+  }
+  // TODO
+  Some(base)
+}
+----
+
 == Überschriften
-TODO
+Überschriften werden verwendet um das Dokument in Unterthemen zu gruppieren.
+
+[[blocks]]
+[source, pest]
+----
+title_block = { anchor* ~ title }
+title = {
+  (line ~ NEWLINE ~ setext_title_style ) |
+  (atx_title_style ~ line)
+}
+setext_title_style = { ("="{4,} | "-"{4,} | "~"{4,} | "^"{4,} ) ~ &NEWLINE }
+atx_title_style = { "="+ }
+----
+
+[[asciidoc_element_rules]]
+[source, rust]
+----
+Rule::title => process_title(element, base),
+Rule::title_block => {
+  for subelement in element.into_inner() {
+    match subelement.as_rule() {
+      Rule::title => {
+        if let Some(e) = process_title(subelement, base.clone()) {
+          base = e;
+        }
+      }
+      Rule::anchor => {
+        base = process_anchor(subelement, base);
+      }
+      // We just take the attributes at the beginning
+      // of the element.
+      _ => {
+        break;
+      } // TODO improve matching
+    }
+  }
+  Some(base)
+}
+----
+
+[[asciidoc_parser_functions]]
+[source, rust]
+----
+fn process_title<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+) -> Option<ElementSpan<'a>> {
+  match element.as_rule() {
+    Rule::title => {
+      for subelement in element.into_inner() {
+        match subelement.as_rule() {
+          Rule::atx_title_style => {
+            base.element = Element::Title {
+              level: subelement.as_str().trim().len() as u32,
+            };
+          }
+          Rule::setext_title_style => {
+            let ch = subelement.as_str().chars().next().unwrap(); // TODO Check None?
+            let level;
+
+            match ch {
+              '=' => {
+                level = 1;
+              }
+              '-' => {
+                level = 2;
+              }
+              '~' => {
+                level = 3;
+              }
+              '^' => {
+                level = 4;
+              }
+              _ => {
+                base.element = Element::Error("Unsupported title formatting".to_string());
+                break;
+              }
+            }
+            base.element = Element::Title {
+              level: level as u32,
+            };
+          }
+          Rule::line => {
+            base.attributes.push(Attribute {
+              key: "name".to_string(),
+              value: AttributeValue::Ref(subelement.as_str()),
+            });
+          }
+          // We just take the attributes at the beginning
+          // of the element.
+          _ => {
+            break; // TODO Error
+          } // TODO improve matching
+        }
+      }
+    }
+    _ => {
+      base.element = Element::Error("Not implemented".to_string());
+    } // TODO
+  };
+
+  Some(base)
+}
+----
 
 == Absätze
 TODO
 
+[[blocks]]
+[source, pest]
+----
+paragraph = ${ (inline | other_inline)+ }
+----
+
+[[asciidoc_parser_functions]]
+[source, rust]
+----
+fn process_paragraph<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+) -> ElementSpan<'a> {
+  base.element = Element::Paragraph;
+
+  for subelement in element.into_inner() {
+    let mut sub = set_span(&subelement);
+    match subelement.as_rule() {
+      Rule::other_inline => {
+        sub.element = Element::Text;
+        // TODO Newlines entfernen? Als Attribut?
+      }
+      Rule::other_list_inline => {
+        sub.element = Element::Text;
+      }
+      Rule::inline => {
+        sub = process_inline(subelement, sub);
+      }
+      _ => {
+        sub.element = Element::Error("Not implemented!".to_string());
+      }
+    }
+    base.children.push(sub);
+  }
+
+  base
+}
+----
+
 == Listen
+
+[[blocks]]
+[source, pest]
+----
+list = { bullet_list | numbered_list | labeled_list }
+
+list_element = ${
+  (
+    list_paragraph |
+    (continuation ~ delimited_block)
+  )+
+}
+list_paragraph = ${ (inline | other_list_inline)+ }
+other_list_inline = @{ (!empty_lines ~ !EOI ~ !inline ~ !(NEWLINE ~ bullet) ~ !(continuation ~ delimited_block) ~ ANY)+ }
+
+bullet = { ("*"+ | "-"+) }
+bullet_list_element = { bullet ~ list_element ~ (NEWLINE | EOI) }
+bullet_list = { bullet_list_element+ }
+
+numbered_list = { "numbered_list" } // TODO
+
+label_bullet = { (!"::" ~ linechar) ~ "::" }
+labeled_list = { (label_bullet ~ list_element)+ }
+----
+
+[[asciidoc_element_rules]]
+[source, rust]
+----
+Rule::list => {
+  for subelement in element.into_inner() {
+    if let Some(e) = process_element(subelement) {
+      base = e;
+    }
+  }
+  Some(base)
+}
+----
 
 === Unnummerierte Listen
 TODO
+
+[[asciidoc_element_rules]]
+[source, rust]
+----
+Rule::bullet_list => {
+  base.element = Element::List;
+
+  for subelement in element.into_inner() {
+    if let Some(e) = process_element(subelement) {
+      base.children.push(e);
+    }
+  }
+
+  Some(base)
+}
+Rule::bullet_list_element => {
+  for subelement in element.into_inner() {
+    match subelement.as_rule() {
+      Rule::bullet => {
+        base.element = Element::ListItem(subelement.as_str().trim().len() as u32);
+      }
+      Rule::list_element => {
+        for subelement in subelement.into_inner() {
+          if let Some(e) = process_element(subelement) {
+            base.children.push(e);
+          }
+        }
+      }
+      _ => {
+        let mut e = set_span(&subelement);
+        e.element = Element::Error("Not implemented".to_string());
+        base.children.push(e);
+      }
+    }
+  }
+
+  Some(base)
+}
+----
 
 === Nummerierte Listen
 TODO
@@ -893,6 +988,52 @@ TODO
 
 == Links
 TODO
+
+[[inline_elements]]
+[source, pest]
+----
+link = ${ url ~ inline_attribute_list }
+url = ${proto ~ "://" ~ path}
+proto = ${ ("http" ~ "s"?) |
+           "mailto" |
+           "git"
+         }
+----
+
+[[asciidoc_parser_functions]]
+[source, rust]
+----
+fn process_link<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+) -> ElementSpan<'a> {
+  base.element = Element::Link;
+  for element in element.into_inner() {
+    match element.as_rule() {
+      Rule::url => {
+        base.attributes.push(Attribute {
+          key: "url".to_string(),
+          value: AttributeValue::Ref(element.as_str()),
+        });
+        let element = element.into_inner().next().unwrap(); // TODO Fehler möglich?
+        base.attributes.push(Attribute {
+          key: "protocol".to_string(),
+          value: AttributeValue::Ref(element.as_str()),
+        });
+      }
+      Rule::inline_attribute_list => {
+        base = process_inline_attribute_list(element, base);
+      }
+      _ => {
+        let mut sub = set_span(&element);
+        sub.element = Element::Error("Not implemented".to_string());
+        base.children.push(sub);
+      }
+    };
+  }
+  base
+}
+----
 
 == Querverweise
 TODO
@@ -938,6 +1079,9 @@ fn process_image<'a>(
           value: AttributeValue::Ref(element.as_str()),
         });
       }
+      Rule::inline_attribute_list => {
+        base = process_inline_attribute_list(element, base);
+      }
       _ => (),
     };
   }
@@ -947,29 +1091,6 @@ fn process_image<'a>(
 
 == Tabellen
 TODO
-
-[[peg_building_blocks]]
-[source, pest]
-----
-attribute_list = { inline_attribute_list ~ NEWLINE }
-
-inline_attribute_list = {
-  "[" ~ (attribute ~ ("," ~ attribute)* )? ~ "]"
-}
-
-attribute = { named_attribute | attribute_value }
-named_attribute = { identifier ~ "=" ~ attribute_value }
-attribute_value = {
-  ("\"" ~ inner_attribute_value ~ "\"") |
-  ( (!"," ~ !"]" ~ ANY)+ )
-}
-inner_attribute_value = { ( "\\\"" | (!"\"" ~ ANY))* }
-
-anchor = { inline_anchor ~ NEWLINE }
-inline_anchor = { "[[" ~ (identifier | path) ~ "]]" }
-
-blocktitle = { "." ~ !"." ~ line ~ NEWLINE }
-----
 
 [[blocks]]
 [source, pest]
@@ -1019,41 +1140,12 @@ delimited_source = {
 
 delimited_verse = { "verse" } // TODO
 
-paragraph = ${ (inline | other_inline)+ }
-
-list = { bullet_list | numbered_list | labeled_list }
-
-list_element = ${
-  (
-    list_paragraph |
-    (continuation ~ delimited_block)
-  )+
-}
-list_paragraph = ${ (inline | other_list_inline)+ }
-other_list_inline = @{ (!empty_lines ~ !EOI ~ !inline ~ !(NEWLINE ~ bullet) ~ !(continuation ~ delimited_block) ~ ANY)+ }
-
-bullet = { ("*"+ | "-"+) }
-bullet_list_element = { bullet ~ list_element ~ (NEWLINE | EOI) }
-bullet_list = { bullet_list_element+ }
-
-numbered_list = { "numbered_list" } // TODO
-
-label_bullet = { (!"::" ~ linechar) ~ "::" }
-labeled_list = { (label_bullet ~ list_element)+ }
-
 include_macro = { "include::" ~ path ~ inline_attribute_list }
 ----
 
 [[inline_elements]]
 [source, pest]
 ----
-link = ${ url ~ inline_attribute_list }
-url = ${proto ~ "://" ~ path}
-proto = ${ ("http" ~ "s"?) |
-           "mailto" |
-           "git"
-         }
-
 footnote = { "footnote:" ~ inline_attribute_list }
 footnoteref = { "footnoteref:" ~ inline_attribute_list }
 xref = !{ "<<" ~ identifier ~ (NEWLINE? ~ "," ~ NEWLINE? ~ word+)? ~ ">>" }
