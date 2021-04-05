@@ -84,7 +84,7 @@ Die Eingabedatei(en) wird(werden) eingelesen::
 Der AST wird von einer oder mehreren Erweiterungen modifiziert::
   * Jede <<extensions, Erweiterung>> bekommt einen AST als Parameter übergeben
     und gibt einen AST zurück.
-  * Erweiterungen können über die <<cmd, Kommandozeile>> oder die <<api>>
+  * Erweiterungen können über die <<cmd-api, Kommandozeile>> oder die <<api>>
     weitere Parameter und Steuerungsdateien (von beliebigem Format) übergeben
     werden.
   * Es können beliebig viele Erweiterungen in beliebiger Reihenfolge
@@ -93,7 +93,7 @@ Der AST wird von einer oder mehreren Erweiterungen modifiziert::
     überlassen.
   * Standardmäßig sind keine Erweiterungen aktiviert.
 Ein Output Prozessor (Writer) wandelt den AST in eine Ausgabedatei um::
-  * Der Writer kann über die <<cmd, Komandozeile>> oder die <<api>> Parameter
+  * Der Writer kann über die <<cmd-api, Kommandozeile>> oder die <<api>> Parameter
     oder Styledateien (wie css-Stylesheets etc) übergeben bekommen.
   * Das standardmäßige Ausgabeformat ist <<html5>>.
 
@@ -179,10 +179,13 @@ pub mod asciidoc;
 pub mod json;
 ----
 
-:leveloffset: +1
+:leveloffset: +3
 
 [[asciidoc-syntax]]
 include::asciidoc-syntax.adoc[]
+
+= Asciidoc
+Asciidoc ist ein einfaches Text Markup Format.
 
 Wir verwenden https://pest.rs/[pest] um die Syntax zu parsen. Es verwendet https://pest.rs/book/grammars/peg.html[Parsing Expression Grammars] um Daten zu parsen.
 
@@ -1177,9 +1180,35 @@ line = { linechar+ ~ ( &NEWLINE | &EOI) }
 empty_lines = _{ NEWLINE{2, } | (NEWLINE ~ EOI) }
 ----
 
-//include::src/json-syntax.adoc[]
+include::src/json-syntax.adoc[]
 
-:leveloffset: -1
+= Json
+
+[source, rust, save]
+.src/reader/json.rs
+----
+pub use crate::ast::*;
+use crate::options::Opts;
+use crate::Result;
+
+pub struct JsonReader {}
+
+impl JsonReader {
+  pub fn new() -> Self {
+    JsonReader {}
+  }
+}
+
+impl crate::Reader for JsonReader {
+  fn parse<'a>(&self, input: &'a str, _args: &Opts) -> Result<AST<'a>> {
+    let ast = serde_json::from_str(input)?;
+
+    Ok(ast)
+  }
+}
+----
+
+:leveloffset: -3
 
 [[output-format]]
 === Ausgabeformate
@@ -1196,9 +1225,12 @@ pub mod html;
 pub mod json;
 ----
 
-:leveloffset: +1
+:leveloffset: +3
 
 include::src/output/html5.adoc[]
+
+[[html5]]
+= Html5
 
 [source, rust, save]
 .src/writer/html.rs
@@ -1277,42 +1309,8 @@ fn escape_text(input: &str) -> String {
 fn write_html<T: io::Write>(input: &ElementSpan, out: &mut T) -> Result<()> {
   match &input.element {
     <<format_html_element>>
-    Element::Title { level } => {
-      let title = input.get_attribute("name").unwrap_or("");
-
-      out.write_all(&format!("<h{}", level).as_bytes())?;
-
-      if level > &1 {
-        let id = match input.get_attribute("anchor") {
-          Some(id) => id.to_string(),
-          None => "_".to_string() + &title.replace(" ", "_").to_lowercase(),
-        };
-        out.write_all(&format!(" id=\"{}\"", id).as_bytes())?;
-      };
-
-      out.write_all(&format!(">{}</h{}>\n", title, level).as_bytes())?;
-    }
-    Element::Paragraph => {
-      out.write_all(b"<p>")?;
-      for element in input.children.iter() {
-        write_html(element, out)?;
-      }
-      out.write_all(b"</p>\n")?;
-    }
     Element::Text => {
       out.write_all(input.content.as_bytes())?;
-    }
-    Element::Link => {
-      let url = input.get_attribute("url").unwrap_or("");
-      let content = match input.positional_attributes.get(0) {
-        Some(value) => match value {
-          AttributeValue::Ref(value) => value.to_string(),
-          AttributeValue::String(value) => value.clone(),
-        },
-        None => "".to_string(),
-      };
-
-      out.write_all(&format!("<a href=\"{}\">{}</a>", url, content).as_bytes())?;
     }
     Element::Styled => {
       let style = input.get_attribute("style").unwrap_or("");
@@ -1332,73 +1330,6 @@ fn write_html<T: io::Write>(input: &ElementSpan, out: &mut T) -> Result<()> {
         out.write_all(b"</strong>")?;
       };
     }
-    Element::XRef => {
-      let id = input.get_attribute("id").unwrap_or("");
-      let content = input.get_attribute("content").unwrap_or(id.clone());
-
-      out.write_all(&format!("<a href=\"#{}\">{}</a>", id, content).as_bytes())?;
-    }
-    Element::List => {
-      let mut level = 1;
-
-      out.write_all(b"<ul>\n")?;
-      for element in input.children.iter() {
-        if let Element::ListItem(item_level) = element.element {
-          if item_level > level {
-            out.write_all(b"<ul>\n")?;
-            level = item_level;
-          } else if item_level < level {
-            out.write_all(b"</ul>\n")?;
-            level = item_level;
-          }
-          write_html(element, out)?;
-        }
-      }
-      out.write_all(b"</ul>\n")?;
-    }
-    Element::ListItem(_level) => {
-      out.write_all(b"<li>\n")?;
-      for element in input.children.iter() {
-        write_html(element, out)?;
-      }
-      out.write_all(b"</li>\n")?;
-    }
-    Element::TypedBlock { kind } => {
-      if kind == &BlockType::Comment {
-        // Comments are not printed in html
-        // TODO provide option to print comments
-        return Ok(());
-      }
-
-      out.write_all(b"<div ")?;
-
-      if let Some(id) = input.get_attribute("anchor") {
-        out.write_all(&format!("id=\"{}\" ", id).as_bytes())?;
-      };
-
-      let class = match kind {
-        BlockType::Listing => "listingblock",
-        _ => "unknown-block",
-      };
-      out.write_all(&format!("class=\"{}\">\n", class).as_bytes())?;
-
-      if let Some(title) = input.get_attribute("title") {
-        out.write_all(&format!("<div class=\"title\">{}</div>\n", title).as_bytes())?;
-      };
-
-      if kind == &BlockType::Listing {
-        out.write_all(b"<pre>")?;
-      }
-
-      let content = input.get_attribute("content").unwrap_or(input.content);
-      out.write_all(escape_text(&content).as_bytes())?;
-
-      if kind == &BlockType::Listing {
-        out.write_all(b"</pre>\n")?;
-      }
-
-      out.write_all(b"</div>\n")?;
-    }
     _ => {
       out.write_all(
         &format!(
@@ -1413,6 +1344,152 @@ fn write_html<T: io::Write>(input: &ElementSpan, out: &mut T) -> Result<()> {
   Ok(())
 }
 ----
+
+== Überschriften
+
+[[format_html_element]]
+[source, rust]
+----
+Element::Title { level } => {
+  let title = input.get_attribute("name").unwrap_or("");
+
+  out.write_all(&format!("<h{}", level).as_bytes())?;
+
+  if level > &1 {
+    let id = match input.get_attribute("anchor") {
+      Some(id) => id.to_string(),
+      None => "_".to_string() + &title.replace(" ", "_").to_lowercase(),
+    };
+    out.write_all(&format!(" id=\"{}\"", id).as_bytes())?;
+  };
+
+  out.write_all(&format!(">{}</h{}>\n", title, level).as_bytes())?;
+}
+----
+
+== Absätze
+
+[[format_html_element]]
+[source, rust]
+----
+Element::Paragraph => {
+  out.write_all(b"<p>")?;
+  for element in input.children.iter() {
+    write_html(element, out)?;
+  }
+  out.write_all(b"</p>\n")?;
+}
+----
+
+== Listen
+
+[[format_html_element]]
+[source, rust]
+----
+Element::List => {
+  let mut level = 1;
+
+  out.write_all(b"<ul>\n")?;
+  for element in input.children.iter() {
+    if let Element::ListItem(item_level) = element.element {
+      if item_level > level {
+        out.write_all(b"<ul>\n")?;
+        level = item_level;
+      } else if item_level < level {
+        out.write_all(b"</ul>\n")?;
+        level = item_level;
+      }
+      write_html(element, out)?;
+    }
+  }
+  out.write_all(b"</ul>\n")?;
+}
+Element::ListItem(_level) => {
+  out.write_all(b"<li>\n")?;
+  for element in input.children.iter() {
+    write_html(element, out)?;
+  }
+  out.write_all(b"</li>\n")?;
+}
+----
+
+== Sourcecode Blocke
+
+[[format_html_element]]
+[source, rust]
+----
+Element::TypedBlock { kind } => {
+  if kind == &BlockType::Comment {
+    // Comments are not printed in html
+    // TODO provide option to print comments
+    return Ok(());
+  }
+
+  out.write_all(b"<div ")?;
+
+  if let Some(id) = input.get_attribute("anchor") {
+    out.write_all(&format!("id=\"{}\" ", id).as_bytes())?;
+  };
+
+  let class = match kind {
+    BlockType::Listing => "listingblock",
+    _ => "unknown-block",
+  };
+  out.write_all(&format!("class=\"{}\">\n", class).as_bytes())?;
+
+  if let Some(title) = input.get_attribute("title") {
+    out.write_all(&format!("<div class=\"title\">{}</div>\n", title).as_bytes())?;
+  };
+
+  if kind == &BlockType::Listing {
+    out.write_all(b"<pre>")?;
+  }
+
+  let content = input.get_attribute("content").unwrap_or(input.content);
+  out.write_all(escape_text(&content).as_bytes())?;
+
+  if kind == &BlockType::Listing {
+    out.write_all(b"</pre>\n")?;
+  }
+
+  out.write_all(b"</div>\n")?;
+}
+----
+
+== Links
+
+[[format_html_element]]
+[source, rust]
+----
+Element::Link => {
+  let url = input.get_attribute("url").unwrap_or("");
+  let content = match input.positional_attributes.get(0) {
+    Some(value) => match value {
+      AttributeValue::Ref(value) => value.to_string(),
+      AttributeValue::String(value) => value.clone(),
+    },
+    None => "".to_string(),
+  };
+
+  out.write_all(&format!("<a href=\"{}\">{}</a>", url, content).as_bytes())?;
+}
+----
+
+== Querverweise
+
+[[format_html_element]]
+[source, rust]
+----
+Element::XRef => {
+  let id = input.get_attribute("id").unwrap_or("");
+  let content = input.get_attribute("content").unwrap_or(id.clone());
+
+  out.write_all(&format!("<a href=\"#{}\">{}</a>", id, content).as_bytes())?;
+}
+----
+
+== Fußnoten
+TODO
 
 == Bilder
 
@@ -1429,10 +1506,18 @@ Element::Image => {
 }
 ----
 
+== Tabellen
+TODO
+
+== Inhaltsverzeichnis
+TODO
+
 include::src/output/docbook.adoc[]
 include::src/output/manpage.adoc[]
 include::src/output/pdf.adoc[]
 include::src/output/json-ast.adoc[]
+
+= Json
 
 [source, rust, save]
 .src/writer/json.rs
@@ -1459,10 +1544,88 @@ impl<T: io::Write> crate::Writer<T> for JsonWriter {
 }
 ----
 
-:leveloffset: -1
+:leveloffset: -3
 
 == asciidoctrine in andere Programme einbinden
 TODO
+
+[[cmd-api]]
+=== Aufruf auf der Kommandozeile
+Der einfachste Weg asciidoctrine in ein anderes Programm einzubinden ist es über der Kommandozeile aufzurufen.
+
+[source, rust, save]
+.src/options.rs
+----
+extern crate clap;
+
+use clap::arg_enum;
+use std::error::Error;
+use std::path::PathBuf;
+pub use structopt::StructOpt;
+
+/// Parse a single key-value pair
+fn parse_key_val<T, U>(s: &str) -> Result<(T, U), Box<dyn Error>>
+where
+  T: std::str::FromStr,
+  T::Err: Error + 'static,
+  U: std::str::FromStr,
+  U::Err: Error + 'static,
+{
+  let pos = s
+    .find('=')
+    .ok_or_else(|| format!("invalid KEY=value: no `=` found in `{}`", s))?;
+  Ok((s[..pos].parse()?, s[pos + 1..].parse()?))
+}
+
+arg_enum! {
+  #[derive(StructOpt, Debug)]
+  pub enum Reader {
+    Asciidoc,
+    Json,
+  }
+}
+
+arg_enum! {
+  #[derive(StructOpt, Debug)]
+  pub enum Writer {
+    Html5,
+    Docbook,
+    Pdf,
+    Json,
+    // The asciidoc output makes it possible
+    // to use this tool as a preprocessor for
+    // other asciidoc tools while it is maturing
+    Asciidoc,
+  }
+}
+
+#[derive(StructOpt, Debug)]
+#[structopt(name = "asciidoctrine")]
+pub struct Opts {
+  #[structopt(short = "r", long = "reader-format", default_value = "asciidoc")]
+  #[structopt(possible_values = &Reader::variants(), case_insensitive = true)]
+  pub readerfmt: Reader,
+  #[structopt(short = "w", long = "writer-format", default_value = "html5")]
+  #[structopt(possible_values = &Writer::variants(), case_insensitive = true)]
+  pub writerfmt: Writer,
+  #[structopt(short = "e", long = "extension")]
+  pub extensions: Vec<String>,
+  #[structopt(long, parse(from_os_str))]
+  pub template: Option<PathBuf>,
+  #[structopt(long, parse(from_os_str))]
+  pub stylesheet: Option<PathBuf>,
+  #[structopt(short = "a", long = "attribute", parse(try_from_str = parse_key_val), number_of_values = 1)]
+  defines: Vec<(String, String)>,
+  #[structopt(name = "FILE", parse(from_os_str))]
+  pub input: Option<PathBuf>,
+  #[structopt(short = "o", parse(from_os_str))]
+  pub output: Option<PathBuf>,
+}
+
+pub fn from_args() -> Opts {
+  Opts::from_args()
+}
+----
 
 [[extensions]]
 == asciidoctrine erweitern
@@ -1645,7 +1808,7 @@ pub enum Element<'a> {
   TableRow,
   /// A table cell
   TableCell,
-  /// A wrong formatted text
+  /// A wrong formatted text or block
   Error(String),
 }
 
@@ -1686,80 +1849,6 @@ Jedes Dokument ist im Großen und Ganzen eine Ansammlung von hintereinander lieg
 
 [%collapsible]
 ====
-
-[source, rust, save]
-.src/options.rs
-----
-extern crate clap;
-
-use clap::arg_enum;
-use std::error::Error;
-use std::path::PathBuf;
-pub use structopt::StructOpt;
-
-/// Parse a single key-value pair
-fn parse_key_val<T, U>(s: &str) -> Result<(T, U), Box<dyn Error>>
-where
-  T: std::str::FromStr,
-  T::Err: Error + 'static,
-  U: std::str::FromStr,
-  U::Err: Error + 'static,
-{
-  let pos = s
-    .find('=')
-    .ok_or_else(|| format!("invalid KEY=value: no `=` found in `{}`", s))?;
-  Ok((s[..pos].parse()?, s[pos + 1..].parse()?))
-}
-
-arg_enum! {
-  #[derive(StructOpt, Debug)]
-  pub enum Reader {
-    Asciidoc,
-    Json,
-  }
-}
-
-arg_enum! {
-  #[derive(StructOpt, Debug)]
-  pub enum Writer {
-    Html5,
-    Docbook,
-    Pdf,
-    Json,
-    // The asciidoc output makes it possible
-    // to use this tool as a preprocessor for
-    // other asciidoc tools while it is maturing
-    Asciidoc,
-  }
-}
-
-#[derive(StructOpt, Debug)]
-#[structopt(name = "asciidoctrine")]
-pub struct Opts {
-  #[structopt(short = "r", long = "reader-format", default_value = "asciidoc")]
-  #[structopt(possible_values = &Reader::variants(), case_insensitive = true)]
-  pub readerfmt: Reader,
-  #[structopt(short = "w", long = "writer-format", default_value = "html5")]
-  #[structopt(possible_values = &Writer::variants(), case_insensitive = true)]
-  pub writerfmt: Writer,
-  #[structopt(short = "e", long = "extension")]
-  pub extensions: Vec<String>,
-  #[structopt(long, parse(from_os_str))]
-  pub template: Option<PathBuf>,
-  #[structopt(long, parse(from_os_str))]
-  pub stylesheet: Option<PathBuf>,
-  #[structopt(short = "a", long = "attribute", parse(try_from_str = parse_key_val), number_of_values = 1)]
-  defines: Vec<(String, String)>,
-  #[structopt(name = "FILE", parse(from_os_str))]
-  pub input: Option<PathBuf>,
-  #[structopt(short = "o", parse(from_os_str))]
-  pub output: Option<PathBuf>,
-}
-
-pub fn from_args() -> Opts {
-  Opts::from_args()
-}
-----
 
 [source, rust, save]
 .src/util.rs
@@ -1865,30 +1954,6 @@ impl Environment for Env {
       Env::Io(env) => env.write(path, content),
       Env::Cache(env) => env.write(path, content),
     }
-  }
-}
-----
-
-[source, rust, save]
-.src/reader/json.rs
-----
-pub use crate::ast::*;
-use crate::options::Opts;
-use crate::Result;
-
-pub struct JsonReader {}
-
-impl JsonReader {
-  pub fn new() -> Self {
-    JsonReader {}
-  }
-}
-
-impl crate::Reader for JsonReader {
-  fn parse<'a>(&self, input: &'a str, _args: &Opts) -> Result<AST<'a>> {
-    let ast = serde_json::from_str(input)?;
-
-    Ok(ast)
   }
 }
 ----
