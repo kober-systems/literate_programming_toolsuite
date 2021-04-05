@@ -117,7 +117,7 @@ pub enum Element<'a> {
   TableRow,
   /// A table cell
   TableCell,
-  /// A wrong formatted text
+  /// A wrong formatted text or block
   Error(String),
 }
 
