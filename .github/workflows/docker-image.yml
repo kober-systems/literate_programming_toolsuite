@@ -17,4 +17,4 @@ jobs:
     - name: Build the Docker image
       run: docker build . --file Dockerfile --tag lammermann/lisa:$(date +%Y-%m-%d) --tag lammermann/lisa:bleeding
     - name: Push the latest Docker image
-      run: docker push lammermann/lisa      
+      run: docker push --all-tags lammermann/lisa
