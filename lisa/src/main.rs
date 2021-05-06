@@ -35,7 +35,8 @@ fn main() -> Result<()> {
     }
   };
 
-  let mut ast = reader.parse(&input, &opts)?;
+  let mut env = util::Env::Io(util::Io::new());
+  let mut ast = reader.parse(&input, &opts, &mut env)?;
 
   // TODO bei diesem Programm gehen wir davon aus,
   // das lisa gewünscht ist.

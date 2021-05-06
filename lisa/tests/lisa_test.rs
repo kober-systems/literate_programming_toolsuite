@@ -26,9 +26,10 @@ print(testmodule.version)
 "#;
   let reader = AsciidocReader::new();
   let opts = options::Opts::from_iter(vec![""].into_iter());
-  let ast = reader.parse(content, &opts)?;
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
 
-  let mut lisa = Lisa::from_env(util::Env::Cache(util::Cache::new()));
+  let mut lisa = Lisa::from_env(env);
   let _ast = lisa.transform(ast)?;
 
   // TODO ast vergleichen
@@ -42,6 +43,7 @@ print(testmodule.version)
 print(testmodule.version)
 "#
 );
+
 
   assert!(outputs.is_empty()); // <1>
 
@@ -72,9 +74,10 @@ require "testmodule"
 "#;
   let reader = AsciidocReader::new();
   let opts = options::Opts::from_iter(vec![""].into_iter());
-  let ast = reader.parse(content, &opts)?;
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
 
-  let mut lisa = Lisa::from_env(util::Env::Cache(util::Cache::new()));
+  let mut lisa = Lisa::from_env(env);
   let _ast = lisa.transform(ast)?;
 
   // TODO ast vergleichen
@@ -88,6 +91,7 @@ require "testmodule"
 print(testmodule.version)
 "#
 );
+
 
   assert!(outputs.is_empty()); // <1>
 
@@ -130,9 +134,10 @@ print(testmodule.version .. "my other snippet")
 "#;
   let reader = AsciidocReader::new();
   let opts = options::Opts::from_iter(vec![""].into_iter());
-  let ast = reader.parse(content, &opts)?;
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
 
-  let mut lisa = Lisa::from_env(util::Env::Cache(util::Cache::new()));
+  let mut lisa = Lisa::from_env(env);
   let _ast = lisa.transform(ast)?;
 
   // TODO ast vergleichen
@@ -155,6 +160,7 @@ assert_eq!(
 print(testmodule.version .. "my other snippet")
 "#
 );
+
 
   assert!(outputs.is_empty()); // <1>
 
@@ -195,9 +201,10 @@ Now lets go on to another thing ...
 "#;
   let reader = AsciidocReader::new();
   let opts = options::Opts::from_iter(vec![""].into_iter());
-  let ast = reader.parse(content, &opts)?;
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
 
-  let mut lisa = Lisa::from_env(util::Env::Cache(util::Cache::new()));
+  let mut lisa = Lisa::from_env(env);
   let _ast = lisa.transform(ast)?;
 
   // TODO ast vergleichen
@@ -285,9 +292,10 @@ And so on ...
 "#;
   let reader = AsciidocReader::new();
   let opts = options::Opts::from_iter(vec![""].into_iter());
-  let ast = reader.parse(content, &opts)?;
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
 
-  let mut lisa = Lisa::from_env(util::Env::Cache(util::Cache::new()));
+  let mut lisa = Lisa::from_env(env);
   let _ast = lisa.transform(ast)?;
 
   // TODO ast vergleichen

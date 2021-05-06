@@ -25,7 +25,8 @@ fn main() -> Result<()> {
     }
   };
 
-  let ast = reader.parse(&input, &opts)?;
+  let mut env = util::Env::Io(util::Io::new());
+  let ast = reader.parse(&input, &opts, &mut env)?;
 
   // TODO Wenn Erweiterungen in den Kommandozeilenparametern angegeben sind
   // diese in einer Schleife den AST manipulieren lassen

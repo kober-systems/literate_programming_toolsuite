@@ -71,11 +71,6 @@ fn escape_text(input: &str) -> String {
 // TODO Styles etc
 fn write_html<T: io::Write>(input: &ElementSpan, out: &mut T) -> Result<()> {
   match &input.element {
-    Element::Image => {
-      if let Some(path) = input.get_attribute("path") {
-        out.write_all(&format!("<img src=\"{}\"></div>\n", path).as_bytes())?;
-      };
-    }
     Element::Title { level } => {
       let title = input.get_attribute("name").unwrap_or("");
 
@@ -97,45 +92,6 @@ fn write_html<T: io::Write>(input: &ElementSpan, out: &mut T) -> Result<()> {
         write_html(element, out)?;
       }
       out.write_all(b"</p>\n")?;
-    }
-    Element::Text => {
-      out.write_all(input.content.as_bytes())?;
-    }
-    Element::Link => {
-      let url = input.get_attribute("url").unwrap_or("");
-      let content = match input.positional_attributes.get(0) {
-        Some(value) => match value {
-          AttributeValue::Ref(value) => value.to_string(),
-          AttributeValue::String(value) => value.clone(),
-        },
-        None => "".to_string(),
-      };
-
-      out.write_all(&format!("<a href=\"{}\">{}</a>", url, content).as_bytes())?;
-    }
-    Element::Styled => {
-      let style = input.get_attribute("style").unwrap_or("");
-      let content = input.get_attribute("content").unwrap_or("");
-
-      if style == "monospaced" {
-        out.write_all(b"<code>")?;
-      } else if style == "strong" {
-        out.write_all(b"<strong>")?;
-      }
-
-      out.write_all(content.as_bytes())?;
-
-      if style == "monospaced" {
-        out.write_all(b"</code>")?;
-      } else if style == "strong" {
-        out.write_all(b"</strong>")?;
-      };
-    }
-    Element::XRef => {
-      let id = input.get_attribute("id").unwrap_or("");
-      let content = input.get_attribute("content").unwrap_or(id.clone());
-
-      out.write_all(&format!("<a href=\"#{}\">{}</a>", id, content).as_bytes())?;
     }
     Element::List => {
       let mut level = 1;
@@ -198,11 +154,72 @@ fn write_html<T: io::Write>(input: &ElementSpan, out: &mut T) -> Result<()> {
 
       out.write_all(b"</div>\n")?;
     }
+    Element::Link => {
+      let url = input.get_attribute("url").unwrap_or("");
+      let content = match input.positional_attributes.get(0) {
+        Some(value) => match value {
+          AttributeValue::Ref(value) => value.to_string(),
+          AttributeValue::String(value) => value.clone(),
+        },
+        None => "".to_string(),
+      };
+
+      out.write_all(&format!("<a href=\"{}\">{}</a>", url, content).as_bytes())?;
+    }
+    Element::XRef => {
+      let id = input.get_attribute("id").unwrap_or("");
+      let content = input.get_attribute("content").unwrap_or(id.clone());
+
+      out.write_all(&format!("<a href=\"#{}\">{}</a>", id, content).as_bytes())?;
+    }
+    Element::Image => {
+      if let Some(path) = input.get_attribute("path") {
+        match input.get_attribute("opts") {
+          Some(options) => {
+            let content = input.get_attribute("content").unwrap_or("");
+            if options == "inline" {
+              if path.ends_with(".svg") {
+                out.write_all(content.as_bytes())?;
+              }
+              // TODO
+            } else if options == "interactive" {
+              // TODO
+            } else {
+              // TODO
+            }
+          }
+          None => {
+            out.write_all(&format!("<img src=\"{}\"></div>\n", path).as_bytes())?;
+          }
+        }
+      }
+    }
+    Element::Text => {
+      out.write_all(input.content.as_bytes())?;
+    }
+    Element::Styled => {
+      let style = input.get_attribute("style").unwrap_or("");
+      let content = input.get_attribute("content").unwrap_or("");
+
+      if style == "monospaced" {
+        out.write_all(b"<code>")?;
+      } else if style == "strong" {
+        out.write_all(b"<strong>")?;
+      }
+
+      out.write_all(content.as_bytes())?;
+
+      if style == "monospaced" {
+        out.write_all(b"</code>")?;
+      } else if style == "strong" {
+        out.write_all(b"</strong>")?;
+      };
+    }
     _ => {
       out.write_all(
         &format!(
-          "<NOT-YET-SUPPORTED:{:?}>{}</NOT-YET-SUPPORTED>\n",
-          input.element, input.content
+          "<NOT-YET-SUPPORTED:{:?}>{}</NOT-YET-SUPPORTED:{:?}>\n",
+          input.element, input.content, input.element,
         )
         .as_bytes(),
       )?;

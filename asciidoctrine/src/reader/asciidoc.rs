@@ -1,5 +1,6 @@
 pub use crate::ast::*;
 use crate::options::Opts;
+use crate::util::{Env, Environment};
 use crate::reader::*;
 use crate::Result;
 use pest::iterators::Pair;
@@ -14,7 +15,7 @@ impl AsciidocReader {
 }
 
 impl crate::Reader for AsciidocReader {
-  fn parse<'a>(&self, input: &'a str, args: &Opts) -> Result<AST<'a>> {
+  fn parse<'a>(&self, input: &'a str, args: &Opts, env: &mut Env) -> Result<AST<'a>> {
     let ast = AsciidocParser::parse(Rule::asciidoc, input)?;
 
     let mut attributes = Vec::new();
@@ -31,7 +32,7 @@ impl crate::Reader for AsciidocReader {
 
     for element in ast {
       //println!("{:#?}", element); // TODO entfernen
-      if let Some(element) = process_element(element) {
+      if let Some(element) = process_element(element, env) {
         elements.push(element);
       }
     }
@@ -47,31 +48,6 @@ impl crate::Reader for AsciidocReader {
 #[derive(Parser, Debug, Copy, Clone)]
 #[grammar = "reader/asciidoc.pest"]
 pub struct AsciidocParser;
-
-fn process_image<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-) -> ElementSpan<'a> {
-  base.element = Element::Image;
-  for element in element.into_inner().flatten() {
-    match element.as_rule() {
-      Rule::url => {
-        base.attributes.push(Attribute {
-          key: "path".to_string(),
-          value: AttributeValue::Ref(element.as_str()),
-        });
-      }
-      Rule::path => {
-        base.attributes.push(Attribute {
-          key: "path".to_string(),
-          value: AttributeValue::Ref(element.as_str()),
-        });
-      }
-      _ => (),
-    };
-  }
-  base
-}
 
 fn process_anchor<'a>(
   element: Pair<'a, asciidoc::Rule>,
@@ -162,24 +138,6 @@ fn process_attribute_list<'a>(
   base
 }
 
-fn process_delimited_inner<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-) -> ElementSpan<'a> {
-  for element in element.into_inner() {
-    match element.as_rule() {
-      Rule::delimited_inner => {
-        base.attributes.push(Attribute {
-          key: "content".to_string(), // TODO
-          value: AttributeValue::Ref(element.as_str()),
-        });
-      }
-      _ => (),
-    };
-  }
-  base
-}
-
 fn process_blocktitle<'a>(
   element: Pair<'a, asciidoc::Rule>,
   mut base: ElementSpan<'a>,
@@ -193,131 +151,6 @@ fn process_blocktitle<'a>(
         });
       }
       _ => (),
-    };
-  }
-  base
-}
-
-fn concat_elements<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  filter: asciidoc::Rule,
-  join: &str,
-) -> Option<String> {
-  let elements: Vec<_> = element
-    .into_inner()
-    .filter(|e| e.as_rule() == filter)
-    .map(|e| e.as_str())
-    .collect();
-
-  if elements.len() > 0 {
-    Some(elements.join(join))
-  } else {
-    None
-  }
-}
-
-fn process_xref<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-) -> ElementSpan<'a> {
-  base.element = Element::XRef;
-  for element in element.clone().into_inner() {
-    match element.as_rule() {
-      Rule::identifier => {
-        base.attributes.push(Attribute {
-          key: "id".to_string(),
-          value: AttributeValue::Ref(element.as_str()),
-        });
-      }
-      Rule::word => {}
-      _ => (),
-    };
-  }
-
-  if let Some(content) = concat_elements(element, Rule::word, " ") {
-    base.attributes.push(Attribute {
-      key: "content".to_string(),
-      value: AttributeValue::String(content),
-    });
-  };
-
-  base
-}
-
-fn process_link<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-) -> ElementSpan<'a> {
-  base.element = Element::Link;
-  for element in element.into_inner() {
-    match element.as_rule() {
-      Rule::url => {
-        base.attributes.push(Attribute {
-          key: "url".to_string(),
-          value: AttributeValue::Ref(element.as_str()),
-        });
-        let element = element.into_inner().next().unwrap(); // TODO Fehler möglich?
-        base.attributes.push(Attribute {
-          key: "protocol".to_string(),
-          value: AttributeValue::Ref(element.as_str()),
-        });
-      }
-      Rule::inline_attribute_list => {
-        base = process_inline_attribute_list(element, base);
-      }
-      _ => {
-        let mut sub = set_span(&element);
-        sub.element = Element::Error("Not implemented".to_string());
-        base.children.push(sub);
-      }
-    };
-  }
-  base
-}
-
-fn process_inline<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-) -> ElementSpan<'a> {
-  for element in element.into_inner() {
-    match element.as_rule() {
-      Rule::link => {
-        base = process_link(element, base);
-      }
-      Rule::xref => {
-        base = process_xref(element, base);
-      }
-      Rule::monospaced => {
-        base.element = Element::Styled;
-        base.attributes.push(Attribute {
-          key: "style".to_string(),
-          value: AttributeValue::Ref("monospaced"),
-        });
-
-        if let Some(content) = concat_elements(element, Rule::linechar, "") {
-          base.attributes.push(Attribute {
-            key: "content".to_string(),
-            value: AttributeValue::String(content),
-          });
-        };
-      }
-      Rule::strong => {
-        base.element = Element::Styled;
-        base.attributes.push(Attribute {
-          key: "style".to_string(),
-          value: AttributeValue::Ref("strong"),
-        });
-
-        if let Some(content) = concat_elements(element, Rule::linechar, "") {
-          base.attributes.push(Attribute {
-            key: "content".to_string(),
-            value: AttributeValue::String(content),
-          });
-        };
-      }
-      _ => {
-        base.element = Element::Error("Not implemented".to_string());
-      }
     };
   }
   base
@@ -384,26 +217,6 @@ fn process_title<'a>(
   Some(base)
 }
 
-fn set_span<'a>(element: &Pair<'a, asciidoc::Rule>) -> ElementSpan<'a> {
-  let (start_line, start_col) = element.as_span().start_pos().line_col();
-  let (end_line, end_col) = element.as_span().end_pos().line_col();
-
-  ElementSpan {
-    element: Element::Error("Root".to_string()),
-    source: None, // TODO
-    content: element.as_str(),
-    children: Vec::new(),
-    attributes: Vec::new(),
-    positional_attributes: Vec::new(),
-    start: element.as_span().start(),
-    end: element.as_span().end(),
-    start_line: start_line,
-    start_col: start_col,
-    end_line: end_line,
-    end_col: end_col,
-  }
-}
-
 fn process_paragraph<'a>(
   element: Pair<'a, asciidoc::Rule>,
   mut base: ElementSpan<'a>,
@@ -433,11 +246,226 @@ fn process_paragraph<'a>(
   base
 }
 
-fn process_element<'a>(element: Pair<'a, asciidoc::Rule>) -> Option<ElementSpan<'a>> {
+fn process_link<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+) -> ElementSpan<'a> {
+  base.element = Element::Link;
+  for element in element.into_inner() {
+    match element.as_rule() {
+      Rule::url => {
+        base.attributes.push(Attribute {
+          key: "url".to_string(),
+          value: AttributeValue::Ref(element.as_str()),
+        });
+        let element = element.into_inner().next().unwrap(); // TODO Fehler möglich?
+        base.attributes.push(Attribute {
+          key: "protocol".to_string(),
+          value: AttributeValue::Ref(element.as_str()),
+        });
+      }
+      Rule::inline_attribute_list => {
+        base = process_inline_attribute_list(element, base);
+      }
+      _ => {
+        let mut sub = set_span(&element);
+        sub.element = Element::Error("Not implemented".to_string());
+        base.children.push(sub);
+      }
+    };
+  }
+  base
+}
+
+fn process_image<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+  env: &mut Env,
+) -> ElementSpan<'a> {
+  base.element = Element::Image;
+  for element in element.into_inner().flatten() {
+    match element.as_rule() {
+      Rule::url => {
+        base.attributes.push(Attribute {
+          key: "path".to_string(),
+          value: AttributeValue::Ref(element.as_str()),
+        });
+      }
+      Rule::path => {
+        base.attributes.push(Attribute {
+          key: "path".to_string(),
+          value: AttributeValue::Ref(element.as_str()),
+        });
+      }
+      Rule::inline_attribute_list => {
+        base = process_inline_attribute_list(element, base);
+      }
+      _ => (),
+    };
+  }
+
+  // TODO Prüfen ob eine inline Anweisung vorhanden ist und
+  // falls ja, die Datei einlesen
+  if let Some(value) = base.get_attribute("opts") {
+    if value == "inline" {
+      // TODO Die Datei einlesen
+      if let Some(path) = base.get_attribute("path") {
+        match env.read_to_string(path) {
+          Ok(content) => {
+            base.attributes.push(Attribute {
+              key: "content".to_string(),
+              value: AttributeValue::String(content),
+            });
+          }
+          Err(e) => {
+            error!("couldn't read content of image file {} ({})", path, e);
+          }
+        }
+      } else {
+        error!("There was no path of inline image defined");
+      }
+    }
+  }
+
+  base
+}
+
+fn process_delimited_inner<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+) -> ElementSpan<'a> {
+  for element in element.into_inner() {
+    match element.as_rule() {
+      Rule::delimited_inner => {
+        base.attributes.push(Attribute {
+          key: "content".to_string(), // TODO
+          value: AttributeValue::Ref(element.as_str()),
+        });
+      }
+      _ => (),
+    };
+  }
+  base
+}
+
+fn concat_elements<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  filter: asciidoc::Rule,
+  join: &str,
+) -> Option<String> {
+  let elements: Vec<_> = element
+    .into_inner()
+    .filter(|e| e.as_rule() == filter)
+    .map(|e| e.as_str())
+    .collect();
+
+  if elements.len() > 0 {
+    Some(elements.join(join))
+  } else {
+    None
+  }
+}
+
+fn process_xref<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+) -> ElementSpan<'a> {
+  base.element = Element::XRef;
+  for element in element.clone().into_inner() {
+    match element.as_rule() {
+      Rule::identifier => {
+        base.attributes.push(Attribute {
+          key: "id".to_string(),
+          value: AttributeValue::Ref(element.as_str()),
+        });
+      }
+      Rule::word => {}
+      _ => (),
+    };
+  }
+
+  if let Some(content) = concat_elements(element, Rule::word, " ") {
+    base.attributes.push(Attribute {
+      key: "content".to_string(),
+      value: AttributeValue::String(content),
+    });
+  };
+
+  base
+}
+
+fn process_inline<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+) -> ElementSpan<'a> {
+  for element in element.into_inner() {
+    match element.as_rule() {
+      Rule::link => {
+        base = process_link(element, base);
+      }
+      Rule::xref => {
+        base = process_xref(element, base);
+      }
+      Rule::monospaced => {
+        base.element = Element::Styled;
+        base.attributes.push(Attribute {
+          key: "style".to_string(),
+          value: AttributeValue::Ref("monospaced"),
+        });
+
+        if let Some(content) = concat_elements(element, Rule::linechar, "") {
+          base.attributes.push(Attribute {
+            key: "content".to_string(),
+            value: AttributeValue::String(content),
+          });
+        };
+      }
+      Rule::strong => {
+        base.element = Element::Styled;
+        base.attributes.push(Attribute {
+          key: "style".to_string(),
+          value: AttributeValue::Ref("strong"),
+        });
+
+        if let Some(content) = concat_elements(element, Rule::linechar, "") {
+          base.attributes.push(Attribute {
+            key: "content".to_string(),
+            value: AttributeValue::String(content),
+          });
+        };
+      }
+      _ => {
+        base.element = Element::Error("Not implemented".to_string());
+      }
+    };
+  }
+  base
+}
+
+fn set_span<'a>(element: &Pair<'a, asciidoc::Rule>) -> ElementSpan<'a> {
+  let (start_line, start_col) = element.as_span().start_pos().line_col();
+  let (end_line, end_col) = element.as_span().end_pos().line_col();
+
+  ElementSpan {
+    element: Element::Error("Root".to_string()),
+    source: None, // TODO
+    content: element.as_str(),
+    children: Vec::new(),
+    attributes: Vec::new(),
+    positional_attributes: Vec::new(),
+    start: element.as_span().start(),
+    end: element.as_span().end(),
+    start_line: start_line,
+    start_col: start_col,
+    end_line: end_line,
+    end_col: end_col,
+  }
+}
+
+fn process_element<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> Option<ElementSpan<'a>> {
   let mut base = set_span(&element);
 
   let element = match element.as_rule() {
-    Rule::image_block => Some(process_image(element, base)),
     Rule::header => {
       for subelement in element.into_inner() {
         match subelement.as_rule() {
@@ -477,17 +505,9 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>) -> Option<ElementSpan<
       }
       Some(base)
     }
-    Rule::block => {
-      for subelement in element.into_inner() {
-        if let Some(e) = process_element(subelement) {
-          base = e;
-        }
-      }
-      Some(base)
-    }
     Rule::list => {
       for subelement in element.into_inner() {
-        if let Some(e) = process_element(subelement) {
+        if let Some(e) = process_element(subelement, env) {
           base = e;
         }
       }
@@ -497,7 +517,7 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>) -> Option<ElementSpan<
       base.element = Element::List;
 
       for subelement in element.into_inner() {
-        if let Some(e) = process_element(subelement) {
+        if let Some(e) = process_element(subelement, env) {
           base.children.push(e);
         }
       }
@@ -512,7 +532,7 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>) -> Option<ElementSpan<
           }
           Rule::list_element => {
             for subelement in subelement.into_inner() {
-              if let Some(e) = process_element(subelement) {
+              if let Some(e) = process_element(subelement, env) {
                 base.children.push(e);
               }
             }
@@ -525,6 +545,15 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>) -> Option<ElementSpan<
         }
       }
 
+      Some(base)
+    }
+    Rule::image_block => Some(process_image(element, base, env)),
+    Rule::block => {
+      for subelement in element.into_inner() {
+        if let Some(e) = process_element(subelement, env) {
+          base = e;
+        }
+      }
       Some(base)
     }
     Rule::delimited_block => {

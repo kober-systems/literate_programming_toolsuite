@@ -37,6 +37,12 @@ header = {
   ~ &NEWLINE{2,}
 }
 
+revision_info = { identifier } // TODO
+
+author_info = { word+ ~ email? ~ &NEWLINE }
+
+email = { "<" ~ (LETTER | "." )+ ~ "@" ~ (LETTER | "." )+ ~ ">" }
+
 title_block = { anchor* ~ title }
 title = {
   (line ~ NEWLINE ~ setext_title_style ) |
@@ -45,11 +51,27 @@ title = {
 setext_title_style = { ("="{4,} | "-"{4,} | "~"{4,} | "^"{4,} ) ~ &NEWLINE }
 atx_title_style = { "="+ }
 
-revision_info = { identifier } // TODO
+paragraph = ${ (inline | other_inline)+ }
 
-author_info = { word+ ~ email? ~ &NEWLINE }
+list = { bullet_list | numbered_list | labeled_list }
 
-email = { "<" ~ (LETTER | "." )+ ~ "@" ~ (LETTER | "." )+ ~ ">" }
+list_element = ${
+  (
+    list_paragraph |
+    (continuation ~ delimited_block)
+  )+
+}
+list_paragraph = ${ (inline | other_list_inline)+ }
+other_list_inline = @{ (!empty_lines ~ !EOI ~ !inline ~ !(NEWLINE ~ bullet) ~ !(continuation ~ delimited_block) ~ ANY)+ }
+
+bullet = { ("*"+ | "-"+) }
+bullet_list_element = { bullet ~ list_element ~ (NEWLINE | EOI) }
+bullet_list = { bullet_list_element+ }
+
+numbered_list = { "numbered_list" } // TODO
+
+label_bullet = { (!"::" ~ linechar) ~ "::" }
+labeled_list = { (label_bullet ~ list_element)+ }
 
 image_block = { anchor* ~ image }
 image = { "image::" ~ (url | path) ~ inline_attribute_list }
@@ -99,33 +121,13 @@ delimited_source = {
 
 delimited_verse = { "verse" } // TODO
 
-paragraph = ${ (inline | other_inline)+ }
-
-list = { bullet_list | numbered_list }
-
-list_element = ${
-  (
-    list_paragraph |
-    (continuation ~ delimited_block)
-  )+
-}
-list_paragraph = ${ (inline | other_list_inline)+ }
-other_list_inline = @{ (!empty_lines ~ !EOI ~ !inline ~ !(NEWLINE ~ bullet) ~ !(continuation ~ delimited_block) ~ ANY)+ }
-
-bullet = { ("*"+ | "-"+) }
-bullet_list_element = { bullet ~ list_element ~ (NEWLINE | EOI) }
-bullet_list = { bullet_list_element+ }
-
-numbered_list = { "numbered_list" } // TODO
-
-//label_bullet = { (!"::" ~ linechar) ~ "::")
-//labeled_list = { (label_bullet ~ list_element)+ }
-
 include_macro = { "include::" ~ path ~ inline_attribute_list }
 
 ////////////////////////////////////////////////////////////////////////////////
 // often resused elements
 
+anchor = { inline_anchor ~ NEWLINE }
+inline_anchor = { "[[" ~ (identifier | path) ~ "]]" }
 attribute_list = { inline_attribute_list ~ NEWLINE }
 
 inline_attribute_list = {
@@ -139,10 +141,6 @@ attribute_value = {
   ( (!"," ~ !"]" ~ ANY)+ )
 }
 inner_attribute_value = { ( "\\\"" | (!"\"" ~ ANY))* }
-
-anchor = { inline_anchor ~ NEWLINE }
-inline_anchor = { "[[" ~ (identifier | path) ~ "]]" }
-
 blocktitle = { "." ~ !"." ~ line ~ NEWLINE }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -203,4 +201,3 @@ empty_lines = _{ NEWLINE{2, } | (NEWLINE ~ EOI) }
 
 // Implicit whitespace rule
 WHITESPACE = _{ " " | "\t" }
-

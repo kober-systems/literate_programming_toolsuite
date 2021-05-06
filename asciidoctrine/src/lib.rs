@@ -5,6 +5,8 @@ extern crate pest_derive;
 use std::io;
 pub use structopt::StructOpt;
 use thiserror::Error;
+#[macro_use]
+extern crate log;
 
 mod ast;
 pub use ast::*;
@@ -36,7 +38,7 @@ pub enum AsciidoctrineError {
 type Result<T> = std::result::Result<T, AsciidoctrineError>;
 
 pub trait Reader {
-  fn parse<'a>(&self, input: &'a str, args: &options::Opts) -> Result<AST<'a>>;
+  fn parse<'a>(&self, input: &'a str, args: &options::Opts, env: &mut util::Env) -> Result<AST<'a>>;
 }
 
 pub trait Extension {

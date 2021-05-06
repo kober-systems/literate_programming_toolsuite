@@ -229,7 +229,7 @@ impl Lisa {
               kind = SnippetType::Save(path.to_string());
             }
             AttributeValue::Ref("eval") => {
-              let interpreter = interpreter.clone().unwrap_or("interpreter_missing");
+              let interpreter = interpreter.clone().unwrap_or("interpreter missing");
               kind = SnippetType::Eval(interpreter.to_string());
             }
             AttributeValue::Ref("pipe") => {
