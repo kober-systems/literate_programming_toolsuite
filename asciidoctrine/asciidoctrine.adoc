@@ -270,6 +270,7 @@ Damit können wir die Syntax in einer relativ formalen Sprache definieren welche
 ----
 pub use crate::ast::*;
 use crate::options::Opts;
+use crate::util::{Env, Environment};
 use crate::reader::*;
 use crate::Result;
 use pest::iterators::Pair;
@@ -284,7 +285,7 @@ impl AsciidocReader {
 }
 
 impl crate::Reader for AsciidocReader {
-  fn parse<'a>(&self, input: &'a str, args: &Opts) -> Result<AST<'a>> {
+  fn parse<'a>(&self, input: &'a str, args: &Opts, env: &mut Env) -> Result<AST<'a>> {
     let ast = AsciidocParser::parse(Rule::asciidoc, input)?;
 
     let mut attributes = Vec::new();
@@ -301,7 +302,7 @@ impl crate::Reader for AsciidocReader {
 
     for element in ast {
       //println!("{:#?}", element); // TODO entfernen
-      if let Some(element) = process_element(element) {
+      if let Some(element) = process_element(element, env) {
         elements.push(element);
       }
     }
@@ -452,14 +453,14 @@ fn set_span<'a>(element: &Pair<'a, asciidoc::Rule>) -> ElementSpan<'a> {
   }
 }
 
-fn process_element<'a>(element: Pair<'a, asciidoc::Rule>) -> Option<ElementSpan<'a>> {
+fn process_element<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> Option<ElementSpan<'a>> {
   let mut base = set_span(&element);
 
   let element = match element.as_rule() {
     <<asciidoc_element_rules>>
     Rule::block => {
       for subelement in element.into_inner() {
-        if let Some(e) = process_element(subelement) {
+        if let Some(e) = process_element(subelement, env) {
           base = e;
         }
       }
@@ -930,7 +931,7 @@ labeled_list = { (label_bullet ~ list_element)+ }
 ----
 Rule::list => {
   for subelement in element.into_inner() {
-    if let Some(e) = process_element(subelement) {
+    if let Some(e) = process_element(subelement, env) {
       base = e;
     }
   }
@@ -948,7 +949,7 @@ Rule::bullet_list => {
   base.element = Element::List;
 
   for subelement in element.into_inner() {
-    if let Some(e) = process_element(subelement) {
+    if let Some(e) = process_element(subelement, env) {
       base.children.push(e);
     }
   }
@@ -963,7 +964,7 @@ Rule::bullet_list_element => {
       }
       Rule::list_element => {
         for subelement in subelement.into_inner() {
-          if let Some(e) = process_element(subelement) {
+          if let Some(e) = process_element(subelement, env) {
             base.children.push(e);
           }
         }
@@ -1057,7 +1058,7 @@ image = { "image::" ~ (url | path) ~ inline_attribute_list }
 [[asciidoc_element_rules]]
 [source, rust]
 ----
-Rule::image_block => Some(process_image(element, base)),
+Rule::image_block => Some(process_image(element, base, env)),
 ----
 
 [[asciidoc_parser_functions]]
@@ -1066,6 +1067,7 @@ Rule::image_block => Some(process_image(element, base)),
 fn process_image<'a>(
   element: Pair<'a, asciidoc::Rule>,
   mut base: ElementSpan<'a>,
+  env: &mut Env,
 ) -> ElementSpan<'a> {
   base.element = Element::Image;
   for element in element.into_inner().flatten() {
@@ -1088,6 +1090,27 @@ fn process_image<'a>(
       _ => (),
     };
   }
+
+  if let Some(value) = base.get_attribute("opts") {
+    if value == "inline" {
+      if let Some(path) = base.get_attribute("path") {
+        match env.read_to_string(path) {
+          Ok(content) => {
+            base.attributes.push(Attribute {
+              key: "content".to_string(),
+              value: AttributeValue::String(content),
+            });
+          }
+          Err(e) => {
+            error!("couldn't read content of image file {} ({})", path, e);
+          }
+        }
+      } else {
+        error!("There was no path of inline image defined");
+      }
+    }
+  }
+
   base
 }
 ----
@@ -1189,6 +1212,7 @@ include::src/json-syntax.adoc[]
 ----
 pub use crate::ast::*;
 use crate::options::Opts;
+use crate::util::{Env};
 use crate::Result;
 
 pub struct JsonReader {}
@@ -1200,7 +1224,7 @@ impl JsonReader {
 }
 
 impl crate::Reader for JsonReader {
-  fn parse<'a>(&self, input: &'a str, _args: &Opts) -> Result<AST<'a>> {
+  fn parse<'a>(&self, input: &'a str, _args: &Opts, _env: &mut Env) -> Result<AST<'a>> {
     let ast = serde_json::from_str(input)?;
 
     Ok(ast)
@@ -1501,8 +1525,25 @@ TODO Fehler wenn keine Attribute vorhanden sind
 ----
 Element::Image => {
   if let Some(path) = input.get_attribute("path") {
-    out.write_all(&format!("<img src=\"{}\"></div>\n", path).as_bytes())?;
-  };
+    match input.get_attribute("opts") {
+      Some(options) => {
+        let content = input.get_attribute("content").unwrap_or("");
+        if options == "inline" {
+          if path.ends_with(".svg") {
+            out.write_all(content.as_bytes())?;
+          }
+          // TODO
+        } else if options == "interactive" {
+          // TODO
+        } else {
+          // TODO
+        }
+      }
+      None => {
+        out.write_all(&format!("<img src=\"{}\"></div>\n", path).as_bytes())?;
+      }
+    }
+  }
 }
 ----
 
@@ -1639,7 +1680,7 @@ Jedes Eingabeformat muss zunächst in einen <<ast>> ungewandelt werden um von as
 [source, rust]
 ----
 pub trait Reader {
-  fn parse<'a>(&self, input: &'a str, args: &options::Opts) -> Result<AST<'a>>;
+  fn parse<'a>(&self, input: &'a str, args: &options::Opts, env: &mut util::Env) -> Result<AST<'a>>;
 }
 ----
 
@@ -1849,6 +1890,15 @@ Jedes Dokument ist im Großen und Ganzen eine Ansammlung von hintereinander lieg
 
 [%collapsible]
 ====
+
+Im Fehlerfall ist es nicht immer gut gleich das Programm zu beenden. Damit der Benutzer dennoch darauf reagieren kann geben wir bei Bedarf log-Meldungen aus. Dazu benötigen wir den entspechenden Crate.
+
+[[crate_usages]]
+[source, rust]
+----
+#[macro_use]
+extern crate log;
+----
 
 [source, rust, save]
 .src/util.rs
