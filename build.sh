@@ -22,6 +22,7 @@ asciidoctor \
             -a icons=font \
             -a toclevels=4 \
             -a data-uri \
+            -a reproducible \
             -D docs \
             README.adoc -o index.html
 asciidoctor \
@@ -31,6 +32,7 @@ asciidoctor \
             -a icons=font \
             -a toclevels=4 \
             -a data-uri \
+            -a reproducible \
             -D docs/lisa \
             lisa/lisa.adoc
 asciidoctor \
@@ -40,6 +42,7 @@ asciidoctor \
             -a icons=font \
             -a toclevels=4 \
             -a data-uri \
+            -a reproducible \
             -D docs/asciidoctrine \
             asciidoctrine/asciidoctrine.adoc
 asciidoctor \
@@ -49,6 +52,7 @@ asciidoctor \
             -a icons=font \
             -a toclevels=4 \
             -a data-uri \
+            -a reproducible \
             -D docs/ansicht \
             ansicht/ansicht.adoc
 

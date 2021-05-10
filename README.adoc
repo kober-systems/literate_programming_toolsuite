@@ -136,6 +136,7 @@ We have some general styles that should be equal in all of our files:
 -a icons=font \
 -a toclevels=4 \
 -a data-uri \
+-a reproducible \
 ----
 
 === Ask for checkin into the VCS
