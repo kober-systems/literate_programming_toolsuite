@@ -2,10 +2,12 @@ use std::fs;
 use std::path::Path;
 use std::io::{self, ErrorKind};
 use std::collections::HashMap;
+use std::process::{Command, Stdio};
 
 pub trait Environment {
   fn read_to_string(&mut self, path: &str) -> crate::Result<String>;
   fn write(&mut self, path: &str, content: &str) -> crate::Result<()>;
+  fn eval(&mut self, interpreter: &str, content: &str) -> crate::Result<(bool, String, String)>; // success, Stdout, Stderr
 }
 
 pub struct Io {}
@@ -38,6 +40,33 @@ impl Environment for Io {
     fs::write(path, content)?;
 
     Ok(())
+  }
+
+  fn eval(&mut self, interpreter: &str, content: &str) -> crate::Result<(bool, String, String)> {
+    let mut eval = Command::new(interpreter)
+      .stdin(Stdio::piped())
+      .stderr(Stdio::piped())
+      .stdout(Stdio::piped())
+      .spawn()?;
+
+    eval
+      .stdin
+      .as_mut()
+      .ok_or(crate::AsciidoctrineError::Childprocess)?
+      .write_all(content.as_bytes())?; // TODO Wie soll EOF gesendet werden?
+    let output = eval.wait_with_output()?;
+
+    let success = output.status.success();
+    let out = match String::from_utf8(output.stdout) {
+      Ok(out) => out,
+      Err(_) => "Error: Couldn't decode stdout".to_string(),
+    };
+    let err = match String::from_utf8(output.stderr) {
+      Ok(out) => out,
+      Err(_) => "Error: Couldn't decode stderr".to_string(),
+    };
+
+    Ok((success, out, err))
   }
 }
 
@@ -72,6 +101,11 @@ impl Environment for Cache {
 
     Ok(())
   }
+
+  fn eval(&mut self, _interpreter: &str, _content: &str) -> crate::Result<(bool, String, String)> {
+    // TODO Zugriff auf cache implementieren um zu testen
+    Err(crate::AsciidoctrineError::Childprocess)
+  }
 }
 
 pub enum Env {
@@ -100,6 +134,13 @@ impl Environment for Env {
     match self {
       Env::Io(env) => env.write(path, content),
       Env::Cache(env) => env.write(path, content),
+    }
+  }
+
+  fn eval(&mut self, interpreter: &str, content: &str) -> crate::Result<(bool, String, String)> {
+    match self {
+      Env::Io(env) => env.eval(interpreter, content),
+      Env::Cache(env) => env.eval(interpreter, content),
     }
   }
 }

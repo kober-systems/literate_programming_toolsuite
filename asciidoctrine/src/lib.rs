@@ -33,6 +33,8 @@ pub enum AsciidoctrineError {
   Template(#[from] tera::Error),
   #[error(transparent)]
   Utf8(#[from] std::str::Utf8Error),
+  #[error("Child process stdin has not been captured!")]
+  Childprocess,
 }
 
 type Result<T> = std::result::Result<T, AsciidoctrineError>;

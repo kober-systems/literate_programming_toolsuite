@@ -11,8 +11,6 @@ use asciidoctrine::*;
 use std::collections::HashMap;
 use std::collections::hash_map;
 use topological_sort::TopologicalSort;
-use std::io::Write;
-use std::process::{Command, Stdio};
 use rhai::RegisterFn;
 use core::cell::RefCell;
 use std::rc::Rc;
@@ -171,8 +169,6 @@ pub enum Error {
   Asciidoctrine(#[from] asciidoctrine::AsciidoctrineError),
   #[error("io problem")]
   Io(#[from] std::io::Error),
-  #[error("Child process stdin has not been captured!")]
-  Childprocess,
 }
 
 pub struct Lisa {
@@ -314,33 +310,14 @@ impl Lisa {
   }
 
   /// Run a snippet in an interpreter
-  pub fn eval(&self, interpreter: String, content: String) -> Result<(), Error> {
+  pub fn eval(&mut self, interpreter: String, content: String) -> Result<(), Error> {
 
-    let mut eval = Command::new(interpreter)
-      .stdin(Stdio::piped())
-      .stderr(Stdio::piped())
-      .stdout(Stdio::piped())
-      .spawn()?;
-
-    eval
-      .stdin
-      .as_mut()
-      .ok_or(Error::Childprocess)?
-      .write_all(content.as_bytes())?; // TODO Wie soll EOF gesendet werden?
-    let output = eval.wait_with_output()?;
+    let (success, out, err) = self.env.eval(&interpreter, &content)?;
 
     // TODO in den Asciidoc AST einbinden
-    if output.status.success() {
-      let out = match String::from_utf8(output.stdout) {
-        Ok(out) => out,
-        Err(_) => "Error: Couldn't decode stdout".to_string(),
-      };
+    if success {
       info!("{}", out); // TODO entfernen
     } else {
-      let err = match String::from_utf8(output.stderr) {
-        Ok(out) => out,
-        Err(_) => "Error: Couldn't decode stderr".to_string(),
-      };
       error!("External command failed:\n {}", err) // TODO entfernen
     }
 
