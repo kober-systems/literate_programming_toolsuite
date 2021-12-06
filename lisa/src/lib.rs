@@ -265,6 +265,36 @@ impl Lisa {
 
         snippets
       }
+      Element::Styled => {
+        let id = match input.get_attribute("anchor") {
+          Some(id) => id.to_string(),
+          None => { return snippets; },
+        };
+        let kind = SnippetType::Plain;
+        let raw = false;
+        let dependencies = Vec::new();
+        let mut attributes: HashMap<String, String> = HashMap::default();
+
+        for key in input.attributes.iter().map(|attr|{ attr.key.clone() }) {
+          attributes.insert(key.clone(), input.get_attribute(&key).unwrap().to_string());
+        }
+        let content = input
+          .get_attribute("content")
+          .unwrap_or(input.content);
+        snippets.store(
+          id.to_string(),
+          Snippet {
+            kind: kind,
+            content: content.to_string(),
+            children: Vec::new(),
+            depends_on: dependencies,
+            attributes: attributes,
+            raw: raw,
+          },
+        );
+
+        snippets
+      }
       Element::IncludeElement(ast) => ast
         .inner
         .elements

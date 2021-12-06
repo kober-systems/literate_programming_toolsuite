@@ -323,3 +323,83 @@ impl MyStruct {
   Ok(())
 }
 
+#[test]
+fn use_inline_snippets() -> Result<()> {
+  let content = r#"
+Let's imagine we need some rust struct.
+
+[[mystruct]]
+[source, rust]
+----
+pub struct MyStruct { <<mystruct_fields|join=", ">> }
+----
+
+In our main process we need to define the struct an d initialize it.
+
+[source, rust, save]
+.sample5.rs
+----
+<<mystruct>>
+
+impl MyStruct {
+  pub fn new {
+    MyStruct {
+      <<init_fields|join=",\n">>
+    }
+  }
+}
+----
+
+In our struct we have variable [[mystruct_fields]]`x: String`. And we initialize it properly
+
+[[init_fields]]
+[source, rust]
+----
+x: "this is the x text".to_string()
+----
+
+Now we can talk about all the functions that use x...
+
+After some time we may have a function that use some other variable [[mystruct_fields]]`y: u8`. And how is it initialized? You know the answer:
+
+[[init_fields]]
+[source, rust]
+----
+y: 42
+----
+
+And so on ...
+"#;
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::from_iter(vec![""].into_iter());
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
+
+  let mut lisa = Lisa::from_env(env);
+  let _ast = lisa.transform(ast)?;
+
+  // TODO ast vergleichen
+
+  let mut outputs = lisa.into_cache().unwrap();
+
+  assert_eq!(
+  outputs.remove("sample5.rs").unwrap(),
+  r#"pub struct MyStruct { x: String, y: u8 }
+
+impl MyStruct {
+  pub fn new {
+    MyStruct {
+      x: "this is the x text".to_string(),
+      y: 42
+    }
+  }
+}
+"#
+);
+
+
+  assert!(outputs.is_empty()); // <1>
+
+  Ok(())
+}
+
