@@ -174,7 +174,7 @@ xref = !{ "<<" ~ identifier ~ (NEWLINE? ~ "," ~ NEWLINE? ~ word+)? ~ ">>" }
 
 strong = ${ "*" ~ (!"*" ~ linechar)+ ~ "*" }
 emphasized = @{ "_" ~ (!"_" ~ linechar)+ ~ "_" }
-monospaced = ${ ("+" ~ (!"+" ~ linechar)+ ~ "+") | ("`" ~ (!"`" ~ linechar)+ ~ "`") }
+monospaced = ${ inline_anchor* ~ (("+" ~ (!"+" ~ linechar)+ ~ "+") | ("`" ~ (!"`" ~ linechar)+ ~ "`")) }
 quoted = @{ inline_attribute_list ~ "#" ~ (!"#" ~ linechar)+ ~ "#" }
 
 // TODO Damit werden keine Kommentare zu Beginn eines Paragraphen angezeigt

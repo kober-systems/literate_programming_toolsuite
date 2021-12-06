@@ -56,21 +56,29 @@ fn process_anchor<'a>(
   for element in element.into_inner() {
     match element.as_rule() {
       Rule::inline_anchor => {
-        for subelement in element.into_inner() {
-          match subelement.as_rule() {
-            Rule::identifier => {
-              base.attributes.push(Attribute {
-                key: "anchor".to_string(),
-                value: AttributeValue::Ref(subelement.as_str()),
-              });
-            }
-            // TODO Fehler abfangen und anzeigen
-            _ => (),
-          }
-        }
+        base = process_inline_anchor(element, base);
       }
       _ => (),
     };
+  }
+  base
+}
+
+fn process_inline_anchor<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+) -> ElementSpan<'a> {
+  for element in element.into_inner() {
+    match element.as_rule() {
+      Rule::identifier => {
+        base.attributes.push(Attribute {
+          key: "anchor".to_string(),
+          value: AttributeValue::Ref(element.as_str()),
+        });
+      }
+      // TODO Fehler abfangen und anzeigen
+      _ => (),
+    }
   }
   base
 }
@@ -413,12 +421,20 @@ fn process_inline<'a>(
           value: AttributeValue::Ref("monospaced"),
         });
 
-        if let Some(content) = concat_elements(element, Rule::linechar, "") {
+        if let Some(content) = concat_elements(element.clone(), Rule::linechar, "") {
           base.attributes.push(Attribute {
             key: "content".to_string(),
             value: AttributeValue::String(content),
           });
         };
+        for subelement in element.into_inner() {
+          match subelement.as_rule() {
+            Rule::inline_anchor => {
+              base = process_inline_anchor(subelement, base);
+            }
+            _ => (),
+          }
+        }
       }
       Rule::strong => {
         base.element = Element::Styled;
