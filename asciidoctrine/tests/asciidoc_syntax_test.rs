@@ -421,6 +421,95 @@ it has an internal <<reference>>. Both should be parsed.
   Ok(())
 }
 
+#[test]
+fn parse_basic_paragraph_with_inline_anchor() -> Result<()> {
+  let input = r#"
+This is a basic paragraph. It has an inline [[myanchor]]`anchor`.
+
+"#;
+
+  let ast = AST {
+    content: input,
+    elements: vec![ElementSpan {
+      source: None,
+      content: input.trim(),
+      element: Element::Paragraph,
+      start: 1,
+      end: 66,
+      start_line: 2,
+      start_col: 1,
+      end_line: 2,
+      end_col: 66,
+      children: vec![
+        ElementSpan {
+          source: None,
+          content: "This is a basic paragraph. It has an inline ",
+          element: Element::Text,
+          start: 1,
+          end: 45,
+          start_line: 2,
+          start_col: 1,
+          end_line: 2,
+          end_col: 45,
+          children: Vec::new(),
+          positional_attributes: Vec::new(),
+          attributes: Vec::new(),
+        },
+        ElementSpan {
+          source: None,
+          content: "[[myanchor]]`anchor`",
+          element: Element::Styled,
+          start: 45,
+          end: 65,
+          start_line: 2,
+          start_col: 45,
+          end_line: 2,
+          end_col: 65,
+          children: Vec::new(),
+          positional_attributes: vec![],
+          attributes: vec![
+            Attribute {
+              key: "style".to_string(),
+              value: AttributeValue::Ref("monospaced"),
+            },
+            Attribute {
+              key: "content".to_string(),
+              value: AttributeValue::String("anchor".to_string()),
+            },
+            Attribute {
+              key: "anchor".to_string(),
+              value: AttributeValue::Ref("myanchor"),
+            },
+          ],
+        },
+        ElementSpan {
+          source: None,
+          content: ".",
+          element: Element::Text,
+          start: 65,
+          end: 66,
+          start_line: 2,
+          start_col: 65,
+          end_line: 2,
+          end_col: 66,
+          children: Vec::new(),
+          positional_attributes: Vec::new(),
+          attributes: Vec::new(),
+        },
+      ],
+      positional_attributes: Vec::new(),
+      attributes: Vec::new(),
+    }],
+    attributes: Vec::new(),
+  };
+
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::from_iter(vec![""].into_iter());
+  let mut env = util::Env::Cache(util::Cache::new());
+  assert_eq!(ast, reader.parse(input, &opts, &mut env)?);
+  Ok(())
+}
+
 // TODO Link, References
 // TODO Links mit Leerzeichen in der Attribut Liste (Würde ich das auch in anderen Attribut Listen zulassen?)
 // TODO bold, italian, auch ob es in einem Wort ignoriert wird
