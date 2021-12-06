@@ -490,6 +490,56 @@ impl MyStruct {
 }
 ----
 
+Es lohnt sich nicht immer einen eigenen Block anzulegen. Bei kurzen Snippets kann es praktischer sein ein Inline Code Objekt zu verwenden. So könnte man den vorigen Quelltext auch folgendermaßen schreiben:
+
+[[unittest_sample6_input]]
+[source, asciidoc, lisa-raw, outputs="unittest_sample5_output", name="use_inline_snippets"]
+....
+Let's imagine we need some rust struct.
+
+[[mystruct]]
+[source, rust]
+----
+pub struct MyStruct { <<mystruct_fields|join=", ">> }
+----
+
+In our main process we need to define the struct an d initialize it.
+
+[source, rust, save]
+.sample5.rs
+----
+<<mystruct>>
+
+impl MyStruct {
+  pub fn new {
+    MyStruct {
+      <<init_fields|join=",\n">>
+    }
+  }
+}
+----
+
+In our struct we have variable [[mystruct_fields]]`x: String`. And we initialize it properly
+
+[[init_fields]]
+[source, rust]
+----
+x: "this is the x text".to_string()
+----
+
+Now we can talk about all the functions that use x...
+
+After some time we may have a function that use some other variable [[mystruct_fields]]`y: u8`. And how is it initialized? You know the answer:
+
+[[init_fields]]
+[source, rust]
+----
+y: 42
+----
+
+And so on ...
+....
+
 Wird eine `cross reference` im Quelltext eingerückt, so wird der ganze
 importierte Quelltext ebenfalls um die gleiche Höhe eingerückt (im Grunde wird
 vor jedem Zeilenbeginn der Text vor der `cross reference` wieder eingefügt).
