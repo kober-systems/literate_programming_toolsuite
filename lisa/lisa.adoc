@@ -1147,7 +1147,7 @@ Die `id` benötigen wir, damit Snippets aufeinander verweisen können. Falls sie
 [source, rust]
 ----
 let id = input.get_attribute("anchor").unwrap_or(
-  &("_id_".to_string() + &input.start.to_string() + &"_".to_string() + &input.end.to_string()),
+  &format!("_id_{}_{}", input.start, input.end),
 ).to_string(); // TODO Vielleicht Datei + Zeile?
 ----
 
