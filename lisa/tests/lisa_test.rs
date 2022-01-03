@@ -45,7 +45,7 @@ print(testmodule.version)
 );
 
 
-  assert!(outputs.is_empty()); // <1>
+  assert!(outputs.is_empty());
 
   Ok(())
 }
@@ -93,7 +93,7 @@ print(testmodule.version)
 );
 
 
-  assert!(outputs.is_empty()); // <1>
+  assert!(outputs.is_empty());
 
   Ok(())
 }
@@ -162,7 +162,7 @@ print(testmodule.version .. "my other snippet")
 );
 
 
-  assert!(outputs.is_empty()); // <1>
+  assert!(outputs.is_empty());
 
   Ok(())
 }
@@ -222,7 +222,7 @@ print(result_of_someprocess)
 );
 
 
-  assert!(outputs.is_empty()); // <1>
+  assert!(outputs.is_empty());
 
   Ok(())
 }
@@ -318,7 +318,7 @@ impl MyStruct {
 );
 
 
-  assert!(outputs.is_empty()); // <1>
+  assert!(outputs.is_empty());
 
   Ok(())
 }
@@ -398,7 +398,7 @@ impl MyStruct {
 );
 
 
-  assert!(outputs.is_empty()); // <1>
+  assert!(outputs.is_empty());
 
   Ok(())
 }

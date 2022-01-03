@@ -3,7 +3,6 @@ extern crate pest;
 #[macro_use]
 extern crate pest_derive;
 extern crate topological_sort;
-extern crate rhai;
 
 mod codeblock_parser;
 
@@ -11,7 +10,6 @@ use asciidoctrine::*;
 use std::collections::HashMap;
 use std::collections::hash_map;
 use topological_sort::TopologicalSort;
-use rhai::RegisterFn;
 use core::cell::RefCell;
 use std::rc::Rc;
 use asciidoctrine::util::Environment;
@@ -210,7 +208,7 @@ impl Lisa {
         let path = input.get_attribute("path").or(title);
 
         let id = input.get_attribute("anchor").unwrap_or(
-          &("_id_".to_string() + &input.start.to_string() + &"_".to_string() + &input.end.to_string()),
+          &format!("_id_{}_{}", input.start, input.end),
         ).to_string(); // TODO Vielleicht Datei + Zeile?
 
         let interpreter = input.get_attribute("interpreter").or(interpreter);
