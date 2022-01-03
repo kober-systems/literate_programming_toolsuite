@@ -2098,8 +2098,8 @@ Das betrifft alles Fehler, welche so von der Bibliothek nicht abgefangen werden.
 [[cargo_dependencies]]
 [source, toml]
 ----
-log = "0.4.8"
-simple_logger = "1.6.0"
+log = "0.4"
+simple_logger = "1"
 ----
 
 [[crate_usages]]
@@ -2235,7 +2235,7 @@ Um schönere diffs angezeigt zu bekommen sobald ein Fehler auftritt verwenden wi
 [[cargo_dev_dependencies]]
 [source, toml]
 ----
-pretty_assertions = "0.7.1"
+pretty_assertions = "1"
 ----
 
 Installation
