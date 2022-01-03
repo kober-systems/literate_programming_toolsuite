@@ -1905,22 +1905,10 @@ if success {
 ==== Pipe: Snippets dynamisch erzeugen
 Beim `pipe` Befehl werden snippets als interne Scripte ausgeführt. Wir verwenden https://github.com/jonathandturner/rhai[rhai] als Interpreter.
 
-[[required_crates]]
-[source, rust]
-----
-extern crate rhai;
-----
-
-[[crate_usages]]
-[source, rust]
-----
-use rhai::RegisterFn;
-----
-
 [[cargo_dependencies]]
 [source, toml]
 ----
-rhai = "0.18.2"
+rhai = "1.3"
 ----
 
 Jede `pipe` bekommt ihre eigene Script Umgebung.
