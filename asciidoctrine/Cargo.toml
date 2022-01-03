@@ -17,4 +17,4 @@ tera = "1"
 log = "0.4.8"
 
 [dev-dependencies]
-pretty_assertions = "0.7.1"
+pretty_assertions = "1"

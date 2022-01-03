@@ -11,9 +11,9 @@ pest_derive = "2.1.0"
 topological-sort = "0.1.0"
 rhai = "0.18.2"
 thiserror = "1.0"
-log = "0.4.8"
-simple_logger = "1.6.0"
+log = "0.4"
+simple_logger = "1"
 anyhow = "1.0"
 
 [dev-dependencies]
-pretty_assertions = "0.7.1"
+pretty_assertions = "1"
