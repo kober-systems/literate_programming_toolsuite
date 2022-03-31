@@ -5,11 +5,33 @@ on: [push]
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        build: [linux, windows]
+        include:
+          - build: linux
+            os: ubuntu-latest
+            rust: stable
+          - build: windows
+            os: windows-latest
+            rust: stable
+
 
     steps:
     - uses: actions/checkout@v2
+    - name: Install Rust (rustup)
+      run: rustup update ${{ matrix.rust }} --no-self-update && rustup default ${{ matrix.rust }}
     - name: Build
-      run: cargo build --verbose
+      run: cargo build --verbose --release
     - name: Run tests
       run: cargo test --verbose
+    - name: Create artifact directory
+      run: mkdir artifacts/${{ runner.os }}
+    - name: Create archive for Windows
+      run: cp ./target/release/lisa.exe ./artifacts/${{ runner.os }}/
+      if: matrix.os == 'windows-latest'
+    - uses: actions/upload-artifact@v3
+      with:
+        name: lisa-${{ runner.os }}
+        path: ./artifacts/${{ runner.os }}
