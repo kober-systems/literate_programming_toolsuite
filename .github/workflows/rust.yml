@@ -27,7 +27,7 @@ jobs:
     - name: Run tests
       run: cargo test --verbose
     - name: Create artifact directory
-      run: mkdir artifacts/${{ runner.os }}
+      run: mkdir -p artifacts/${{ runner.os }}
     - name: Create archive for Windows
       run: cp ./target/release/lisa.exe ./artifacts/${{ runner.os }}/
       if: matrix.os == 'windows-latest'
