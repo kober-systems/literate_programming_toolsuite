@@ -1398,18 +1398,21 @@ comment = { <<comment>> }
 <<internal_gramma_elements>>
 ----
 
-Eine Referenz wird durch eine von doppelten spitzen Klammern umrahmten id dargestellt. Es ist möglich auch noch Attribute mit zu übergeben um die Art, wie der Schnipsel eingebunden wird zu modifizieren.
+Eine Referenz wird durch eine von doppelten spitzen Klammern umrahmten
+id dargestellt. Es ist möglich auch noch Attribute mit zu übergeben um
+die Art, wie der Schnipsel eingebunden wird zu modifizieren.
 
 [[reference]]
 [source, pest]
 .reference
 ----
-"<<" ~ identifier ~ ("|" ~ attributes)? ~ ">>"
+"<<" ~ identifier ~ ("|" ~ empty ~ attributes)? ~ ">>"
 ----
 
-Wobei eine id nur aus ASCII Buchstaben, Unterstrich und Verbindungsstrich
-bestehen darf. Zudem darf sie nicht mit einem Verbindungsstrich beginnen, um
-nicht den wie eine Minus Expression zu wirken (und damit Verwirrung zu stiften).
+Wobei eine id nur aus ASCII Buchstaben, Unterstrich und
+Verbindungsstrich bestehen darf. Zudem darf sie nicht mit einem
+Verbindungsstrich beginnen, um nicht den wie eine Minus Expression zu
+wirken (und damit Verwirrung zu stiften).
 
 [[internal_gramma_elements]]
 [source, pest]
@@ -1418,13 +1421,23 @@ nicht den wie eine Minus Expression zu wirken (und damit Verwirrung zu stiften).
 identifier = @{ (ASCII_ALPHANUMERIC | "_") ~ (ASCII_ALPHANUMERIC | "_" | "-" )* }
 ----
 
-Attribute bestehen aus einem Namen und dem dazugehörigen Inhalt (oder Wert) die durch ein = Zeichen verbunden werden. Der Name ist eine Id und der Inhalt wird in Hochkommata (") eingerahmt. Es können beliebig viele Attribute übergeben werden. Diese müssen durch Kommas getrennt werden.
+Attribute bestehen aus einem Namen und dem dazugehörigen Inhalt (oder
+Wert) die durch ein `=` Zeichen verbunden werden. Der Name ist eine Id
+und der Inhalt wird in Hochkommata (") eingerahmt. Es können beliebig
+viele Attribute übergeben werden. Diese müssen durch Kommas getrennt
+werden. Es können aber auch Snippet Parameter als Inhalt übergeben
+werden. In diesem Fall wird `:=` als Zuweisungszeichen verwendet. Als
+Parameter können entweder normale Inhalte in Hochkommata übergeben
+werden oder (beliebig tief geschachtelte) Referenzen.
 
 [[internal_gramma_elements]]
 [source, pest]
 ----
-attributes = { attribute ~ ("," ~ attribute)* }
+attributes = { (attribute | attribute_param) ~ empty
+  ~ ("," ~ empty ~ (attribute | attribute_param) ~ empty)* }
 attribute = { identifier ~ "=" ~ "\"" ~ value ~ "\"" }
+attribute_param = { identifier ~ ":=" ~ empty
+  ~ (("\"" ~ value ~ "\"") | reference) }
 value = @{ ( !"\"" ~ ANY | "\\\"")* }
 ----
 
@@ -1443,6 +1456,7 @@ später (TODO link) wirderverwenden zu können.
 ----
 whitespace = @{ (" " | "\t") }
 indentation = @{ whitespace+ }
+empty = @{ (" " | "\t" | "\n" | "\r")* }
 ----
 
 Als Quellcode betrachten wir alles, was keine Referenz und kein Kommentar ist.
