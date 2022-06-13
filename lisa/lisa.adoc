@@ -35,12 +35,6 @@ https://www.rust-lang.org/[rust] besser kennenlernen will und mit <<../asciidoct
 eigenen asciidoc Interpreter in rust geschrieben habe, habe ich mich
 entschlossen `lisa` als asciidoctrine-extension zu implementieren.
 
-[[required_crates]]
-[source, rust]
-----
-extern crate asciidoctrine;
-----
-
 [[crate_usages]]
 [source, rust]
 ----
@@ -1290,7 +1284,6 @@ Um die Referenzen zu finden verwenden wir die https://pest.rs/[Pest] Bibliothek.
 [[required_crates]]
 [source, rust]
 ----
-extern crate pest;
 #[macro_use]
 extern crate pest_derive;
 ----
@@ -1642,12 +1635,6 @@ fn get_content(&self, join_str: &str) -> String {
 Eines der wichtigsten Features von `lisa` (und das, welches, wie ich glaube, es am stärksten von vergleichbaren Tools unterscheidet), ist, dass man den <<usage_control_flow,Kontrollfluss bestimmen kann>>. Dadurch wird es in gewissem Sinne zu einer https://en.wikipedia.org/wiki/Dataflow_programming[Dataflow Sprache].
 
 Damit das möglich wird muss herausgefunden werden, welches Snippet verarbeitet werden kann, und welches von anderen abhängt, die vorher verarbeitet werden müssen. Dazu verwenden wir die https://en.wikipedia.org/wiki/Topological_sorting[Topoligical Sorting] Methode. Wir implementieren sie nicht selbst, sondern benutzen den `topological-sort` (TODO link) crate.
-
-[[required_crates]]
-[source, rust]
-----
-extern crate topological_sort;
-----
 
 [[cargo_dependencies]]
 [source, toml]
