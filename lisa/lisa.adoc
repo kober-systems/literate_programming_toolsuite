@@ -589,7 +589,7 @@ example to change the error message.
 [[checks]]
 [source, sh]
 ----
-<<test_condition|condition:="-f file_yz.txt"
+<<test_condition|condition:="-f file_yz.txt",
                  err_message:="my custom err message yz">>
 ----
 
