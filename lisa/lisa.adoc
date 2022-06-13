@@ -548,58 +548,96 @@ Dateinamen angeben.
 
   TODO Quellcodebeispiele zwischen jedem Absatz
 
-TODO Es wäre zielich cool, wenn man einem Schnipsel Parameter übergeben könnte.
-Z.B. so
+===== Parameterierte Snippets
+Manche Schnipsel sind sehr allgemein und haben eine vielfältige
+Verwendung. Mit parameterisierten Schnipseln kann man Bibliotheken
+anlegen, welche eine breitere Verwendung von Schnipseln erlauben.
 
-[listing]
-[source,asciidoc]
-.Parameter in einem Schnipsel verwenden
+Dazu kann man einfach die Platzhalter überschreiben. Zum definieren
+eines Parameters wird `:=` verwendet.
+
+[[unittest_sample7_input]]
+[source, asciidoc, lisa-raw, outputs="unittest_sample7_output", name="snippets_with_params"]
 ....
-First we give a short outline of the program. It imports the required modules
-and then prints out its version.
+There is a function we want to use in different contexts.
 
-[source, lua]
-.sample3.lua
+[[test_condition]]
+[source, sh]
 ----
-<<sample3_require(module=testmodule)>>
-<<sample3_require(module=testmodule2)>>
-
-print(testmodule.version)
+if [[ <<condition>> ]] then
+  echo "<<err_message>>"
+  exit <<exit_code>>
+fi
 ----
 
-We need the testmodule for this project.
+Normally we exit with the message
+[[err_message]]`the condition <<condition>> was not met` and return exit
+code [[exit_code]]`1`.
 
-[[sample3_require]]
-[source, lua]
+Now we can use this snippet to test some condition before we execute our
+script. Lets say we want to make sure `file_xy.txt` exists.
+
+[[checks]]
+[source, sh]
 ----
-require "{{module}}"
+<<test_condition| condition:="-f file_xy.txt">>
+----
+
+But we could also override the default snippets with a custom one. For
+example to change the error message.
+
+[[checks]]
+[source, sh]
+----
+<<test_condition|condition:="-f file_yz.txt"
+                 err_message:="my custom err message yz">>
+----
+
+It's also possible to nest snippets. We can just reference them. Let's
+say we would like to return the message
+[[custom_err_message]]`return from nested param snippet with code <<exit_code>>`
+and exit code [[custom_exit_code]]`42`.
+
+[[checks]]
+[source, sh]
+----
+<<test_condition|condition:="-f nested_params.txt",
+                 err_message:=<<custom_err_message>>,
+                 exit_code:=<<custom_exit_code>>>>
+----
+
+Now we put all of these conditions at the beginning of our script.
+
+[source, sh, save]
+.sample7.sh
+----
+<<checks>>
+
+echo "you passed all checks"
 ----
 ....
 
-Das Ergebnis wäre dann
+Das hier erzeugte Script sähe dann folgendermaßen aus:
 
-[source, lua]
-.sample3.lua
+[[unittest_sample7_output]]
+[source, sh]
+.sample7.sh
 ----
-require "testmodule"
-require "testmodule2"
+if [[ -f file_xy.txt ]] then
+  echo "the condition -f file_xy.txt was not met"
+  exit 1
+fi
+if [[ -f file_yz.txt ]] then
+  echo "my custom err message yz"
+  exit 1
+fi
+if [[ -f nested_params.txt ]] then
+  echo "return from nested param snippet with code 42"
+  exit 42
+fi
 
-print(testmodule.version)
+echo "you passed all checks"
 ----
-
-TODO Überprüfen, ob diese Syntax Probleme verursachen könnte. Einerseits haben
-wir dadurch einen weiteren Parametertyp `{{}}`. Die gleiche Funktionalität ließe
-sich mit Sicherheit auch durch `pipe` implementieren. Andererseits könnte das
-ein sehr nützliches, intuitives und vielverwendetes Feature sein. TODO Gibt es
-mögliche Fehlerquellen, die nur durch dieses Feature eingeführt werden?
-
-TODO Einige weitere Features, die sich durch `pipe` implementieren lassen (und
-eventuell auch mit Standardfeatures von asciidoctrine) sind bedingte Ausführung
-oder Generierung (z.B. nur wenn ein Attribut auf der Kommandozeile definiert
-wurde, oder wenn ein bestimmtes OS vorhanden ist).
-
-TODO Ignorieren von Ersetzungszeichen in einigen Snippets oder anpassen des
-Musters. z.B. mit dem Attribut `lisa-reference="<<<"`.
 
 [[transform]]
 ==== Transformieren
