@@ -1,8 +1,5 @@
-extern crate asciidoctrine;
-extern crate pest;
 #[macro_use]
 extern crate pest_derive;
-extern crate topological_sort;
 
 mod codeblock_parser;
 
