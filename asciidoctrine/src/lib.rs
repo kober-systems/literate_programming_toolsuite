@@ -3,7 +3,6 @@ extern crate pest;
 extern crate pest_derive;
 
 use std::io;
-pub use structopt::StructOpt;
 use thiserror::Error;
 #[macro_use]
 extern crate log;

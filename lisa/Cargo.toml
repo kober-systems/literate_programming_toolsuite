@@ -14,6 +14,7 @@ thiserror = "1.0"
 log = "0.4"
 simple_logger = "1"
 anyhow = "1.0"
+clap = { version = "3", features = ["derive"] }
 
 [dev-dependencies]
 pretty_assertions = "1"

@@ -2119,7 +2119,7 @@ Ein Test hat dabei grundsätzlich folgenden Aufbau:
 fn {test_name}() -> Result<()> {
   let content = r#"{asciidoc_content}"#;
   let reader = AsciidocReader::new();
-  let opts = options::Opts::from_iter(vec![""].into_iter());
+  let opts = options::Opts::parse_from(vec![""].into_iter());
   let mut env = util::Env::Cache(util::Cache::new());
   let ast = reader.parse(content, &opts, &mut env)?;
 
@@ -2158,6 +2158,7 @@ Unsere Tests packen wir in eine Test Umgebung, welche alle wichtigen crates bere
 ----
 use anyhow::Result;
 use asciidoctrine::{self, *};
+use clap::Parser;
 use lisa::*;
 use pretty_assertions::assert_eq;
 
@@ -2224,6 +2225,15 @@ Um schönere diffs angezeigt zu bekommen sobald ein Fehler auftritt verwenden wi
 [source, toml]
 ----
 pretty_assertions = "1"
+----
+
+Zudem brauchen wir die `clap` Bibliothek um die Kommandozeilenparameter
+zu parsen.
+
+[[cargo_dependencies]]
+[source, toml]
+----
+clap = { version = "3", features = ["derive"] }
 ----
 
 Installation

@@ -1,5 +1,6 @@
 use anyhow::Result;
 use asciidoctrine::{self, *};
+use clap::Parser;
 use lisa::*;
 use pretty_assertions::assert_eq;
 
@@ -25,7 +26,7 @@ print(testmodule.version)
 ----
 "#;
   let reader = AsciidocReader::new();
-  let opts = options::Opts::from_iter(vec![""].into_iter());
+  let opts = options::Opts::parse_from(vec![""].into_iter());
   let mut env = util::Env::Cache(util::Cache::new());
   let ast = reader.parse(content, &opts, &mut env)?;
 
@@ -73,7 +74,7 @@ require "testmodule"
 ----
 "#;
   let reader = AsciidocReader::new();
-  let opts = options::Opts::from_iter(vec![""].into_iter());
+  let opts = options::Opts::parse_from(vec![""].into_iter());
   let mut env = util::Env::Cache(util::Cache::new());
   let ast = reader.parse(content, &opts, &mut env)?;
 
@@ -133,7 +134,7 @@ print(testmodule.version .. "my other snippet")
 
 "#;
   let reader = AsciidocReader::new();
-  let opts = options::Opts::from_iter(vec![""].into_iter());
+  let opts = options::Opts::parse_from(vec![""].into_iter());
   let mut env = util::Env::Cache(util::Cache::new());
   let ast = reader.parse(content, &opts, &mut env)?;
 
@@ -200,7 +201,7 @@ result_of_someprocess = variable * variable
 Now lets go on to another thing ...
 "#;
   let reader = AsciidocReader::new();
-  let opts = options::Opts::from_iter(vec![""].into_iter());
+  let opts = options::Opts::parse_from(vec![""].into_iter());
   let mut env = util::Env::Cache(util::Cache::new());
   let ast = reader.parse(content, &opts, &mut env)?;
 
@@ -291,7 +292,7 @@ y: 42
 And so on ...
 "#;
   let reader = AsciidocReader::new();
-  let opts = options::Opts::from_iter(vec![""].into_iter());
+  let opts = options::Opts::parse_from(vec![""].into_iter());
   let mut env = util::Env::Cache(util::Cache::new());
   let ast = reader.parse(content, &opts, &mut env)?;
 
@@ -371,7 +372,7 @@ y: 42
 And so on ...
 "#;
   let reader = AsciidocReader::new();
-  let opts = options::Opts::from_iter(vec![""].into_iter());
+  let opts = options::Opts::parse_from(vec![""].into_iter());
   let mut env = util::Env::Cache(util::Cache::new());
   let ast = reader.parse(content, &opts, &mut env)?;
 

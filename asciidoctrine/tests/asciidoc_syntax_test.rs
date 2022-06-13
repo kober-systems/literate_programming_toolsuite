@@ -1,6 +1,7 @@
 use anyhow::Result;
 use asciidoctrine::reader::asciidoc::AsciidocReader;
 use asciidoctrine::{self, *};
+use clap::Parser;
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -12,7 +13,7 @@ fn parse_empty_document() -> Result<()> {
   };
 
   let reader = AsciidocReader::new();
-  let opts = options::Opts::from_iter(vec![""].into_iter());
+  let opts = options::Opts::parse_from(vec![""].into_iter());
   let mut env = util::Env::Cache(util::Cache::new());
   assert_eq!(ast, reader.parse("", &opts, &mut env)?);
   Ok(())
@@ -27,7 +28,7 @@ fn parse_whitespace_only() -> Result<()> {
   };
 
   let reader = AsciidocReader::new();
-  let opts = options::Opts::from_iter(vec![""].into_iter());
+  let opts = options::Opts::parse_from(vec![""].into_iter());
   let mut env = util::Env::Cache(util::Cache::new());
   assert_eq!(ast, reader.parse("  ", &opts, &mut env)?);
   Ok(())
@@ -62,7 +63,7 @@ fn parse_basic_header() -> Result<()> {
   };
 
   let reader = AsciidocReader::new();
-  let opts = options::Opts::from_iter(vec![""].into_iter());
+  let opts = options::Opts::parse_from(vec![""].into_iter());
   //assert_eq!(ast, asciidoc::parse_ast("= test")); // TODO
   let mut env = util::Env::Cache(util::Cache::new());
   assert_eq!(ast, reader.parse("= test\n", &opts, &mut env)?);
@@ -102,7 +103,7 @@ fn parse_title_with_anchor() -> Result<()> {
   };
 
   let reader = AsciidocReader::new();
-  let opts = options::Opts::from_iter(vec![""].into_iter());
+  let opts = options::Opts::parse_from(vec![""].into_iter());
   let mut env = util::Env::Cache(util::Cache::new());
   assert_eq!(
     ast,
@@ -136,7 +137,7 @@ fn parse_atx_header() -> Result<()> {
   };
 
   let reader = AsciidocReader::new();
-  let opts = options::Opts::from_iter(vec![""].into_iter());
+  let opts = options::Opts::parse_from(vec![""].into_iter());
   let mut env = util::Env::Cache(util::Cache::new());
   assert_eq!(ast, reader.parse("== test\n", &opts, &mut env)?);
   Ok(())
@@ -167,7 +168,7 @@ fn parse_setext_header() -> Result<()> {
   };
 
   let reader = AsciidocReader::new();
-  let opts = options::Opts::from_iter(vec![""].into_iter());
+  let opts = options::Opts::parse_from(vec![""].into_iter());
   let mut env = util::Env::Cache(util::Cache::new());
   assert_eq!(ast, reader.parse("test\n====\n", &opts, &mut env)?);
 
@@ -224,7 +225,7 @@ require "mytestmodule"
   };
 
   let reader = AsciidocReader::new();
-  let opts = options::Opts::from_iter(vec![""].into_iter());
+  let opts = options::Opts::parse_from(vec![""].into_iter());
   let mut env = util::Env::Cache(util::Cache::new());
   assert_eq!(ast, reader.parse(input, &opts, &mut env)?);
   Ok(())
@@ -294,7 +295,7 @@ asciidoctrine dont sees it."#;
   };
 
   let reader = AsciidocReader::new();
-  let opts = options::Opts::from_iter(vec![""].into_iter());
+  let opts = options::Opts::parse_from(vec![""].into_iter());
   let mut env = util::Env::Cache(util::Cache::new());
   assert_eq!(ast, reader.parse(input, &opts, &mut env)?);
   Ok(())
@@ -415,7 +416,7 @@ it has an internal <<reference>>. Both should be parsed.
   };
 
   let reader = AsciidocReader::new();
-  let opts = options::Opts::from_iter(vec![""].into_iter());
+  let opts = options::Opts::parse_from(vec![""].into_iter());
   let mut env = util::Env::Cache(util::Cache::new());
   assert_eq!(ast, reader.parse(input, &opts, &mut env)?);
   Ok(())
@@ -504,7 +505,7 @@ This is a basic paragraph. It has an inline [[myanchor]]`anchor`.
   };
 
   let reader = AsciidocReader::new();
-  let opts = options::Opts::from_iter(vec![""].into_iter());
+  let opts = options::Opts::parse_from(vec![""].into_iter());
   let mut env = util::Env::Cache(util::Cache::new());
   assert_eq!(ast, reader.parse(input, &opts, &mut env)?);
   Ok(())
@@ -668,7 +669,7 @@ fn parse_bullet_list() -> Result<()> {
   };
 
   let reader = AsciidocReader::new();
-  let opts = options::Opts::from_iter(vec![""].into_iter());
+  let opts = options::Opts::parse_from(vec![""].into_iter());
   let mut env = util::Env::Cache(util::Cache::new());
   assert_eq!(ast, reader.parse(input, &opts, &mut env)?);
   Ok(())
@@ -823,7 +824,7 @@ fn parse_nested_bullet_list() -> Result<()> {
   };
 
   let reader = AsciidocReader::new();
-  let opts = options::Opts::from_iter(vec![""].into_iter());
+  let opts = options::Opts::parse_from(vec![""].into_iter());
   let mut env = util::Env::Cache(util::Cache::new());
   assert_eq!(ast, reader.parse(input, &opts, &mut env)?);
   Ok(())
