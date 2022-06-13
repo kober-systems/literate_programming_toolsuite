@@ -922,7 +922,7 @@ Wir wollen, dass unsere Präsentation
 
 Als Basis benutzen wir daher ein Werkzeug, welches im Browser ausgeführt werden
 kann (aber nicht zwangsläufig eine Verbindung ins Internet benötigt):
-https://github.com/impress/impress.js:[impress.js].
+https://github.com/impress/impress.js[impress.js].
 
 Da wir zudem einige interaktive charts einbinden möchten benutzen wir noch
 https://d3js.org/:[d3].
