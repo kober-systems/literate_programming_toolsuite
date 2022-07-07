@@ -21,17 +21,19 @@ Das bringt verschiedene Vorteile mit sich:
 * Programme werden spannender.
 * Es regt zu mehr Kreativität an.
 
-Gleichzeitig gibt es auch eine ganze Menge Probleme mit diesem
-Programmierkonzept. Diese behandle ich in einem <<literate-problems,späteren Abschnitt>> und versuche
-Lösungsansätze dafür zu finden.
+Gleichzeitig gibt es auch eine ganze Menge Probleme mit
+diesem Programmierkonzept. Diese behandle ich in einem
+<<literate-problems,späteren Abschnitt>> und versuche Lösungsansätze
+dafür zu finden.
 
 === Architektur
-Dieses Programm existiert nicht unabhängig von seinem Kontext. Es ist dazu
-gedacht asciidoc Texte in Programmcode und in Programmdokumentation
+Dieses Programm existiert nicht unabhängig von seinem Kontext. Es ist
+dazu gedacht asciidoc Texte in Programmcode und in Programmdokumentation
 umzuwandeln. Letzteres ist nicht schwer, denn das ist ja ohnehin die
-Hauptaufgabe von asciidoc. Mit http://asciidoctor.org/[Asciidoctor] besteht
-bereits ein hervoragendes Programm zu diesem Zweck. Da ich aber
-https://www.rust-lang.org/[rust] besser kennenlernen will und mit <<../asciidoctrine/asciidoctrine.adoc#, asciidoctrine>> einen
+Hauptaufgabe von asciidoc. Mit http://asciidoctor.org/[Asciidoctor]
+besteht bereits ein hervoragendes Programm zu diesem Zweck. Da ich
+aber https://www.rust-lang.org/[rust] besser kennenlernen will und
+mit <<../asciidoctrine/asciidoctrine.adoc#, asciidoctrine>> einen
 eigenen asciidoc Interpreter in rust geschrieben habe, habe ich mich
 entschlossen `lisa` als asciidoctrine-extension zu implementieren.
 
@@ -66,7 +68,12 @@ asciidoctrine = { path = "../asciidoctrine" }
 
 ----
 
-`lisa` arbeitet direkt auf einem asciidoc https://en.wikipedia.org/wiki/Abstract_syntax_tree[AST] und erzeugt aus den darin enthaltenen Quelltext-Snippets (TODO link) Sourcecode Dateien (und manchmal auch weitere Dateien). Im AST fügt es einige zusätzliche Informationen hinzu (vor allem Referenzen, wo Code-Snippets verwendet werden TODO interner link).
+`lisa` arbeitet direkt auf einem asciidoc
+https://en.wikipedia.org/wiki/Abstract_syntax_tree[AST] und erzeugt aus
+den darin enthaltenen Quelltext-Snippets (TODO link) Sourcecode Dateien
+(und manchmal auch weitere Dateien). Im AST fügt es einige zusätzliche
+Informationen hinzu (vor allem Referenzen, wo Code-Snippets verwendet
+werden TODO interner link).
 
 Die Hauptdatei hat dabei folgendes Gerüst:
 
@@ -126,8 +133,9 @@ impl Extension for Lisa { // <1>
   }
 }
 ----
-<1> Da `lisa` eine <<../asciidoctrine/asciidoctrine.adoc#, asciidoctrine>> Erweiterung ist, implementiert das
-    Programm die dafür erforderliche Schnittstelle.
+<1> Da `lisa` eine <<../asciidoctrine/asciidoctrine.adoc#,
+    asciidoctrine>> Erweiterung ist, implementiert das Programm die
+    dafür erforderliche Schnittstelle.
 <2> Als erste Funktion aller Erweiterungen wird immer die Funktion `transform`
     aufgerufen. Sie bekommt den von asciidoctrine vorverarbeiteten AST sowie
     eventuell vorhandene Argumente übergeben. Sie übernimmt diesen und gibt
@@ -136,7 +144,9 @@ impl Extension for Lisa { // <1>
 <3> Die grundlegende Aufgabe zu Beginn der Transformation ist das Extrahieren
     des Quellcodes aus der Datei.
 <4> Zum Schluss können alle Dateien generiert und Scripte ausgeführt werden.
-<5> Oftmals ist die <<snippet_topo_sort, Reihenfolge der Abarbeitung der Code-Schnipsel>> entscheidend. Diese wird vor der Abarbeitung festgelegt.
+<5> Oftmals ist die <<snippet_topo_sort, Reihenfolge der Abarbeitung
+    der Code-Schnipsel>> entscheidend. Diese wird vor der Abarbeitung
+    festgelegt.
 
 [[usage]]
 == Benutzung
@@ -145,43 +155,50 @@ impl Extension for Lisa { // <1>
 Beim schreiben eines literate Programmes sollte man wie bei einer
 wissenschaftlichen Arbeit vorgehen:
 
-* Zunächst schreibt man eine Übersicht mit der Ausgangslage, der Motivation und
-  einer groben Zusammenfassung des eigenen Lösungsansatzes.
-* Es ist gut sich frühzeitig Gedanken über verschiedene Lösungsalternativen zu
-  machen und diese gegeneinander abzuwägen (Das kann man auf jeder Ebene des
-  Programms tun. Sowohl bei der Architektur als auch bei Details)
-** Diesen Alternativen kann man einen eigenen Abschnitt oder ein eigenes Kapitel
-   widmen. Sobald mit der Umsetzung des Programms begonnen wird sollten sie
-   recht weit nach hinten wandern, da sie für die meisten Benutzer nicht
-   relevant sind.
-* Dann sollte man mit der Bedienung beginnen. So hat man eine User orientierte
-  Herangehensweise (eine Art User Story) und kann von dort aus leicht die
-  Requirements und darauf aufbauend die Unit Tests festhalten.
-** Sollte das Programm größer werden, ist es gut alle weniger offensichtlichen
-   Unittests (Corner Cases) nach hinten in ein eigenes Kapitel zu verschieben
-   und einen Link dorthin bereitzustellen.
+* Zunächst schreibt man eine Übersicht mit der Ausgangslage, der
+  Motivation und einer groben Zusammenfassung des eigenen
+  Lösungsansatzes.
+* Es ist gut sich frühzeitig Gedanken über verschiedene
+  Lösungsalternativen zu machen und diese gegeneinander abzuwägen (Das
+  kann man auf jeder Ebene des Programms tun. Sowohl bei der Architektur
+  als auch bei Details)
+** Diesen Alternativen kann man einen eigenen Abschnitt oder ein eigenes
+   Kapitel widmen. Sobald mit der Umsetzung des Programms begonnen wird
+   sollten sie recht weit nach hinten wandern, da sie für die meisten
+   Benutzer nicht relevant sind.
+* Dann sollte man mit der Bedienung beginnen. So hat man eine User
+  orientierte Herangehensweise (eine Art User Story) und kann von dort
+  aus leicht die Requirements und darauf aufbauend die Unit Tests
+  festhalten.
+** Sollte das Programm größer werden, ist es gut alle weniger
+   offensichtlichen Unittests (Corner Cases) nach hinten in ein eigenes
+   Kapitel zu verschieben und einen Link dorthin bereitzustellen.
 * Dann kommt das Kapitel mit der eigentlichen Implementierung.
-* Bei vielen Programmen wird es nützlich sein Beispiele (als eine Art Tutorial)
-  bereitzustellen.
+* Bei vielen Programmen wird es nützlich sein Beispiele (als eine Art
+  Tutorial) bereitzustellen.
 
-Zu Beginn kann man mit einem einzigen Dokument starten aber im Laufe der Zeit
-wird es bei größeren Projekten gut sein, sie in Kapitel (Module) zu gliedern und
-diese in ein Hauptdokument einzubinden.
+Zu Beginn kann man mit einem einzigen Dokument starten aber im Laufe der
+Zeit wird es bei größeren Projekten gut sein, sie in Kapitel (Module) zu
+gliedern und diese in ein Hauptdokument einzubinden.
 
-Die Reihenfolge des Schreibens kann sich überlagern (obwohl es gut ist mit der
-Übersicht und den grundlegenden Fragen zu beginnen) aber wahrscheinlich ist die
-Anordnung der Kapitel im endgültigen Dokument immer ähnlich. Im Laufe der
-Entwicklung wird man immer mal wieder aufräumen und umstrukturieren müssen
-(refaktoring).
+Die Reihenfolge des Schreibens kann sich überlagern (obwohl es gut
+ist mit der Übersicht und den grundlegenden Fragen zu beginnen) aber
+wahrscheinlich ist die Anordnung der Kapitel im endgültigen Dokument
+immer ähnlich. Im Laufe der Entwicklung wird man immer mal wieder
+aufräumen und umstrukturieren müssen (refaktoring).
 
-Es ist wichtig eine Begründung für alle Designentscheidungen aufzuschreiben damit man bei der späteren Pflege des Programmes weiß, ob diese noch gültig oder obsolet sind. Das ermöglicht auch bei der gemeinsamen Arbeit mit einem Team an einem Projekt, eine Argumentationsgrundlage für Designentscheidungen/Änderungen zu haben.
+Es ist wichtig eine Begründung für alle Designentscheidungen
+aufzuschreiben damit man bei der späteren Pflege des Programmes
+weiß, ob diese noch gültig oder obsolet sind. Das ermöglicht auch
+bei der gemeinsamen Arbeit mit einem Team an einem Projekt, eine
+Argumentationsgrundlage für Designentscheidungen/Änderungen zu haben.
 
 === Quellcode generieren
 
 [[usage_extract]]
 ==== Extrahieren
-Die normalen Quellcode Listings können gebraucht werden, um ein Programm zu
-erstellen.
+Die normalen Quellcode Listings können gebraucht werden, um ein Programm
+zu erstellen.
 
 [source, asciidoc]
 ....
@@ -197,21 +214,22 @@ Quelltext ... <1>
 Fliestext ... <3>
 ....
 <1> `lisa` kümmert sich nur um Quelltext-Snippets.
-<2> Die ID (`anchor`) kann benutzt werden, um Code-Snippets zu referenzieren.
+<2> Die ID (`anchor`) kann benutzt werden, um Code-Snippets zu
+    referenzieren.
 <4> Der restliche Text wird von dem Programm ignoriert.
 
 ////////////////////////////////////////////////////////////////////////////////
-Die `ID` kann verwendet werden, um Quelltextelemente in anderen Qelltexten
-einzubinden. Der `filename` kann dazu benutzt werden, um den Dateinamen einer
-Ausgabedatei festzulegen und der `Quelltext` kann als Inhalt dieser Dateien
-dienen.
+Die `ID` kann verwendet werden, um Quelltextelemente in anderen
+Qelltexten einzubinden. Der `filename` kann dazu benutzt werden, um den
+Dateinamen einer Ausgabedatei festzulegen und der `Quelltext` kann als
+Inhalt dieser Dateien dienen.
 ////////////////////////////////////////////////////////////////////////////////
 
 [[usage_import_snippets]]
 ==== Zusammenfügen
-Die verschiedenen Codeschnipsel kann man in anderen Codeschnipseln einbinden.
-Dafür verwendet man einfach eine `cross reference` auf den `anchor` des
-jeweiligen Schnipsels:
+Die verschiedenen Codeschnipsel kann man in anderen Codeschnipseln
+einbinden. Dafür verwendet man einfach eine `cross reference` auf den
+`anchor` des jeweiligen Schnipsels:
 
 [[unittest_sample1_input]]
 [source, asciidoc, lisa-raw, outputs="unittest_sample1_output", name="use_snippets"]
@@ -274,8 +292,9 @@ require "testmodule"
 ----
 ....
 
-In diesem Beispiel haben wir den Schnipsel `sample2_required_modules` erst nach dem
-importierenden Schnipsel geschrieben. Die Ausgabe bleibt aber die gleiche:
+In diesem Beispiel haben wir den Schnipsel `sample2_required_modules`
+erst nach dem importierenden Schnipsel geschrieben. Die Ausgabe bleibt
+aber die gleiche:
 
 [[unittest_sample2_output]]
 [source, lua]
@@ -346,8 +365,8 @@ require "testmodule"
 print(testmodule.version .. "my other snippet")
 ----
 
-Verwenden zwei (oder mehr) Schnipsel den gleichen `anchor`, so wird der Inhalt
-in der Reihenfolge, in der die Schnipsel im Quelltext erscheinen,
+Verwenden zwei (oder mehr) Schnipsel den gleichen `anchor`, so wird der
+Inhalt in der Reihenfolge, in der die Schnipsel im Quelltext erscheinen,
 aneinandergefügt. Auf diese Weise kann man leicht Erklärungen in einen
 Quelltext einfügen oder an verschiedenen Stellen Ergänzungen zu einem
 Codebereich hinzufügen (z.B. die Imports erweitern).
@@ -385,7 +404,8 @@ result_of_someprocess = variable * variable
 Now lets go on to another thing ...
 ....
 
-In der Ergebnisdatei sind nun die beiden Schnipsel hintereinandergehängt.
+In der Ergebnisdatei sind nun die beiden Schnipsel
+hintereinandergehängt.
 
 [[unittest_sample4_output]]
 [source, lua]
@@ -398,9 +418,12 @@ result_of_someprocess = variable * variable
 print(result_of_someprocess)
 ----
 
-Nicht immer möchte man einfach einen Zeilenumbruch zwischen den Snippets haben. Manchmal ist es z.B. schöner eine Leerzeile zu haben. Bei Aufzählungen ist oft ein Komma das beste.
+Nicht immer möchte man einfach einen Zeilenumbruch zwischen den Snippets
+haben. Manchmal ist es z.B. schöner eine Leerzeile zu haben. Bei
+Aufzählungen ist oft ein Komma das beste.
 
-In diesem Fall kann man an der einfügenden Stelle festlegen, welche Trennzeichen einem am besten gefallen.
+In diesem Fall kann man an der einfügenden Stelle festlegen, welche
+Trennzeichen einem am besten gefallen.
 
 [[unittest_sample5_input]]
 [source, asciidoc, lisa-raw, outputs="unittest_sample5_output", name="append_snippets_with_customized_join"]
@@ -466,7 +489,8 @@ y: 42
 And so on ...
 ....
 
-Das Ergebnis ist eine Datei, die die beiden Snippet-Listen unterschiedlich zusammenfügt.
+Das Ergebnis ist eine Datei, die die beiden Snippet-Listen
+unterschiedlich zusammenfügt.
 
 [[unittest_sample5_output]]
 [source, rust]
@@ -484,7 +508,9 @@ impl MyStruct {
 }
 ----
 
-Es lohnt sich nicht immer einen eigenen Block anzulegen. Bei kurzen Snippets kann es praktischer sein ein Inline Code Objekt zu verwenden. So könnte man den vorigen Quelltext auch folgendermaßen schreiben:
+Es lohnt sich nicht immer einen eigenen Block anzulegen. Bei kurzen
+Snippets kann es praktischer sein ein Inline Code Objekt zu verwenden.
+So könnte man den vorigen Quelltext auch folgendermaßen schreiben:
 
 [[unittest_sample6_input]]
 [source, asciidoc, lisa-raw, outputs="unittest_sample5_output", name="use_inline_snippets"]
@@ -497,7 +523,7 @@ Let's imagine we need some rust struct.
 pub struct MyStruct { <<mystruct_fields|join=", ">> }
 ----
 
-In our main process we need to define the struct an d initialize it.
+In our main process we need to define the struct and initialize it.
 
 [source, rust, save]
 .sample5.rs
