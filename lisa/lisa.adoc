@@ -393,7 +393,8 @@ variable = 42
 variable = variable + 42
 ----
 
-But something else has also to be done. For exaple we need to set the result.
+But something else has also to be done. For example we need to set the
+result.
 
 [[some_process]]
 [source, lua]
@@ -436,7 +437,7 @@ Let's imagine we need some rust struct.
 pub struct MyStruct { <<mystruct_fields|join=", ">> }
 ----
 
-In our main process we need to define the struct an d initialize it.
+In our main process we need to define the struct and initialize it.
 
 [source, rust, save]
 .sample5.rs
@@ -539,7 +540,8 @@ impl MyStruct {
 }
 ----
 
-In our struct we have variable [[mystruct_fields]]`x: String`. And we initialize it properly
+In our struct we have variable [[mystruct_fields]]`x: String`. And we
+initialize it properly
 
 [[init_fields]]
 [source, rust]
@@ -549,7 +551,9 @@ x: "this is the x text".to_string()
 
 Now we can talk about all the functions that use x...
 
-After some time we may have a function that use some other variable [[mystruct_fields]]`y: u8`. And how is it initialized? You know the answer:
+After some time we may have a function that use some other variable
+[[mystruct_fields]]`y: u8`. And how is it initialized? You know the
+answer:
 
 [[init_fields]]
 [source, rust]
@@ -767,7 +771,9 @@ rawsnippets:: Die Codeschnipsel, wie sie aus dem AST extrahiert wurden, bevor
 snippets:: Die Codeschnipsel mit bereits eingesetzten Schnipseln an den
   Referenzen.
 
-Die Anwendungsmöglichkeiten von `pipe` sind extrem vielfältig und mächtig. Deshalb werden wir in den nächsten Abschnitten einige Anwendungsfälle besprechen, die sich mit `pipe` elegant lösen lassen.
+Die Anwendungsmöglichkeiten von `pipe` sind extrem vielfältig und
+mächtig. Deshalb werden wir in den nächsten Abschnitten einige
+Anwendungsfälle besprechen, die sich mit `pipe` elegant lösen lassen.
 
 [[usage_control_flow]]
 Den Ausführungsfluss steuern
@@ -855,7 +861,7 @@ Auftraggeber erarbeitet und legt genau fest, was von einem Programm erwartet
 wird. Eigentlich ist es nur naheliegend diese Informationen unmittelbar im
 Quelltext (und zwar in Form von Testcases) zu nutzen.
 
-Bisher ist die gängige Praxis (wenn überhaupt systhematisch getestet wird), in
+Bisher ist die gängige Praxis (wenn überhaupt systematisch getestet wird), in
 den Unittests nochmal seperat die Informationen aus dem Pflichtenheft
 abzufassen aber diesmal auf die Implementierung zugeschnitten. Das leistet
 einem Auseinanderdriften von Vorgaben und Implementierung Vorschub (oftmals
@@ -1032,7 +1038,11 @@ Implementierung
 === Codeschnipsel verarbeiten
 
 ==== Eine Datenbank für Codeschnipsel anlegen
-Um die Snippets zu verarbeiten müssen wir leicht auf sie zugreifen können. Das Ziel der <<usage_extract,Extrakt Phase>> ist es alle Schnipsel in eine Datenbank (oder Cache je nach Sichtweise) zu überführen, wo wir wahlfrei darauf zugreifen können. Dafür verwenden wir eine `HashMap`.
+Um die Snippets zu verarbeiten müssen wir leicht auf sie zugreifen
+können. Das Ziel der <<usage_extract,Extrakt Phase>> ist es alle
+Schnipsel in eine Datenbank (oder Cache je nach Sichtweise) zu
+überführen, wo wir wahlfrei darauf zugreifen können. Dafür verwenden wir
+eine `HashMap`.
 
 [[crate_usages]]
 [source, rust]
@@ -1116,7 +1126,10 @@ impl Snippet {
     link).
 <2> Dadurch muss der Text des Snippets aus allen anderen Snippets berechnet
     werden.
-<3> Snippets haben <<usage_import_snippets,andere Snippets, die sie einbinden>>, oder man möchte eine explizite Reihenfolge festlegen (TODO link). Daher werden hier alle Snippets aufgelistet, die vorher verarbeitet werden müssen.
+<3> Snippets haben <<usage_import_snippets,andere Snippets, die sie
+    einbinden>>, oder man möchte eine explizite Reihenfolge festlegen
+    (TODO link). Daher werden hier alle Snippets aufgelistet, die vorher
+    verarbeitet werden müssen.
 
 ==== Den AST filtern und die Datenbank füllen
 
@@ -1269,7 +1282,7 @@ for key in input.attributes.iter().map(|attr|{ attr.key.clone() }) {
 
 ===== Snippets in der Datenbank speichern
 
-Ist ein Snippet aus dem AST herausgefilter worden, können wir es in der
+Ist ein Snippet aus dem AST herausgefiltert worden, können wir es in der
 Datenbank abspeichern.
 
 [[store_snippet_in_internal_db]]
@@ -1343,7 +1356,12 @@ let content = input
   .unwrap_or(input.content);
 ----
 
-Um die Referenzen zu finden verwenden wir die https://pest.rs/[Pest] Bibliothek. Sie basiert auf https://en.wikipedia.org/wiki/Parsing_expression_grammar[Parsing Expression Grammars] und wird bereits von asciidoctrine (TODO link) verwendet. Diese Art von Parsern ist (für mich) sehr leicht zu lesen und zu schreiben.
+Um die Referenzen zu finden verwenden wir die
+https://pest.rs/[Pest] Bibliothek. Sie basiert auf
+https://en.wikipedia.org/wiki/Parsing_expression_grammar[Parsing
+Expression Grammars] und wird bereits von
+<<../asciidoctrine/asciidoctrine.adoc#, asciidoctrine>> verwendet. Diese
+Art von Parsern ist (für mich) sehr leicht zu lesen und zu schreiben.
 
 [[required_crates]]
 [source, rust]
@@ -1772,7 +1790,8 @@ pub fn calculate_snippet_ordering(&mut self, snippets: &SnippetDB) {
     Abhängigkeiten verloren gehen.
 <2> Zudem müssen alle Abhängigkeiten bekanntgegeben werden.
 
-Wir verwenden die `calculate_snippet_ordering` Funktion um die abhängigen keys zu einem Snippet zu finden und zu speichern.
+Wir verwenden die `calculate_snippet_ordering` Funktion um die
+abhängigen keys zu einem Snippet zu finden und zu speichern.
 
 [[find_references]]
 [source, rust]
@@ -1808,7 +1827,9 @@ depends_on_ids
 ----
 
 === Ausgaben erzeugen
-Um Ausgaben erzeugen zu können holen wir die Code-Schnipsel in <<snippet_topo_sort, der topologisch sortierten Reihenfolge>> ab und verarbeiten sie anschließend gemäß ihrem jeweiligen Typ.
+Um Ausgaben erzeugen zu können holen wir die Code-Schnipsel in
+<<snippet_topo_sort, der topologisch sortierten Reihenfolge>> ab und
+verarbeiten sie anschließend gemäß ihrem jeweiligen Typ.
 
 [[generate_outputs]]
 [source, rust]
