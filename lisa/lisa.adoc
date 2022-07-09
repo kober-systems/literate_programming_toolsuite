@@ -123,7 +123,7 @@ impl Lisa {
 
 impl Extension for Lisa { // <1>
   fn transform<'a>(&mut self, mut input: AST<'a>) -> anyhow::Result<AST<'a>> { // <2>
-    let snippets = self.extract_ast(&input).unwrap(); // <3>
+    let snippets = self.extract_ast(&input)?; // <3>
 
     self.calculate_snippet_ordering(&snippets); // <5>
 
@@ -1278,12 +1278,12 @@ Datenbank abspeichern.
 snippets.store(
   id.to_string(),
   Snippet {
-    kind: kind,
+    kind,
     content: content.to_string(),
     children: Vec::new(),
     depends_on: dependencies,
-    attributes: attributes,
-    raw: raw,
+    attributes,
+    raw,
   },
 );
 ----
