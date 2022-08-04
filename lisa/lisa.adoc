@@ -567,6 +567,66 @@ And so on ...
 Wird eine `cross reference` im Quelltext eingerückt, so wird der ganze
 importierte Quelltext ebenfalls um die gleiche Höhe eingerückt (im Grunde wird
 vor jedem Zeilenbeginn der Text vor der `cross reference` wieder eingefügt).
+
+[[unittest_sample7_input]]
+[source, asciidoc, lisa-raw, outputs="unittest_sample7_output", name="indented_snippets"]
+.Eingerückte Snippets
+....
+Imagine you want to print a long pattern of "//***//" around so text to emphasize it.
+
+We can do this:
+
+[[print_pattern_once]]
+[source, c]
+----
+printf("/");
+printf("***");
+printf("/");
+----
+
+But we want this line to be long
+
+[[print_pattern]]
+[source, c]
+----
+for (i=0;i<5;i++) {
+  <<print_pattern_once>>
+}
+print("\n");
+----
+
+And now lets emphasize the text.
+
+[source, c, save]
+.sample7.c
+----
+<<print_pattern>>
+print("My emphasized text!!\n"
+<<print_pattern>>
+----
+....
+
+Die generierte Datei wäre folgende:
+
+[[unittest_sample7_output]]
+[source, c]
+.sample7.c
+----
+for (i=0;i<5;i++) {
+  printf("/");
+  printf("***");
+  printf("/");
+}
+print("\n");
+print("My emphasized text!!\n"
+for (i=0;i<5;i++) {
+  printf("/");
+  printf("***");
+  printf("/");
+}
+print("\n");
+----
+
 Will man das vermeiden, so kann man das Stichwort `inline` angeben (TODO
 wirklich? oder soll man in diesem Fall den Schnipsel einfach anders schreiben?
 Was ist mit dem Zeilenende hinter der `cross reference`? Manchmal wäre es gut
@@ -586,8 +646,8 @@ anlegen, welche eine breitere Verwendung von Schnipseln erlauben.
 Dazu kann man einfach die Platzhalter überschreiben. Zum definieren
 eines Parameters wird `:=` verwendet.
 
-[[unittest_sample7_input]]
-[source, asciidoc, lisa-raw, outputs="unittest_sample7_output", name="snippets_with_params"]
+[[unittest_sample8_input]]
+[source, asciidoc, lisa-raw, outputs="unittest_sample8_output", name="snippets_with_params"]
 ....
 There is a function we want to use in different contexts.
 
@@ -639,7 +699,7 @@ and exit code [[custom_exit_code]]`42`.
 Now we put all of these conditions at the beginning of our script.
 
 [source, sh, save]
-.sample7.sh
+.sample8.sh
 ----
 <<checks>>
 
@@ -649,9 +709,9 @@ echo "you passed all checks"
 
 Das hier erzeugte Script sähe dann folgendermaßen aus:
 
-[[unittest_sample7_output]]
+[[unittest_sample8_output]]
 [source, sh]
-.sample7.sh
+.sample8.sh
 ----
 if [[ -f file_xy.txt ]] then
   echo "the condition -f file_xy.txt was not met"
