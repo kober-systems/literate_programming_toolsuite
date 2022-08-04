@@ -1110,6 +1110,7 @@ Verarbeitung ermöglichen.
 pub struct Snippet {
   pub kind: SnippetType,
   pub content: String,         // <2>
+  pub raw_content: String,
   pub children: Vec<Snippet>,  // <1>
   /// List of all keys the snippet depends on
   /// before it can be processed
@@ -1293,6 +1294,7 @@ snippets.store(
   Snippet {
     kind,
     content: content.to_string(),
+    raw_content: content.to_string(),
     children: Vec::new(),
     depends_on: dependencies,
     attributes,
@@ -1395,6 +1397,8 @@ use crate::*;
 #[derive(Parser, Debug)]
 #[grammar = "codeblock.pest"]
 pub struct CodeblockParser;
+
+<<codeblock_parser_internal_structs>>
 
 <<codeblock_parser_functions>>
 
@@ -1555,59 +1559,111 @@ if snippet.children.len() > 0 {
 In dieser Funktion wird ein String erzeugt, die Referenzen im Snippet durch den
 tatsächlichen Inhalt ersetzt.
 
+[[codeblock_parser_internal_structs]]
+[source, rust]
+----
+#[derive(Clone)]
+enum ReferenceParam {
+  Value(String),
+  Reference(String),
+}
+----
+
 [[merge_dependencies]]
 [source, rust]
 ----
-let mut output = String::new();
-
 let ast = CodeblockParser::parse(Rule::codeblock, input).expect("couldn't parse input.");
+let mut snippet_params: HashMap<String, ReferenceParam> = HashMap::default();
+<<extract_snippet_params>>
 
-for element in ast {
-  match element.as_rule() {
-    Rule::reference => {
-      let identifier = extract_identifier(&element);
-      let join_str = extract_join_str(&element)
-        .replace("\\n", "\n");
-      // TODO Den passenden snippet suchen
-      let snippet = snippets.get(identifier);
-      // TODO Den snippet einfügen
-      match snippet {
-        Some(snippet) => {
-          output.push_str(&snippet.get_content(&join_str));
-        }
-        None => {
-          // TODO Fehlermeldung? Müsste vorher bereits abgefangen sein.
-        }
-      }
-    }
-    Rule::indented_reference => {
-      let identifier = extract_identifier(&element);
-      let join_str = extract_join_str(&element)
-        .replace("\\n", "\n");
-      let indentation = extract_indentation(&element);
-      // TODO Den passenden snippet suchen
-      let snippet = snippets.get(identifier);
-      // TODO Den snippet einfügen und indentation beruecksichtigen
-      match snippet {
-        Some(snippet) => {
-          for line in snippet.get_content(&join_str).lines() {
-            output.push_str("\n");
-            output.push_str(indentation);
-            output.push_str(line);
+merge_dependencies_inner(ast, snippets, snippet_params)
+----
+
+[[codeblock_parser_functions]]
+[source, rust]
+----
+fn merge_dependencies_inner<'a>(
+  ast: pest::iterators::Pairs<'a, codeblock_parser::Rule>,
+  snippets: &SnippetDB,
+  snippet_params: HashMap<String, ReferenceParam>
+) -> String {
+  let mut output = String::new();
+
+  for element in ast {
+    match element.as_rule() {
+      Rule::reference => {
+        let identifier = extract_identifier(&element);
+        let join_str = extract_join_str(&element)
+          .replace("\\n", "\n");
+        // TODO Den passenden snippet suchen
+        match snippet_params.get(identifier) {
+          Some(param) => match param {
+            ReferenceParam::Value(param) => output.push_str(&param),
+            ReferenceParam::Reference(param) => {
+              let ast = CodeblockParser::parse(Rule::codeblock, &param).expect("couldn't parse input.");
+              let content = merge_dependencies_inner(ast, snippets, snippet_params.clone());
+              output.push_str(&content);
+            }
+          }
+          None => match snippets.get(identifier) {
+            Some(snippet) => {
+              if snippet_params.is_empty() {
+                output.push_str(&snippet.get_content(&join_str));
+              } else {
+                let input = snippet.get_raw_content(&join_str);
+                let ast = CodeblockParser::parse(Rule::codeblock, &input).expect("couldn't parse input.");
+                let content = merge_dependencies_inner(ast, snippets, snippet_params.clone());
+                output.push_str(&content);
+              }
+            }
+            None => {
+              // TODO Fehlermeldung? Müsste vorher bereits abgefangen sein.
+            }
           }
         }
-        None => {
-          // TODO Fehlermeldung? Müsste vorher bereits abgefangen sein.
+      }
+      Rule::indented_reference => {
+        let identifier = extract_identifier(&element);
+        let join_str = extract_join_str(&element)
+          .replace("\\n", "\n");
+        let indentation = extract_indentation(&element);
+        // TODO Den passenden snippet suchen
+        match snippet_params.get(identifier) {
+          Some(param) => match param {
+            ReferenceParam::Value(param) => indent(&param, indentation, &mut output),
+            ReferenceParam::Reference(param) => {
+              let ast = CodeblockParser::parse(Rule::codeblock, &param).expect("couldn't parse input.");
+              let content = merge_dependencies_inner(ast, snippets, snippet_params.clone());
+              indent(&content, indentation, &mut output);
+            }
+          }
+          // TODO Den snippet einfügen und indentation beruecksichtigen
+          None => match snippets.get(identifier) {
+            Some(snippet) => {
+              if snippet_params.is_empty() {
+                indent(&snippet.get_content(&join_str), indentation, &mut output);
+              } else {
+                let input = snippet.get_raw_content(&join_str);
+                let ast = CodeblockParser::parse(Rule::codeblock, &input).expect("couldn't parse input.");
+                let content = merge_dependencies_inner(ast, snippets, snippet_params.clone());
+                indent(&content, indentation, &mut output);
+                output.push_str(&content);
+              }
+            }
+            None => {
+              // TODO Fehlermeldung? Müsste vorher bereits abgefangen sein.
+            }
+          }
         }
       }
+      Rule::code => {
+        output.push_str(element.as_str());
+      }
+      _ => (),
     }
-    Rule::code => {
-      output.push_str(element.as_str());
-    }
-    _ => (),
   }
+  output
 }
-output
 ----
 
 [[codeblock_parser_functions]]
@@ -1704,6 +1760,67 @@ fn extract_indentation<'a>(element: &pest::iterators::Pair<'a, codeblock_parser:
   }
   output
 }
+
+fn indent(content: &str, indentation: &str, output: &mut String) -> () {
+  for line in content.lines() {
+    output.push_str("\n");
+    output.push_str(indentation);
+    output.push_str(line);
+  }
+}
+----
+
+Wir müssen auch mögliche Parameter, welche beim Aufruf des Snippets
+eventuell übergeben wurden, herausfiltern und abspeichern.
+
+[[extract_snippet_params]]
+[source, rust]
+----
+for element in ast
+  .clone()
+  .filter(|element| match element.as_rule() {
+    Rule::reference => true,
+    Rule::indented_reference => true,
+    _ => false
+  })
+  .flat_map(|element| element.clone().into_inner())
+  .filter(|element| {
+    match element.as_rule() {
+      Rule::attributes => true,
+      _ => false
+    }
+  })
+  .flat_map(|element| element.clone().into_inner())
+  .filter(|element| match element.as_rule() {
+    Rule::attribute_param => true,
+    _ => false
+  })
+{
+  let key = element
+    .clone()
+    .into_inner()
+    .find(|element| match element.as_rule() {
+      Rule::identifier => true,
+      _ => false
+    })
+    .map(|element| element.as_str().to_string())
+    .unwrap_or("".to_string());
+  let value = element
+    .into_inner()
+    .find(|element| match element.as_rule() {
+      Rule::value => true,
+      Rule::reference => true,
+      _ => false
+    })
+    .map(|element| match element.as_rule() {
+      Rule::value => ReferenceParam::Value(element.as_str().to_string()),
+      Rule::reference => ReferenceParam::Reference(element.as_str().to_string()),
+      _ => ReferenceParam::Value("".to_string())
+    })
+    .unwrap();
+  snippet_params.insert(key, value);
+
+}
 ----
 
 Hierfür müssen wir den Inhalt eines Snippets genereieren können.
@@ -1722,6 +1839,20 @@ fn get_content(&self, join_str: &str) -> String {
     })
   } else {
     self.content.to_string()
+  }
+}
+
+fn get_raw_content(&self, join_str: &str) -> String {
+  if self.children.len() > 0 {
+    let mut iter = self.children.iter();
+    let start = iter.next().unwrap().raw_content.clone();
+    iter.fold(start, |mut base, snippet| {
+      base.push_str(join_str);
+      base.push_str(&snippet.raw_content);
+      base
+    })
+  } else {
+    self.raw_content.to_string()
   }
 }
 ----
@@ -2043,6 +2174,7 @@ impl LisaWrapper {
       Snippet {
         kind: SnippetType::Plain,
         content: content.to_string(),
+        raw_content: content.to_string(),
         children: Vec::new(),
         depends_on: Vec::new(),
         attributes: HashMap::default(),
