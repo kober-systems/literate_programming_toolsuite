@@ -69,6 +69,7 @@ pub enum SnippetType {
 pub struct Snippet {
   pub kind: SnippetType,
   pub content: String,
+  pub raw_content: String,
   pub children: Vec<Snippet>,
   /// List of all keys the snippet depends on
   /// before it can be processed
@@ -91,6 +92,20 @@ impl Snippet {
       self.content.to_string()
     }
   }
+
+  fn get_raw_content(&self, join_str: &str) -> String {
+    if self.children.len() > 0 {
+      let mut iter = self.children.iter();
+      let start = iter.next().unwrap().raw_content.clone();
+      iter.fold(start, |mut base, snippet| {
+        base.push_str(join_str);
+        base.push_str(&snippet.raw_content);
+        base
+      })
+    } else {
+      self.raw_content.to_string()
+    }
+  }
 }
 
 #[derive(Clone)]
@@ -109,6 +124,7 @@ impl LisaWrapper {
       Snippet {
         kind: SnippetType::Plain,
         content: content.to_string(),
+        raw_content: content.to_string(),
         children: Vec::new(),
         depends_on: Vec::new(),
         attributes: HashMap::default(),
@@ -251,6 +267,7 @@ impl Lisa {
           Snippet {
             kind,
             content: content.to_string(),
+            raw_content: content.to_string(),
             children: Vec::new(),
             depends_on: dependencies,
             attributes,
@@ -281,6 +298,7 @@ impl Lisa {
           Snippet {
             kind,
             content: content.to_string(),
+            raw_content: content.to_string(),
             children: Vec::new(),
             depends_on: dependencies,
             attributes,

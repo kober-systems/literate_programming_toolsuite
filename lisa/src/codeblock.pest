@@ -1,14 +1,18 @@
 codeblock = _{ (code | indented_reference | reference | comment)* ~ EOI }
 
-reference = { "<<" ~ identifier ~ ("|" ~ attributes)? ~ ">>" }
+reference = { "<<" ~ identifier ~ ("|" ~ empty ~ attributes)? ~ ">>" }
 indented_reference = { (SOI | NEWLINE) ~ indentation ~ reference }
 code = { (!indented_reference ~ !reference ~ !comment ~ ANY)+ }
 comment = { optspaces ~ ("//" | "#" | ";;" ) ~ optspaces ~ "<" ~ ASCII_DIGIT+ ~ ">" ~ optspaces ~ &(EOI | NEWLINE) }
 
 identifier = @{ (ASCII_ALPHANUMERIC | "_") ~ (ASCII_ALPHANUMERIC | "_" | "-" )* }
-attributes = { attribute ~ ("," ~ attribute)* }
+attributes = { (attribute | attribute_param) ~ empty
+  ~ ("," ~ empty ~ (attribute | attribute_param) ~ empty)* }
 attribute = { identifier ~ "=" ~ "\"" ~ value ~ "\"" }
+attribute_param = { identifier ~ ":=" ~ empty
+  ~ (("\"" ~ value ~ "\"") | reference) }
 value = @{ ( !"\"" ~ ANY | "\\\"")* }
 whitespace = @{ (" " | "\t") }
 indentation = @{ whitespace+ }
+empty = @{ (" " | "\t" | "\n" | "\r")* }
 optspaces = @{ whitespace* }

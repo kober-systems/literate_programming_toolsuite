@@ -404,3 +404,98 @@ impl MyStruct {
   Ok(())
 }
 
+#[test]
+fn snippets_with_params() -> Result<()> {
+  let content = r#"
+There is a function we want to use in different contexts.
+
+[[test_condition]]
+[source, sh]
+----
+if [[ <<condition>> ]] then
+  echo "<<err_message>>"
+  exit <<exit_code>>
+fi
+----
+
+Normally we exit with the message
+[[err_message]]`the condition <<condition>> was not met` and return exit
+code [[exit_code]]`1`.
+
+Now we can use this snippet to test some condition before we execute our
+script. Lets say we want to make sure `file_xy.txt` exists.
+
+[[checks]]
+[source, sh]
+----
+<<test_condition| condition:="-f file_xy.txt">>
+----
+
+But we could also override the default snippets with a custom one. For
+example to change the error message.
+
+[[checks]]
+[source, sh]
+----
+<<test_condition|condition:="-f file_yz.txt",
+                 err_message:="my custom err message yz">>
+----
+
+It's also possible to nest snippets. We can just reference them. Let's
+say we would like to return the message
+[[custom_err_message]]`return from nested param snippet with code <<exit_code>>`
+and exit code [[custom_exit_code]]`42`.
+
+[[checks]]
+[source, sh]
+----
+<<test_condition|condition:="-f nested_params.txt",
+                 err_message:=<<custom_err_message>>,
+                 exit_code:=<<custom_exit_code>>>>
+----
+
+Now we put all of these conditions at the beginning of our script.
+
+[source, sh, save]
+.sample8.sh
+----
+<<checks>>
+
+echo "you passed all checks"
+----
+"#;
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::parse_from(vec![""].into_iter());
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
+
+  let mut lisa = Lisa::from_env(env);
+  let _ast = lisa.transform(ast)?;
+
+  let mut outputs = lisa.into_cache().unwrap();
+
+  assert_eq!(
+  outputs.remove("sample8.sh").unwrap(),
+  r#"if [[ -f file_xy.txt ]] then
+  echo "the condition -f file_xy.txt was not met"
+  exit 1
+fi
+if [[ -f file_yz.txt ]] then
+  echo "my custom err message yz"
+  exit 1
+fi
+if [[ -f nested_params.txt ]] then
+  echo "return from nested param snippet with code 42"
+  exit 42
+fi
+
+echo "you passed all checks"
+"#
+);
+
+
+  assert!(outputs.is_empty());
+
+  Ok(())
+}
+
