@@ -249,12 +249,12 @@ impl Lisa {
         snippets.store(
           id.to_string(),
           Snippet {
-            kind: kind,
+            kind,
             content: content.to_string(),
             children: Vec::new(),
             depends_on: dependencies,
-            attributes: attributes,
-            raw: raw,
+            attributes,
+            raw,
           },
         );
 
@@ -279,12 +279,12 @@ impl Lisa {
         snippets.store(
           id.to_string(),
           Snippet {
-            kind: kind,
+            kind,
             content: content.to_string(),
             children: Vec::new(),
             depends_on: dependencies,
-            attributes: attributes,
-            raw: raw,
+            attributes,
+            raw,
           },
         );
 
