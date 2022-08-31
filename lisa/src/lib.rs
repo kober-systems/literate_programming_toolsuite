@@ -380,10 +380,10 @@ impl Lisa {
 
     loop {
       let key = self.dependencies.pop();
-      let snippet = match key {
+      let snippet = match &key {
         Some(key) => {
           let mut snippets = snippets.borrow_mut();
-          let snippet = snippets.pop(&key.clone());
+          let snippet = snippets.pop(&key);
 
           match snippet {
             Some(mut snippet) => {
@@ -465,7 +465,7 @@ impl Lisa {
 
 impl Extension for Lisa {
   fn transform<'a>(&mut self, input: AST<'a>) -> anyhow::Result<AST<'a>> {
-    let snippets = self.extract_ast(&input).unwrap();
+    let snippets = self.extract_ast(&input)?;
 
     self.calculate_snippet_ordering(&snippets);
 
