@@ -1523,7 +1523,7 @@ pub fn get_dependencies(input: &str) -> Vec<&str> {
 }
 
 /// Merges the snippets into the depending snippet
-pub fn merge_dependencies(input: &str, snippets: &SnippetDB) -> String {
+pub fn merge_dependencies(input: &str, snippets: &SnippetDB, key: &str) -> String {
   <<merge_dependencies>>
 }
 ----
@@ -1604,8 +1604,18 @@ attribute_param = { identifier ~ ":=" ~ empty
 value = @{ ( !"\"" ~ ANY | "\\\"")* }
 ----
 
+[[codeblock_parser_internal_structs]]
+[source, rust]
+----
+#[derive(Clone)]
+enum ReferenceParam {
+  Value(String),
+  Reference(String),
+}
+----
+
 Bei einer eingerückten Referenz definieren wir die Einrückung seperat um sie
-später (TODO link) wirderverwenden zu können.
+später (TODO link) wiederverwenden zu können.
 
 [[indented_reference]]
 [source, pest]
@@ -1659,30 +1669,20 @@ if snippet.children.len() > 0 {
   let mut children = Vec::new();
   for mut child in snippet.children.clone().into_iter() {
     let content = child.content.clone();
-    let content = codeblock_parser::merge_dependencies(content.as_str(), &snippets);
+    let content = codeblock_parser::merge_dependencies(content.as_str(), &snippets, key);
     child.content = content;
     children.push(child);
   }
   snippet.children = children;
 } else {
   let content = snippet.content.clone();
-  let content = codeblock_parser::merge_dependencies(content.as_str(), &snippets);
+  let content = codeblock_parser::merge_dependencies(content.as_str(), &snippets, key);
   snippet.content = content;
 }
 ----
 
 In dieser Funktion wird ein String erzeugt, die Referenzen im Snippet durch den
 tatsächlichen Inhalt ersetzt.
-
-[[codeblock_parser_internal_structs]]
-[source, rust]
-----
-#[derive(Clone)]
-enum ReferenceParam {
-  Value(String),
-  Reference(String),
-}
-----
 
 [[merge_dependencies]]
 [source, rust]
@@ -1691,7 +1691,7 @@ let ast = CodeblockParser::parse(Rule::codeblock, input).expect("couldn't parse 
 let mut snippet_params: HashMap<String, ReferenceParam> = HashMap::default();
 <<extract_snippet_params>>
 
-merge_dependencies_inner(ast, snippets, snippet_params)
+merge_dependencies_inner(ast, snippets, snippet_params, key)
 ----
 
 [[codeblock_parser_functions]]
@@ -1700,7 +1700,8 @@ merge_dependencies_inner(ast, snippets, snippet_params)
 fn merge_dependencies_inner<'a>(
   ast: pest::iterators::Pairs<'a, codeblock_parser::Rule>,
   snippets: &SnippetDB,
-  snippet_params: HashMap<String, ReferenceParam>
+  snippet_params: HashMap<String, ReferenceParam>,
+  key: &str,
 ) -> String {
   let mut output = String::new();
 
@@ -1738,35 +1739,38 @@ fn merge_dependencies_inner<'a>(
         }
       }
       Rule::indented_reference => {
+        let indentation = extract_indentation(&element);
         let identifier = extract_identifier(&element);
         let join_str = extract_join_str(&element)
           .replace("\\n", "\n");
-        let indentation = extract_indentation(&element);
-        // TODO Den passenden snippet suchen
-        match snippet_params.get(identifier) {
+        let param_key = identifier.to_string() + key;
+
+        match snippet_params.get(&param_key) {
           Some(param) => match param {
-            ReferenceParam::Value(param) => indent(&param, indentation, &mut output),
+            ReferenceParam::Value(param) => output.push_str(&param),
             ReferenceParam::Reference(param) => {
               let ast = CodeblockParser::parse(Rule::codeblock, &param).expect("couldn't parse input.");
-              let content = merge_dependencies_inner(ast, snippets, snippet_params.clone());
+              let mut snippet_params = snippet_params.clone();
+              <<extract_snippet_params>>
+              let content = merge_dependencies_inner(ast, snippets, snippet_params, element.as_str());
               indent(&content, indentation, &mut output);
             }
           }
-          // TODO Den snippet einfügen und indentation beruecksichtigen
           None => match snippets.get(identifier) {
             Some(snippet) => {
               if snippet_params.is_empty() {
-                indent(&snippet.get_content(&join_str), indentation, &mut output);
+                let content = snippet.get_content(&join_str);
+                indent(&content, indentation, &mut output);
               } else {
                 let input = snippet.get_raw_content(&join_str);
                 let ast = CodeblockParser::parse(Rule::codeblock, &input).expect("couldn't parse input.");
-                let content = merge_dependencies_inner(ast, snippets, snippet_params.clone());
+                let mut snippet_params = snippet_params.clone();
+                let content = merge_dependencies_inner(ast, snippets, snippet_params, element.as_str().trim_start());
                 indent(&content, indentation, &mut output);
-                output.push_str(&content);
               }
             }
             None => {
-              // TODO Fehlermeldung? Müsste vorher bereits abgefangen sein.
+              warn!("Couldn't find snippet dependency `{}` for `{}`", identifier, key);
             }
           }
         }
@@ -1779,6 +1783,66 @@ fn merge_dependencies_inner<'a>(
   }
   output
 }
+----
+
+Das einsetzen der Snippets läuft immer etwa gleich ab: Entweder es
+gibt einen Parameter welcher ersetzt werden muss oder man ersetzt die
+Referenzen durch Snippets aus der Datenbank.
+
+[[get_modified_snippet]]
+[source, rust]
+----
+let identifier = extract_identifier(&element);
+let join_str = extract_join_str(&element)
+  .replace("\\n", "\n");
+let param_key = identifier.to_string() + key;
+match snippet_params.get(&param_key) {
+  Some(param) => match param {
+    ReferenceParam::Value(param) => output.push_str(&param),
+    ReferenceParam::Reference(param) => {
+      let ast = CodeblockParser::parse(Rule::codeblock, &param).expect("couldn't parse input.");
+      let mut snippet_params = snippet_params.clone();
+      <<extract_snippet_params>>
+      let content = merge_dependencies_inner(ast, snippets, snippet_params, element.as_str());
+      <<substitute_reference_with_content>>
+    }
+  }
+  None => match snippets.get(identifier) {
+    Some(snippet) => {
+      if snippet_params.is_empty() {
+        let content = snippet.get_content(&join_str);
+        <<substitute_reference_with_content>>
+      } else {
+        let input = snippet.get_raw_content(&join_str);
+        let ast = CodeblockParser::parse(Rule::codeblock, &input).expect("couldn't parse input.");
+        let mut snippet_params = snippet_params.clone();
+        <<extract_snippet_params>>
+        let content = merge_dependencies_inner(ast, snippets, snippet_params, element.as_str());
+        <<substitute_reference_with_content>>
+      }
+    }
+    None => {
+      warn!("Couldn't find snippet dependency `{}` for `{}`", identifier, key);
+    }
+  }
+}
+----
+
+Bei normalen Referenzen kann der Inhalt einfach ersetzt werden.
+
+[[substitute_reference_with_content]]
+[source, rust]
+----
+output.push_str(&content);
+----
+
+Bei eingerückten Referenzen muss zusätzlich jede Zeile des Inhalts
+eingerückt werden.
+
+[[substitute_indented_reference_with_content]]
+[source, rust]
+----
+indent(&content, indentation, &mut output);
 ----
 
 [[codeblock_parser_functions]]
@@ -1911,43 +1975,50 @@ let indent_ref_iter = ast
 
 for element in ref_iter
   .chain(indent_ref_iter)
-  .flat_map(|element| element.clone().into_inner())
-  .filter(|element| {
-    match element.as_rule() {
-      Rule::attributes => true,
-      _ => false
-    }
-  })
-  .flat_map(|element| element.clone().into_inner())
-  .filter(|element| match element.as_rule() {
-    Rule::attribute_param => true,
-    _ => false
-  })
 {
-  let key = element
+  let base_key = element.as_str();
+
+  for element in element
     .clone()
     .into_inner()
-    .find(|element| match element.as_rule() {
-      Rule::identifier => true,
+    .filter(|element| {
+      match element.as_rule() {
+        Rule::attributes => true,
+        _ => false
+      }
+    })
+    .flat_map(|element| element.clone().into_inner())
+    .filter(|element| match element.as_rule() {
+      Rule::attribute_param => true,
       _ => false
     })
-    .map(|element| element.as_str().to_string())
-    .unwrap();
-  let value = element
-    .into_inner()
-    .find(|element| match element.as_rule() {
-      Rule::value => true,
-      Rule::reference => true,
-      _ => false
-    })
-    .map(|element| match element.as_rule() {
-      Rule::value => ReferenceParam::Value(element.as_str().to_string()),
-      Rule::reference => ReferenceParam::Reference(element.as_str().to_string()),
-      _ => ReferenceParam::Value("".to_string())
-    })
-    .unwrap();
+  {
+    let identifier = element
+      .clone()
+      .into_inner()
+      .find(|element| match element.as_rule() {
+        Rule::identifier => true,
+        _ => false
+      })
+      .map(|element| element.as_str().to_string())
+      .unwrap();
+    let identifier = identifier + base_key;
+    let value = element
+      .into_inner()
+      .find(|element| match element.as_rule() {
+        Rule::value => true,
+        Rule::reference => true,
+        _ => false
+      })
+      .map(|element| match element.as_rule() {
+        Rule::value => ReferenceParam::Value(element.as_str().to_string()),
+        Rule::reference => ReferenceParam::Reference(element.as_str().to_string()),
+        _ => ReferenceParam::Value("".to_string())
+      })
+      .unwrap();
 
-  snippet_params.insert(key, value);
+    snippet_params.insert(identifier, value);
+  }
 }
 ----
 
