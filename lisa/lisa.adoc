@@ -729,6 +729,61 @@ fi
 echo "you passed all checks"
 ----
 
+[%collapsible]
+.Details und Edge-Cases
+====
+
+Das funktioniert auch, wenn die Snippets eingerückt wurden
+
+[[unittest_indented_param_snippets_input]]
+[source, asciidoc, lisa-raw, outputs="unittest_indented_param_snippets_output", name="indented_snippets_with_params"]
+....
+We have a snippet
+
+[[inner_snippet]]
+[source, yaml]
+----
+this is my snippet <<text>>
+----
+
+And we indent it
+
+[source, yaml, save]
+.sample.yaml
+----
+category:
+    <<inner_snippet|
+        text:="my param text">>
+
+category2:
+    <<inner_snippet|
+        text:=<<referenced_param>> >>
+----
+
+And here we have a param we reference
+
+[[referenced_param]]
+[source, yaml]
+----
+referenced param text
+----
+....
+
+Die erzeugte Datei ist folgende:
+
+[[unittest_indented_param_snippets_output]]
+[source, sh]
+.sample.yaml
+----
+category:
+    this is my snippet my param text
+
+category2:
+    this is my snippet referenced param text
+----
+
+====
+
 [[transform]]
 ==== Transformieren
 Vorhandene Codeschnipsel können nicht nur zu einer größeren Einheit
