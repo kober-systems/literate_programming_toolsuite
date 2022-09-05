@@ -1836,13 +1836,26 @@ eventuell übergeben wurden, herausfiltern und abspeichern.
 [[extract_snippet_params]]
 [source, rust]
 ----
-for element in ast
+let ref_iter = ast
   .clone()
   .filter(|element| match element.as_rule() {
     Rule::reference => true,
+    _ => false
+  });
+let indent_ref_iter = ast
+  .clone()
+  .filter(|element| match element.as_rule() {
     Rule::indented_reference => true,
     _ => false
   })
+  .flat_map(|element| element.clone().into_inner())
+  .filter(|element| match element.as_rule() {
+    Rule::reference => true,
+    _ => false
+  });
+
+for element in ref_iter
+  .chain(indent_ref_iter)
   .flat_map(|element| element.clone().into_inner())
   .filter(|element| {
     match element.as_rule() {
@@ -1864,7 +1877,7 @@ for element in ast
       _ => false
     })
     .map(|element| element.as_str().to_string())
-    .unwrap_or("".to_string());
+    .unwrap();
   let value = element
     .into_inner()
     .find(|element| match element.as_rule() {
@@ -1878,8 +1891,8 @@ for element in ast
       _ => ReferenceParam::Value("".to_string())
     })
     .unwrap();
-  snippet_params.insert(key, value);
 
+  snippet_params.insert(key, value);
 }
 ----
 
