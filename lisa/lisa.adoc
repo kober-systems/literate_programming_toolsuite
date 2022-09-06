@@ -1714,46 +1714,8 @@ fn merge_dependencies_inner<'a>(
       }
       Rule::indented_reference => {
         let indentation = extract_indentation(&element);
-        let identifier = extract_identifier(&element);
-        let join_str = extract_join_str(&element)
-          .replace("\\n", "\n");
-        let param_key = identifier.to_string() + key;
-
-        match snippet_params.get(&param_key) {
-          Some(param) => match param {
-            ReferenceParam::Value(param) => output.push_str(&param),
-            ReferenceParam::Reference(param) => {
-              let ast = CodeblockParser::parse(Rule::codeblock, &param).expect("couldn't parse input.");
-              let mut snippet_params = snippet_params.clone();
-              let next_key = element.as_str().trim_start();
-              <<extract_snippet_params>>
-              <<extract_snippet_sub_params>>
-              let content = merge_dependencies_inner(ast, snippets, snippet_params, next_key);
-              indent(&content, indentation, &mut output);
-            }
-          }
-          None => match snippets.get(identifier) {
-            Some(snippet) => {
-              if snippet_params.is_empty() {
-                let content = snippet.get_content(&join_str);
-                indent(&content, indentation, &mut output);
-              } else {
-                let input = snippet.get_raw_content(&join_str);
-                let ast = CodeblockParser::parse(Rule::codeblock, &input).expect("couldn't parse input.");
-                let mut snippet_params = snippet_params.clone();
-
-                let next_key = element.as_str().trim_start();
-                <<extract_snippet_params>>
-                <<extract_snippet_sub_params>>
-                let content = merge_dependencies_inner(ast, snippets, snippet_params, element.as_str().trim_start());
-                indent(&content, indentation, &mut output);
-              }
-            }
-            None => {
-              warn!("Couldn't find snippet dependency `{}` for `{}`", identifier, key);
-            }
-          }
-        }
+        <<get_modified_snippet|
+            substitute_reference_with_content:=<<substitute_indented_reference_with_content>>>>
       }
       Rule::code => {
         output.push_str(element.as_str());
