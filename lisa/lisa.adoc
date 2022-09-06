@@ -655,7 +655,7 @@ There is a function we want to use in different contexts.
 [source, sh]
 ----
 if [[ <<condition>> ]] then
-  echo "<<err_message>>"
+  echo "<<err_message| condition:=<<condition>> >>"
   exit <<exit_code>>
 fi
 ----
@@ -685,7 +685,7 @@ example to change the error message.
 
 It's also possible to nest snippets. We can just reference them. Let's
 say we would like to return the message
-[[custom_err_message]]`return from nested param snippet with code <<exit_code>>`
+[[custom_err_message]]`return from nested param snippet with code <<custom_exit_code>>`
 and exit code [[custom_exit_code]]`42`.
 
 [[checks]]
