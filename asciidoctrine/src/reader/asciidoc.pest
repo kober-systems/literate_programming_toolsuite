@@ -102,21 +102,21 @@ delimited_block = {
 delimited_inner = @{ (!(NEWLINE ~ PEEK) ~ ANY)* }
 
 delimited_comment = {
-  PUSH("/"{4,} ~ NEWLINE) ~
+  PUSH("/"{4,}) ~ NEWLINE ~
   delimited_inner ~
-  NEWLINE ~ POP
+  NEWLINE ~ POP ~ &NEWLINE
 }
 
 delimited_literal = {
-  PUSH("."{4,} ~ NEWLINE) ~
+  PUSH("."{4,}) ~ NEWLINE ~
   delimited_inner ~
-  NEWLINE ~ POP
+  NEWLINE ~ POP ~ &NEWLINE
 }
 
 delimited_source = {
-  PUSH("-"{4,} ~ NEWLINE) ~
+  PUSH("-"{4,}) ~ NEWLINE ~
   delimited_inner ~
-  NEWLINE ~ POP
+  NEWLINE ~ POP ~ &NEWLINE
 }
 
 delimited_verse = { "verse" } // TODO
