@@ -198,16 +198,16 @@ require "mytestmodule"
     content: input,
     elements: vec![ElementSpan {
       source: None,
-      content: input.trim_start(),
+      content: input.trim(),
       element: Element::TypedBlock {
         kind: BlockType::Listing,
       },
       start: 1,
-      end: 145,
+      end: 144,
       start_line: 2,
       start_col: 1,
-      end_line: 8,
-      end_col: 1,
+      end_line: 7,
+      end_col: 41,
       children: Vec::new(),
       positional_attributes: vec![AttributeValue::Ref("source"), AttributeValue::Ref("lua")],
       attributes: vec![
@@ -265,16 +265,16 @@ asciidoctrine dont sees it."#;
     content: input,
     elements: vec![ElementSpan {
       source: None,
-      content: input.trim_start(),
+      content: input.trim(),
       element: Element::TypedBlock {
         kind: BlockType::Listing,
       },
       start: 1,
-      end: 269,
+      end: 268,
       start_line: 2,
       start_col: 1,
-      end_line: 16,
-      end_col: 1,
+      end_line: 15,
+      end_col: 5,
       children: Vec::new(),
       positional_attributes: vec![
         AttributeValue::Ref("source"),
