@@ -2049,7 +2049,7 @@ Damit das möglich wird muss herausgefunden werden, welches Snippet verarbeitet 
 [[cargo_dependencies]]
 [source, toml]
 ----
-topological-sort = "0.1.0"
+topological-sort = "0.2"
 ----
 
 [[crate_usages]]
