@@ -1,4 +1,4 @@
-
+set -e
 
 echo "Start generating source files ..."
 
@@ -6,13 +6,13 @@ cd lisa
 lisa lisa.adoc
 # The new generated source must be able to
 # generate itself
-cargo run --manifest-path ../Cargo.toml --bin lisa -- lisa.adoc || exit 1
+cargo run --manifest-path ../Cargo.toml --bin lisa -- lisa.adoc
 cd ..
 
-cargo run --bin lisa -- README.adoc || exit 1
+cargo run --bin lisa -- -o /dev/null README.adoc
 
 echo "Generating source files done!"
-cargo test || exit 1
+cargo test
 echo "Start generating html files ..."
 
 asciidoctor \
