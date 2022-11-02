@@ -5,6 +5,67 @@ use lisa::*;
 use pretty_assertions::assert_eq;
 
 #[test]
+fn indented_snippets_with_params() -> Result<()> {
+  let content = r#"
+We have a snippet
+
+[[inner_snippet]]
+[source, yaml]
+----
+this is my snippet <<text>>
+----
+
+And we indent it
+
+[source, yaml, save]
+.sample.yaml
+----
+category:
+    <<inner_snippet|
+        text:="my param text">>
+
+category2:
+    <<inner_snippet|
+        text:=<<referenced_param>> >>
+----
+
+And here we have a param we reference
+
+[[referenced_param]]
+[source, yaml]
+----
+referenced param text
+----
+"#;
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::parse_from(vec![""].into_iter());
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
+
+  let mut lisa = Lisa::from_env(env);
+  let _ast = lisa.transform(ast)?;
+
+  // TODO ast vergleichen
+
+  let mut outputs = lisa.into_cache().unwrap();
+
+  assert_eq!(
+  outputs.remove("sample.yaml").unwrap(),
+  r#"category:
+    this is my snippet my param text
+
+category2:
+    this is my snippet referenced param text
+"#
+);
+
+
+  assert!(outputs.is_empty());
+
+  Ok(())
+}
+
+#[test]
 fn use_snippets() -> Result<()> {
   let content = r#"
 We need the testmodule for this project.
@@ -190,7 +251,8 @@ variable = 42
 variable = variable + 42
 ----
 
-But something else has also to be done. For exaple we need to set the result.
+But something else has also to be done. For example we need to set the
+result.
 
 [[some_process]]
 [source, lua]
@@ -239,7 +301,7 @@ Let's imagine we need some rust struct.
 pub struct MyStruct { <<mystruct_fields|join=", ">> }
 ----
 
-In our main process we need to define the struct an d initialize it.
+In our main process we need to define the struct and initialize it.
 
 [source, rust, save]
 .sample5.rs
@@ -335,7 +397,7 @@ Let's imagine we need some rust struct.
 pub struct MyStruct { <<mystruct_fields|join=", ">> }
 ----
 
-In our main process we need to define the struct an d initialize it.
+In our main process we need to define the struct and initialize it.
 
 [source, rust, save]
 .sample5.rs
@@ -351,7 +413,8 @@ impl MyStruct {
 }
 ----
 
-In our struct we have variable [[mystruct_fields]]`x: String`. And we initialize it properly
+In our struct we have variable [[mystruct_fields]]`x: String`. And we
+initialize it properly
 
 [[init_fields]]
 [source, rust]
@@ -361,7 +424,9 @@ x: "this is the x text".to_string()
 
 Now we can talk about all the functions that use x...
 
-After some time we may have a function that use some other variable [[mystruct_fields]]`y: u8`. And how is it initialized? You know the answer:
+After some time we may have a function that use some other variable
+[[mystruct_fields]]`y: u8`. And how is it initialized? You know the
+answer:
 
 [[init_fields]]
 [source, rust]
@@ -405,6 +470,78 @@ impl MyStruct {
 }
 
 #[test]
+fn indented_snippets() -> Result<()> {
+  let content = r#"
+Imagine you want to print a long pattern of "//***//" around so text to emphasize it.
+
+We can do this:
+
+[[print_pattern_once]]
+[source, c]
+----
+printf("/");
+printf("***");
+printf("/");
+----
+
+But we want this line to be long
+
+[[print_pattern]]
+[source, c]
+----
+for (i=0;i<5;i++) {
+  <<print_pattern_once>>
+}
+print("\n");
+----
+
+And now lets emphasize the text.
+
+[source, c, save]
+.sample7.c
+----
+<<print_pattern>>
+print("My emphasized text!!\n"
+<<print_pattern>>
+----
+"#;
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::parse_from(vec![""].into_iter());
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
+
+  let mut lisa = Lisa::from_env(env);
+  let _ast = lisa.transform(ast)?;
+
+  // TODO ast vergleichen
+
+  let mut outputs = lisa.into_cache().unwrap();
+
+  assert_eq!(
+  outputs.remove("sample7.c").unwrap(),
+  r#"for (i=0;i<5;i++) {
+  printf("/");
+  printf("***");
+  printf("/");
+}
+print("\n");
+print("My emphasized text!!\n"
+for (i=0;i<5;i++) {
+  printf("/");
+  printf("***");
+  printf("/");
+}
+print("\n");
+"#
+);
+
+
+  assert!(outputs.is_empty());
+
+  Ok(())
+}
+
+#[test]
 fn snippets_with_params() -> Result<()> {
   let content = r#"
 There is a function we want to use in different contexts.
@@ -413,7 +550,7 @@ There is a function we want to use in different contexts.
 [source, sh]
 ----
 if [[ <<condition>> ]] then
-  echo "<<err_message>>"
+  echo "<<err_message| condition:=<<condition>> >>"
   exit <<exit_code>>
 fi
 ----
@@ -443,7 +580,7 @@ example to change the error message.
 
 It's also possible to nest snippets. We can just reference them. Let's
 say we would like to return the message
-[[custom_err_message]]`return from nested param snippet with code <<exit_code>>`
+[[custom_err_message]]`return from nested param snippet with code <<custom_exit_code>>`
 and exit code [[custom_exit_code]]`42`.
 
 [[checks]]
@@ -471,6 +608,8 @@ echo "you passed all checks"
 
   let mut lisa = Lisa::from_env(env);
   let _ast = lisa.transform(ast)?;
+
+  // TODO ast vergleichen
 
   let mut outputs = lisa.into_cache().unwrap();
 
