@@ -1,19 +1,20 @@
 = Literate programming toolsuite
-This is a suite of programs to use for literate programming. They try to make
-this process as smooth as possible.
+This is a suite of programs to use for literate programming. They try to
+make this process as smooth as possible.
 
-https://github.com/lammermann/literate_programming_toolsuite[Repo]
+image:https://img.shields.io/github/languages/code-size/lammermann/literate_programming_toolsuite?style=flat-square[link=https://github.com/lammermann/literate_programming_toolsuite]
 image:https://img.shields.io/github/workflow/status/lammermann/literate_programming_toolsuite/Rust?style=flat-square[link=https://github.com/lammermann/literate_programming_toolsuite/actions]
 image:https://img.shields.io/docker/image-size/lammermann/lisa/bleeding?label=docker&style=flat-square[link=https://hub.docker.com/r/lammermann/lisa]
 image:https://deps.rs/repo/github/lammermann/literate_programming_toolsuite/status.svg[link=https://deps.rs/repo/github/lammermann/literate_programming_toolsuite]
 
 == Basic design decisions
-This software is written in rust. It uses it's own tools to gererate the rust
-sourcecode.
+This software is written in rust. It uses it's own tools to gererate the
+rust sourcecode.
 
-Every logical part is seperated in its own subcrate. Most of those subcrates
-define a cmdline util of the same name in this crate. In everey subcrate folder
-we have a `<name>.adoc` file which is the main source for that subcrate.
+Every logical part is seperated in its own subcrate. Most of those
+subcrates define a cmdline util of the same name in this crate. In
+everey subcrate folder we have a `<name>.adoc` file which is the main
+source for that subcrate.
 
 The subrates are:
 
@@ -25,15 +26,18 @@ ansicht:: A <<ansicht/ansicht.adoc#,visual programming tool>> primerily meant
   to use in conjunction with literate programming tools. Currently just a draft.
 dolmetscher:: A translation helper tool. Not started yet.
 
-I think asciidoc is superior to markdown so we use this as our basic input
-format.
+I think asciidoc is superior to markdown so we use this as our basic
+input format.
 
-== Build
+== Build from source
+If you want to modify how the programs work to suit your usecase you
+will need build and compile the code.
 There are a few steps to build the toolsuite.
 
 [source, sh, save]
 .build.sh
 ----
+set -e # <4>
 <<check_generated_sources_are_vcs_clean>> # <1>
 
 <<generate_sources>>
@@ -51,8 +55,17 @@ There are a few steps to build the toolsuite.
     our vcs.
 <3> If everything went good we may want to install our new version of the
     toolsuite locally.
+<4> When a step fails we want the script to end
 
 === Check if generated files are untouched in VCS
+Maybe we have edited some of our generated source files by hand. In that
+case we would like to be warned before generating the files. This way we
+could check if we want to put our changes into our asciidoc sources or
+don't care if they are overwritten.
+
+We assume that all changed files that are not asciidoc files are
+potentially in danger to be overwritten.
+
 TODO
 
 === Generate source files
@@ -70,10 +83,10 @@ cd lisa
 lisa lisa.adoc # <1>
 # The new generated source must be able to
 # generate itself
-cargo run --manifest-path ../Cargo.toml --bin lisa -- lisa.adoc || exit 1
+cargo run --manifest-path ../Cargo.toml --bin lisa -- lisa.adoc
 cd ..
 
-cargo run --bin lisa -- README.adoc || exit 1 # <2>
+cargo run --bin lisa -- -o /dev/null README.adoc # <2>
 
 echo "Generating source files done!"
 ----
@@ -89,7 +102,7 @@ echo "Generating source files done!"
 [[build_and_test]]
 [source, sh]
 ----
-cargo test || exit 1
+cargo test
 ----
 
 === Build websites for github pages
