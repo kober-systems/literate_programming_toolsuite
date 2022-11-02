@@ -410,14 +410,14 @@ impl Lisa {
                   let mut children = Vec::new();
                   for mut child in snippet.children.clone().into_iter() {
                     let content = child.content.clone();
-                    let content = codeblock_parser::merge_dependencies(content.as_str(), &snippets);
+                    let content = codeblock_parser::merge_dependencies(content.as_str(), &snippets, key);
                     child.content = content;
                     children.push(child);
                   }
                   snippet.children = children;
                 } else {
                   let content = snippet.content.clone();
-                  let content = codeblock_parser::merge_dependencies(content.as_str(), &snippets);
+                  let content = codeblock_parser::merge_dependencies(content.as_str(), &snippets, key);
                   snippet.content = content;
                 }
               };

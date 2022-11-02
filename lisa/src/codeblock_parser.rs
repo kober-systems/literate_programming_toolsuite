@@ -6,7 +6,7 @@ use crate::*;
 #[grammar = "codeblock.pest"]
 pub struct CodeblockParser;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 enum ReferenceParam {
   Value(String),
   Reference(String),
@@ -15,9 +15,9 @@ enum ReferenceParam {
 fn merge_dependencies_inner<'a>(
   ast: pest::iterators::Pairs<'a, codeblock_parser::Rule>,
   snippets: &SnippetDB,
-  snippet_params: HashMap<String, ReferenceParam>
+  snippet_params: HashMap<String, ReferenceParam>,
+  key: &str,
 ) -> String {
-
   let mut output = String::new();
 
   for element in ast {
@@ -26,58 +26,82 @@ fn merge_dependencies_inner<'a>(
         let identifier = extract_identifier(&element);
         let join_str = extract_join_str(&element)
           .replace("\\n", "\n");
-        match snippet_params.get(identifier) {
+        let param_key = identifier.to_string() + key;
+
+        match snippet_params.get(&param_key) {
           Some(param) => match param {
             ReferenceParam::Value(param) => output.push_str(&param),
             ReferenceParam::Reference(param) => {
               let ast = CodeblockParser::parse(Rule::codeblock, &param).expect("couldn't parse input.");
+
+              let next_key = element.as_str().trim_start();
               let mut snippet_params = snippet_params.clone();
-              for element in ast
+              let ref_iter = ast
                 .clone()
                 .filter(|element| match element.as_rule() {
                   Rule::reference => true,
+                  _ => false
+                });
+              let indent_ref_iter = ast
+                .clone()
+                .filter(|element| match element.as_rule() {
                   Rule::indented_reference => true,
                   _ => false
                 })
                 .flat_map(|element| element.clone().into_inner())
-                .filter(|element| {
-                  match element.as_rule() {
-                    Rule::attributes => true,
-                    _ => false
-                  }
-                })
-                .flat_map(|element| element.clone().into_inner())
                 .filter(|element| match element.as_rule() {
-                  Rule::attribute_param => true,
+                  Rule::reference => true,
                   _ => false
-                })
+                });
+
+              for element in ref_iter
+                .chain(indent_ref_iter)
               {
-                let key = element
+                let base_key = element.as_str();
+
+                for element in element
                   .clone()
                   .into_inner()
-                  .find(|element| match element.as_rule() {
-                    Rule::identifier => true,
+                  .filter(|element| {
+                    match element.as_rule() {
+                      Rule::attributes => true,
+                      _ => false
+                    }
+                  })
+                  .flat_map(|element| element.clone().into_inner())
+                  .filter(|element| match element.as_rule() {
+                    Rule::attribute_param => true,
                     _ => false
                   })
-                  .map(|element| element.as_str().to_string())
-                  .unwrap_or("".to_string());
-                let value = element
-                  .into_inner()
-                  .find(|element| match element.as_rule() {
-                    Rule::value => true,
-                    Rule::reference => true,
-                    _ => false
-                  })
-                  .map(|element| match element.as_rule() {
-                    Rule::value => ReferenceParam::Value(element.as_str().to_string()),
-                    Rule::reference => ReferenceParam::Reference(element.as_str().to_string()),
-                    _ => ReferenceParam::Value("".to_string())
-                  })
-                  .unwrap();
-                snippet_params.insert(key, value);
+                {
+                  let identifier = element
+                    .clone()
+                    .into_inner()
+                    .find(|element| match element.as_rule() {
+                      Rule::identifier => true,
+                      _ => false
+                    })
+                    .map(|element| element.as_str().to_string())
+                    .unwrap();
+                  let identifier = identifier + base_key;
+                  let value = element
+                    .into_inner()
+                    .find(|element| match element.as_rule() {
+                      Rule::value => true,
+                      Rule::reference => true,
+                      _ => false
+                    })
+                    .map(|element| match element.as_rule() {
+                      Rule::value => ReferenceParam::Value(element.as_str().to_string()),
+                      Rule::reference => ReferenceParam::Reference(element.as_str().to_string()),
+                      _ => ReferenceParam::Value("".to_string())
+                    })
+                    .unwrap();
 
+                  snippet_params.insert(identifier, value);
+                }
               }
-              let content = merge_dependencies_inner(ast, snippets, snippet_params);
+              let content = merge_dependencies_inner(ast, snippets, snippet_params, next_key);
               output.push_str(&content);
             }
           }
@@ -90,14 +114,156 @@ fn merge_dependencies_inner<'a>(
                 let input = snippet.get_raw_content(&join_str);
                 let ast = CodeblockParser::parse(Rule::codeblock, &input).expect("couldn't parse input.");
                 let mut snippet_params = snippet_params.clone();
-                for element in ast
+
+                let next_key = element.as_str().trim_start();
+                let mut snippet_params = snippet_params.clone();
+                let ref_iter = ast
                   .clone()
                   .filter(|element| match element.as_rule() {
                     Rule::reference => true,
+                    _ => false
+                  });
+                let indent_ref_iter = ast
+                  .clone()
+                  .filter(|element| match element.as_rule() {
                     Rule::indented_reference => true,
                     _ => false
                   })
                   .flat_map(|element| element.clone().into_inner())
+                  .filter(|element| match element.as_rule() {
+                    Rule::reference => true,
+                    _ => false
+                  });
+
+                for element in ref_iter
+                  .chain(indent_ref_iter)
+                {
+                  let base_key = element.as_str();
+
+                  for element in element
+                    .clone()
+                    .into_inner()
+                    .filter(|element| {
+                      match element.as_rule() {
+                        Rule::attributes => true,
+                        _ => false
+                      }
+                    })
+                    .flat_map(|element| element.clone().into_inner())
+                    .filter(|element| match element.as_rule() {
+                      Rule::attribute_param => true,
+                      _ => false
+                    })
+                  {
+                    let identifier = element
+                      .clone()
+                      .into_inner()
+                      .find(|element| match element.as_rule() {
+                        Rule::identifier => true,
+                        _ => false
+                      })
+                      .map(|element| element.as_str().to_string())
+                      .unwrap();
+                    let identifier = identifier + base_key;
+                    let value = element
+                      .into_inner()
+                      .find(|element| match element.as_rule() {
+                        Rule::value => true,
+                        Rule::reference => true,
+                        _ => false
+                      })
+                      .map(|element| match element.as_rule() {
+                        Rule::value => ReferenceParam::Value(element.as_str().to_string()),
+                        Rule::reference => ReferenceParam::Reference(element.as_str().to_string()),
+                        _ => ReferenceParam::Value("".to_string())
+                      })
+                      .unwrap();
+
+                    snippet_params.insert(identifier, value);
+                  }
+                }
+                let ref_iter = ast
+                  .clone()
+                  .filter(|element| match element.as_rule() {
+                    Rule::reference => true,
+                    _ => false
+                  });
+                let indent_ref_iter = ast
+                  .clone()
+                  .filter(|element| match element.as_rule() {
+                    Rule::indented_reference => true,
+                    _ => false
+                  })
+                  .flat_map(|element| element.clone().into_inner())
+                  .filter(|element| match element.as_rule() {
+                    Rule::reference => true,
+                    _ => false
+                  });
+
+                for element in ref_iter
+                  .chain(indent_ref_iter)
+                {
+                      let old_identifier = extract_identifier(&element).to_string();
+                  match snippet_params.remove(&(old_identifier.clone() + key)) {
+                    Some(v) => {
+                      snippet_params.insert(old_identifier.clone() + next_key, v);
+                    },
+                    None => {
+                      //content.push_str(" not_found ");
+                    }
+                  }
+                }
+                let content = merge_dependencies_inner(ast, snippets, snippet_params, next_key);
+                output.push_str(&content);
+              }
+            }
+            None => {
+              warn!("Couldn't find snippet dependency `{}` for `{}`", identifier, key);
+            }
+          }
+        }
+      }
+      Rule::indented_reference => {
+        let indentation = extract_indentation(&element);
+        let identifier = extract_identifier(&element);
+        let join_str = extract_join_str(&element)
+          .replace("\\n", "\n");
+        let param_key = identifier.to_string() + key;
+
+        match snippet_params.get(&param_key) {
+          Some(param) => match param {
+            ReferenceParam::Value(param) => output.push_str(&param),
+            ReferenceParam::Reference(param) => {
+              let ast = CodeblockParser::parse(Rule::codeblock, &param).expect("couldn't parse input.");
+
+              let next_key = element.as_str().trim_start();
+              let mut snippet_params = snippet_params.clone();
+              let ref_iter = ast
+                .clone()
+                .filter(|element| match element.as_rule() {
+                  Rule::reference => true,
+                  _ => false
+                });
+              let indent_ref_iter = ast
+                .clone()
+                .filter(|element| match element.as_rule() {
+                  Rule::indented_reference => true,
+                  _ => false
+                })
+                .flat_map(|element| element.clone().into_inner())
+                .filter(|element| match element.as_rule() {
+                  Rule::reference => true,
+                  _ => false
+                });
+
+              for element in ref_iter
+                .chain(indent_ref_iter)
+              {
+                let base_key = element.as_str();
+
+                for element in element
+                  .clone()
+                  .into_inner()
                   .filter(|element| {
                     match element.as_rule() {
                       Rule::attributes => true,
@@ -110,7 +276,7 @@ fn merge_dependencies_inner<'a>(
                     _ => false
                   })
                 {
-                  let key = element
+                  let identifier = element
                     .clone()
                     .into_inner()
                     .find(|element| match element.as_rule() {
@@ -118,7 +284,8 @@ fn merge_dependencies_inner<'a>(
                       _ => false
                     })
                     .map(|element| element.as_str().to_string())
-                    .unwrap_or("".to_string());
+                    .unwrap();
+                  let identifier = identifier + base_key;
                   let value = element
                     .into_inner()
                     .find(|element| match element.as_rule() {
@@ -132,76 +299,11 @@ fn merge_dependencies_inner<'a>(
                       _ => ReferenceParam::Value("".to_string())
                     })
                     .unwrap();
-                  snippet_params.insert(key, value);
 
+                  snippet_params.insert(identifier, value);
                 }
-                let content = merge_dependencies_inner(ast, snippets, snippet_params);
-                output.push_str(&content);
               }
-            }
-            None => {
-              // TODO Fehlermeldung? Müsste vorher bereits abgefangen sein.
-            }
-          }
-        }
-      }
-      Rule::indented_reference => {
-        let indentation = extract_indentation(&element);
-        let identifier = extract_identifier(&element);
-        let join_str = extract_join_str(&element)
-          .replace("\\n", "\n");
-        match snippet_params.get(identifier) {
-          Some(param) => match param {
-            ReferenceParam::Value(param) => output.push_str(&param),
-            ReferenceParam::Reference(param) => {
-              let ast = CodeblockParser::parse(Rule::codeblock, &param).expect("couldn't parse input.");
-              let mut snippet_params = snippet_params.clone();
-              for element in ast
-                .clone()
-                .filter(|element| match element.as_rule() {
-                  Rule::reference => true,
-                  Rule::indented_reference => true,
-                  _ => false
-                })
-                .flat_map(|element| element.clone().into_inner())
-                .filter(|element| {
-                  match element.as_rule() {
-                    Rule::attributes => true,
-                    _ => false
-                  }
-                })
-                .flat_map(|element| element.clone().into_inner())
-                .filter(|element| match element.as_rule() {
-                  Rule::attribute_param => true,
-                  _ => false
-                })
-              {
-                let key = element
-                  .clone()
-                  .into_inner()
-                  .find(|element| match element.as_rule() {
-                    Rule::identifier => true,
-                    _ => false
-                  })
-                  .map(|element| element.as_str().to_string())
-                  .unwrap_or("".to_string());
-                let value = element
-                  .into_inner()
-                  .find(|element| match element.as_rule() {
-                    Rule::value => true,
-                    Rule::reference => true,
-                    _ => false
-                  })
-                  .map(|element| match element.as_rule() {
-                    Rule::value => ReferenceParam::Value(element.as_str().to_string()),
-                    Rule::reference => ReferenceParam::Reference(element.as_str().to_string()),
-                    _ => ReferenceParam::Value("".to_string())
-                  })
-                  .unwrap();
-                snippet_params.insert(key, value);
-
-              }
-              let content = merge_dependencies_inner(ast, snippets, snippet_params);
+              let content = merge_dependencies_inner(ast, snippets, snippet_params, next_key);
               indent(&content, indentation, &mut output);
             }
           }
@@ -214,57 +316,111 @@ fn merge_dependencies_inner<'a>(
                 let input = snippet.get_raw_content(&join_str);
                 let ast = CodeblockParser::parse(Rule::codeblock, &input).expect("couldn't parse input.");
                 let mut snippet_params = snippet_params.clone();
-                for element in ast
+
+                let next_key = element.as_str().trim_start();
+                let mut snippet_params = snippet_params.clone();
+                let ref_iter = ast
                   .clone()
                   .filter(|element| match element.as_rule() {
                     Rule::reference => true,
+                    _ => false
+                  });
+                let indent_ref_iter = ast
+                  .clone()
+                  .filter(|element| match element.as_rule() {
                     Rule::indented_reference => true,
                     _ => false
                   })
                   .flat_map(|element| element.clone().into_inner())
-                  .filter(|element| {
-                    match element.as_rule() {
-                      Rule::attributes => true,
+                  .filter(|element| match element.as_rule() {
+                    Rule::reference => true,
+                    _ => false
+                  });
+
+                for element in ref_iter
+                  .chain(indent_ref_iter)
+                {
+                  let base_key = element.as_str();
+
+                  for element in element
+                    .clone()
+                    .into_inner()
+                    .filter(|element| {
+                      match element.as_rule() {
+                        Rule::attributes => true,
+                        _ => false
+                      }
+                    })
+                    .flat_map(|element| element.clone().into_inner())
+                    .filter(|element| match element.as_rule() {
+                      Rule::attribute_param => true,
                       _ => false
-                    }
+                    })
+                  {
+                    let identifier = element
+                      .clone()
+                      .into_inner()
+                      .find(|element| match element.as_rule() {
+                        Rule::identifier => true,
+                        _ => false
+                      })
+                      .map(|element| element.as_str().to_string())
+                      .unwrap();
+                    let identifier = identifier + base_key;
+                    let value = element
+                      .into_inner()
+                      .find(|element| match element.as_rule() {
+                        Rule::value => true,
+                        Rule::reference => true,
+                        _ => false
+                      })
+                      .map(|element| match element.as_rule() {
+                        Rule::value => ReferenceParam::Value(element.as_str().to_string()),
+                        Rule::reference => ReferenceParam::Reference(element.as_str().to_string()),
+                        _ => ReferenceParam::Value("".to_string())
+                      })
+                      .unwrap();
+
+                    snippet_params.insert(identifier, value);
+                  }
+                }
+                let ref_iter = ast
+                  .clone()
+                  .filter(|element| match element.as_rule() {
+                    Rule::reference => true,
+                    _ => false
+                  });
+                let indent_ref_iter = ast
+                  .clone()
+                  .filter(|element| match element.as_rule() {
+                    Rule::indented_reference => true,
+                    _ => false
                   })
                   .flat_map(|element| element.clone().into_inner())
                   .filter(|element| match element.as_rule() {
-                    Rule::attribute_param => true,
+                    Rule::reference => true,
                     _ => false
-                  })
-                {
-                  let key = element
-                    .clone()
-                    .into_inner()
-                    .find(|element| match element.as_rule() {
-                      Rule::identifier => true,
-                      _ => false
-                    })
-                    .map(|element| element.as_str().to_string())
-                    .unwrap_or("".to_string());
-                  let value = element
-                    .into_inner()
-                    .find(|element| match element.as_rule() {
-                      Rule::value => true,
-                      Rule::reference => true,
-                      _ => false
-                    })
-                    .map(|element| match element.as_rule() {
-                      Rule::value => ReferenceParam::Value(element.as_str().to_string()),
-                      Rule::reference => ReferenceParam::Reference(element.as_str().to_string()),
-                      _ => ReferenceParam::Value("".to_string())
-                    })
-                    .unwrap();
-                  snippet_params.insert(key, value);
+                  });
 
+                for element in ref_iter
+                  .chain(indent_ref_iter)
+                {
+                      let old_identifier = extract_identifier(&element).to_string();
+                  match snippet_params.remove(&(old_identifier.clone() + key)) {
+                    Some(v) => {
+                      snippet_params.insert(old_identifier.clone() + next_key, v);
+                    },
+                    None => {
+                      //content.push_str(" not_found ");
+                    }
+                  }
                 }
-                let content = merge_dependencies_inner(ast, snippets, snippet_params);
+                let content = merge_dependencies_inner(ast, snippets, snippet_params, next_key);
                 indent(&content, indentation, &mut output);
               }
             }
             None => {
-              // TODO Fehlermeldung? Müsste vorher bereits abgefangen sein.
+              warn!("Couldn't find snippet dependency `{}` for `{}`", identifier, key);
             }
           }
         }
@@ -399,54 +555,107 @@ pub fn get_dependencies(input: &str) -> Vec<&str> {
 }
 
 /// Merges the snippets into the depending snippet
-pub fn merge_dependencies(input: &str, snippets: &SnippetDB) -> String {
+pub fn merge_dependencies(input: &str, snippets: &SnippetDB, key: &str) -> String {
   let ast = CodeblockParser::parse(Rule::codeblock, input).expect("couldn't parse input.");
   let mut snippet_params: HashMap<String, ReferenceParam> = HashMap::default();
-  for element in ast
+  let next_key = key;
+  let mut snippet_params = snippet_params.clone();
+  let ref_iter = ast
     .clone()
     .filter(|element| match element.as_rule() {
       Rule::reference => true,
+      _ => false
+    });
+  let indent_ref_iter = ast
+    .clone()
+    .filter(|element| match element.as_rule() {
       Rule::indented_reference => true,
       _ => false
     })
     .flat_map(|element| element.clone().into_inner())
-    .filter(|element| {
-      match element.as_rule() {
-        Rule::attributes => true,
+    .filter(|element| match element.as_rule() {
+      Rule::reference => true,
+      _ => false
+    });
+
+  for element in ref_iter
+    .chain(indent_ref_iter)
+  {
+    let base_key = element.as_str();
+
+    for element in element
+      .clone()
+      .into_inner()
+      .filter(|element| {
+        match element.as_rule() {
+          Rule::attributes => true,
+          _ => false
+        }
+      })
+      .flat_map(|element| element.clone().into_inner())
+      .filter(|element| match element.as_rule() {
+        Rule::attribute_param => true,
         _ => false
-      }
+      })
+    {
+      let identifier = element
+        .clone()
+        .into_inner()
+        .find(|element| match element.as_rule() {
+          Rule::identifier => true,
+          _ => false
+        })
+        .map(|element| element.as_str().to_string())
+        .unwrap();
+      let identifier = identifier + base_key;
+      let value = element
+        .into_inner()
+        .find(|element| match element.as_rule() {
+          Rule::value => true,
+          Rule::reference => true,
+          _ => false
+        })
+        .map(|element| match element.as_rule() {
+          Rule::value => ReferenceParam::Value(element.as_str().to_string()),
+          Rule::reference => ReferenceParam::Reference(element.as_str().to_string()),
+          _ => ReferenceParam::Value("".to_string())
+        })
+        .unwrap();
+
+      snippet_params.insert(identifier, value);
+    }
+  }
+  let ref_iter = ast
+    .clone()
+    .filter(|element| match element.as_rule() {
+      Rule::reference => true,
+      _ => false
+    });
+  let indent_ref_iter = ast
+    .clone()
+    .filter(|element| match element.as_rule() {
+      Rule::indented_reference => true,
+      _ => false
     })
     .flat_map(|element| element.clone().into_inner())
     .filter(|element| match element.as_rule() {
-      Rule::attribute_param => true,
+      Rule::reference => true,
       _ => false
-    })
-  {
-    let key = element
-      .clone()
-      .into_inner()
-      .find(|element| match element.as_rule() {
-        Rule::identifier => true,
-        _ => false
-      })
-      .map(|element| element.as_str().to_string())
-      .unwrap_or("".to_string());
-    let value = element
-      .into_inner()
-      .find(|element| match element.as_rule() {
-        Rule::value => true,
-        Rule::reference => true,
-        _ => false
-      })
-      .map(|element| match element.as_rule() {
-        Rule::value => ReferenceParam::Value(element.as_str().to_string()),
-        Rule::reference => ReferenceParam::Reference(element.as_str().to_string()),
-        _ => ReferenceParam::Value("".to_string())
-      })
-      .unwrap();
-    snippet_params.insert(key, value);
+    });
 
+  for element in ref_iter
+    .chain(indent_ref_iter)
+  {
+        let old_identifier = extract_identifier(&element).to_string();
+    match snippet_params.remove(&(old_identifier.clone() + key)) {
+      Some(v) => {
+        snippet_params.insert(old_identifier.clone() + next_key, v);
+      },
+      None => {
+        //content.push_str(" not_found ");
+      }
+    }
   }
 
-  merge_dependencies_inner(ast, snippets, snippet_params)
+  merge_dependencies_inner(ast, snippets, snippet_params, key)
 }
