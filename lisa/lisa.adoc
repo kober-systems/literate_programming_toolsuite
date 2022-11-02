@@ -647,7 +647,8 @@ Dazu kann man einfach die Platzhalter überschreiben. Zum definieren
 eines Parameters wird `:=` verwendet.
 
 [[unittest_sample8_input]]
-[source, asciidoc, lisa-raw, outputs="unittest_sample8_output", name="snippets_with_params"]
+[source, asciidoc, lisa-raw]
+[outputs="unittest_sample8_output", name="snippets_with_params"]
 ....
 There is a function we want to use in different contexts.
 
@@ -736,7 +737,9 @@ echo "you passed all checks"
 Das funktioniert auch, wenn die Snippets eingerückt wurden
 
 [[unittest_indented_param_snippets_input]]
-[source, asciidoc, lisa-raw, outputs="unittest_indented_param_snippets_output", name="indented_snippets_with_params"]
+[source, asciidoc, lisa-raw]
+[outputs="unittest_indented_param_snippets_output"]
+[name="indented_snippets_with_params"]
 ....
 We have a snippet
 
