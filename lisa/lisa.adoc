@@ -232,7 +232,8 @@ einbinden. Dafür verwendet man einfach eine `cross reference` auf den
 `anchor` des jeweiligen Schnipsels:
 
 [[unittest_sample1_input]]
-[source, asciidoc, lisa-raw, outputs="unittest_sample1_output", name="use_snippets"]
+[source, asciidoc, lisa-raw]
+[outputs="unittest_sample1_output", name="use_snippets"]
 ....
 We need the testmodule for this project.
 
@@ -270,7 +271,8 @@ print(testmodule.version)
 Die Reihenfolge ist dabei egal.
 
 [[unittest_sample2_input]]
-[source, asciidoc, lisa-raw, outputs="unittest_sample2_output", name="handle_snippet_order"]
+[source, asciidoc, lisa-raw]
+[outputs="unittest_sample2_output", name="handle_snippet_order"]
 ....
 First we give a short outline of the program. It imports the required modules
 and then prints out its version.
@@ -309,7 +311,8 @@ Außerdem kann man einen Codeschnipsel beliebig oft in einem oder mehreren
 anderen Codeschnipseln einfügen.
 
 [[unittest_sample3_input]]
-[source, asciidoc, lisa-raw, outputs="unittest_sample3_output1,unittest_sample3_output2", name="use_snippet_multiple_times"]
+[source, asciidoc, lisa-raw]
+[outputs="unittest_sample3_output1,unittest_sample3_output2", name="use_snippet_multiple_times"]
 ....
 Lets assume we want to use the following snippet in multiple places.
 
@@ -372,7 +375,8 @@ Quelltext einfügen oder an verschiedenen Stellen Ergänzungen zu einem
 Codebereich hinzufügen (z.B. die Imports erweitern).
 
 [[unittest_sample4_input]]
-[source, asciidoc, lisa-raw, outputs="unittest_sample4_output", name="append_snippets"]
+[source, asciidoc, lisa-raw]
+[outputs="unittest_sample4_output", name="append_snippets"]
 ....
 We do some thing in our code.
 
@@ -427,7 +431,8 @@ In diesem Fall kann man an der einfügenden Stelle festlegen, welche
 Trennzeichen einem am besten gefallen.
 
 [[unittest_sample5_input]]
-[source, asciidoc, lisa-raw, outputs="unittest_sample5_output", name="append_snippets_with_customized_join"]
+[source, asciidoc, lisa-raw]
+[outputs="unittest_sample5_output", name="append_snippets_with_customized_join"]
 ....
 Let's imagine we need some rust struct.
 
@@ -514,7 +519,8 @@ Snippets kann es praktischer sein ein Inline Code Objekt zu verwenden.
 So könnte man den vorigen Quelltext auch folgendermaßen schreiben:
 
 [[unittest_sample6_input]]
-[source, asciidoc, lisa-raw, outputs="unittest_sample5_output", name="use_inline_snippets"]
+[source, asciidoc, lisa-raw]
+[outputs="unittest_sample5_output", name="use_inline_snippets"]
 ....
 Let's imagine we need some rust struct.
 
@@ -569,7 +575,8 @@ importierte Quelltext ebenfalls um die gleiche Höhe eingerückt (im Grunde wird
 vor jedem Zeilenbeginn der Text vor der `cross reference` wieder eingefügt).
 
 [[unittest_sample7_input]]
-[source, asciidoc, lisa-raw, outputs="unittest_sample7_output", name="indented_snippets"]
+[source, asciidoc, lisa-raw]
+[outputs="unittest_sample7_output", name="indented_snippets"]
 .Eingerückte Snippets
 ....
 Imagine you want to print a long pattern of "//***//" around so text to emphasize it.
@@ -1656,7 +1663,7 @@ value = @{ ( !"\"" ~ ANY | "\\\"")* }
 [[codeblock_parser_internal_structs]]
 [source, rust]
 ----
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 enum ReferenceParam {
   Value(String),
   Reference(String),
