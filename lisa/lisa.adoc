@@ -1268,6 +1268,13 @@ pub fn extract(&mut self, mut snippets: SnippetDB, input: &ElementSpan) -> Snipp
 
       snippets
     }
+    Element::Styled => { // <1>
+      <<check_is_inline_code_block>>
+      <<inline_extract_attributes>>
+      <<store_snippet_in_internal_db>>
+
+      snippets
+    }
     Element::IncludeElement(ast) => ast // <2>
       .inner
       .elements
@@ -1281,7 +1288,7 @@ pub fn extract(&mut self, mut snippets: SnippetDB, input: &ElementSpan) -> Snipp
   }
 }
 ----
-<1> Ist ein Element ein Code-Snippet wird es weiterverarbeitet.
+<1> Ist ein Element ein Code-Snippet (ob Block oder Inline) wird es weiterverarbeitet.
 <2> Falls ein Element zwar kein Snippet ist aber Unterknoten hat, wird rekursiv
     weiter nach Quellcode-Snippets gesucht.
 
@@ -1297,6 +1304,17 @@ let args = &mut input.positional_attributes.iter();
 if !(args.next() == Some(&AttributeValue::Ref("source"))) {
   return snippets;
 }
+----
+
+Wenn es sich dagegen um ein Inline Snippet handelt erkennt man es daran, dass es einen Anker hat.
+
+[[check_is_inline_code_block]]
+[source, rust]
+----
+let id = match input.get_attribute("anchor") {
+  Some(id) => id.to_string(),
+  None => { return snippets; },
+};
 ----
 
 Das zweite Attribut gibt den Interpreter an. Falls dieser nicht durch eine
@@ -1387,9 +1405,29 @@ for argument in args {
 Missing,
 ----
 
+Bei inline Snippets ist das etwas einfacher, da es hier nur normale Schnipsel gibt.
+
+[[inline_extract_attributes]]
+[source, rust]
+----
+let kind = SnippetType::Plain;
+let raw = false;
+let dependencies = Vec::new();
+----
+
 Alle weiteren Attribute werden in einer HashMap abgelegt, die später von der Pipe (TODO link verarbeitet werden kann).
 
 [[extract_attributes]]
+[source, rust]
+----
+let mut attributes: HashMap<String, String> = HashMap::default();
+
+for key in input.attributes.iter().map(|attr|{ attr.key.clone() }) {
+  attributes.insert(key.clone(), input.get_attribute(&key).unwrap().to_string());
+}
+----
+
+[[inline_extract_attributes]]
 [source, rust]
 ----
 let mut attributes: HashMap<String, String> = HashMap::default();
@@ -1469,6 +1507,14 @@ Beim verwenden, müssen wir zunächst einmal sichergehen, dass das Snippet
 leer ist.
 
 [[extract_attributes]]
+[source, rust]
+----
+let content = input
+  .get_attribute("content")
+  .unwrap_or(input.content);
+----
+
+[[inline_extract_attributes]]
 [source, rust]
 ----
 let content = input
