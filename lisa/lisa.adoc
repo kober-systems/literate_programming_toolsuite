@@ -1618,7 +1618,7 @@ die Art, wie der Schnipsel eingebunden wird zu modifizieren.
 [source, pest]
 .reference
 ----
-"<<" ~ identifier ~ ("|" ~ empty ~ attributes)? ~ ">>"
+"<<" ~ identifier ~ (empty ~ "|" ~ empty ~ attributes)? ~ ">>"
 ----
 
 Wobei eine id nur aus ASCII Buchstaben, Unterstrich und
@@ -1648,7 +1648,7 @@ werden oder (beliebig tief geschachtelte) Referenzen.
 attributes = { (attribute | attribute_param) ~ empty
   ~ ("," ~ empty ~ (attribute | attribute_param) ~ empty)* }
 attribute = { identifier ~ "=" ~ "\"" ~ value ~ "\"" }
-attribute_param = { identifier ~ ":=" ~ empty
+attribute_param = { identifier ~ empty ~ ":=" ~ empty
   ~ (("\"" ~ value ~ "\"") | reference) }
 value = @{ ( !"\"" ~ ANY | "\\\"")* }
 ----
