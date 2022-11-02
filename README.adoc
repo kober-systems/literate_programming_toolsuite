@@ -152,6 +152,38 @@ We have some general styles that should be equal in all of our files:
 -a reproducible \
 ----
 
+== Hacking Guide
+If you want to modify the code to fit your own needs you could follow
+this describes my process of doing it:
+
+Changing the sources:: This is a literate program so the source of truth
+  here is the asciidoc document. However I often consider the literate
+  document and the generated source code as to differnt views on the
+  same programm. To keep them both in sync I make sure to commit any
+  changes I make at the generated source code to the VCS *before* I
+  regenerate the source code from the literate source. Than I can view
+  the diff between the generated source and my own modified version and
+  change the literate sources accodingly until the generated code does
+  not differ anymore from the one in VCS. +
+  When the two sources are in sync, than I can modify the literate
+  sources however I like and direkty regenerate the source code.
+Compile:: I compile and test in a loop during the whole modification
+  process. For this I use watchexec as my own poor mans ci.
+Commit:: When the bug is fixed or the feature is implemented etc I
+  commit my modifications to VCS.
+Check:: After some time I reach a point where I want to release. Here I
+  do the following: Check the literate and generated sources are in
+  sync. Rerender the docs. Push to github. Let the ci do his work.
+
+=== Poor mans ci
+Whenever the rust files change we want to rebuild and test the program.
+
+[source, sh, save]
+.auto_build_loop.sh
+----
+watchexec -c -e rs -- <<build_and_test>>
+----
+
 === Ask for checkin into the VCS
 
 [[ask_for_vcs_check_in]]
