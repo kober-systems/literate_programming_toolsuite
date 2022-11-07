@@ -196,14 +196,14 @@ impl Lisa {
   }
 
   /// Gets recursively all snippets from an element
-  pub fn extract(&mut self, mut snippets: SnippetDB, input: &ElementSpan) -> SnippetDB {
+  pub fn extract(&mut self, mut snippets: SnippetDB, input: &ElementSpan) -> Result<SnippetDB, Error> {
     match &input.element {
       Element::TypedBlock {
         kind: BlockType::Listing,
       } => {
         let args = &mut input.positional_attributes.iter();
         if !(args.next() == Some(&AttributeValue::Ref("source"))) {
-          return snippets;
+          return Ok(snippets);
         }
         let mut interpreter = None;
         if let Some(value) = args.next()  {
@@ -236,7 +236,7 @@ impl Lisa {
               kind = SnippetType::Save(path.to_string());
             }
             AttributeValue::Ref("eval") => {
-              let interpreter = interpreter.clone().unwrap_or("interpreter missing");
+              let interpreter = interpreter.clone().ok_or(Error::Missing)?;
               kind = SnippetType::Eval(interpreter.to_string());
             }
             AttributeValue::Ref("pipe") => {
@@ -275,12 +275,12 @@ impl Lisa {
           },
         );
 
-        snippets
+        Ok(snippets)
       }
       Element::Styled => {
         let id = match input.get_attribute("anchor") {
           Some(id) => id.to_string(),
-          None => { return snippets; },
+          None => { return Ok(snippets); },
         };
         let kind = SnippetType::Plain;
         let raw = false;
@@ -306,16 +306,16 @@ impl Lisa {
           },
         );
 
-        snippets
+        Ok(snippets)
       }
       Element::IncludeElement(ast) => ast
         .inner
         .elements
         .iter()
-        .fold(snippets, |snippets, element| {
+        .try_fold(snippets, |snippets, element| {
           self.extract(snippets, element)
         }),
-      _ => input.children.iter().fold(snippets, |snippets, element| {
+      _ => input.children.iter().try_fold(snippets, |snippets, element| {
         self.extract(snippets, element)
       }),
     }
@@ -383,11 +383,9 @@ impl Lisa {
     let snippets = SnippetDB::new();
 
     // extract snippets from all inner elements
-    let snippets = input.elements.iter().fold(snippets, |snippets, element| {
+    input.elements.iter().try_fold(snippets, |snippets, element| {
       self.extract(snippets, element)
-    });
-
-    Ok(snippets)
+    })
   }
 
   /// Build all snippets (Runs the vm)
