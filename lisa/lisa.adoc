@@ -1569,7 +1569,7 @@ pub struct CodeblockParser;
 
 <<codeblock_parser_internal_structs>>
 
-<<codeblock_parser_functions>>
+<<codeblock_parser_functions|join="\n\n">>
 
 /// Extracts the ids of used snippets from a depending snippet
 pub fn get_dependencies(input: &str) -> Vec<&str> {
