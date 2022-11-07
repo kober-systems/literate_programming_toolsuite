@@ -120,7 +120,7 @@ impl Lisa {
 }
 
 impl Extension for Lisa { // <1>
-  fn transform<'a>(&mut self, mut input: AST<'a>) -> anyhow::Result<AST<'a>> { // <2>
+  fn transform<'a>(&mut self, input: AST<'a>) -> anyhow::Result<AST<'a>> { // <2>
     let snippets = self.extract_ast(&input)?; // <3>
 
     self.calculate_snippet_ordering(&snippets); // <5>
