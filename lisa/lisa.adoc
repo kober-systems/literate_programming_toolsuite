@@ -106,11 +106,9 @@ impl Lisa {
     let snippets = SnippetDB::new();
 
     // extract snippets from all inner elements
-    let snippets = input.elements.iter().fold(snippets, |snippets, element| {
+    input.elements.iter().try_fold(snippets, |snippets, element| {
       self.extract(snippets, element)
-    });
-
-    Ok(snippets)
+    })
   }
 
   /// Build all snippets (Runs the vm)
@@ -1263,7 +1261,7 @@ impl Snippet {
 [source, rust]
 ----
 /// Gets recursively all snippets from an element
-pub fn extract(&mut self, mut snippets: SnippetDB, input: &ElementSpan) -> SnippetDB {
+pub fn extract(&mut self, mut snippets: SnippetDB, input: &ElementSpan) -> Result<SnippetDB, Error> {
   match &input.element {
     Element::TypedBlock {
       kind: BlockType::Listing,
@@ -1273,23 +1271,23 @@ pub fn extract(&mut self, mut snippets: SnippetDB, input: &ElementSpan) -> Snipp
       <<find_references>>
       <<store_snippet_in_internal_db>>
 
-      snippets
+      Ok(snippets)
     }
     Element::Styled => { // <1>
       <<check_is_inline_code_block>>
       <<inline_extract_attributes>>
       <<store_snippet_in_internal_db>>
 
-      snippets
+      Ok(snippets)
     }
     Element::IncludeElement(ast) => ast // <2>
       .inner
       .elements
       .iter()
-      .fold(snippets, |snippets, element| {
+      .try_fold(snippets, |snippets, element| {
         self.extract(snippets, element)
       }),
-    _ => input.children.iter().fold(snippets, |snippets, element| { // <2>
+    _ => input.children.iter().try_fold(snippets, |snippets, element| { // <2>
       self.extract(snippets, element)
     }),
   }
@@ -1309,7 +1307,7 @@ Parameter `source`. `lisa` verarbeitet nur diese Blocks.
 ----
 let args = &mut input.positional_attributes.iter();
 if !(args.next() == Some(&AttributeValue::Ref("source"))) {
-  return snippets;
+  return Ok(snippets);
 }
 ----
 
@@ -1320,7 +1318,7 @@ Wenn es sich dagegen um ein Inline Snippet handelt erkennt man es daran, dass es
 ----
 let id = match input.get_attribute("anchor") {
   Some(id) => id.to_string(),
-  None => { return snippets; },
+  None => { return Ok(snippets); },
 };
 ----
 
