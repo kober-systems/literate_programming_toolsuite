@@ -2542,7 +2542,7 @@ Das betrifft alles Fehler, welche so von der Bibliothek nicht abgefangen werden.
 [source, toml]
 ----
 log = "0.4"
-simple_logger = "3"
+simple_logger = "4"
 ----
 
 [[crate_usages]]
