@@ -2688,7 +2688,7 @@ zu parsen.
 [[cargo_dependencies]]
 [source, toml]
 ----
-clap = { version = "3", features = ["derive"] }
+clap = { version = "4", features = ["derive"] }
 ----
 
 Installation
