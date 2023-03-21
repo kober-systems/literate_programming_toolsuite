@@ -1,4 +1,4 @@
-use clap::{Parser, ArgEnum};
+use clap::{Parser, ValueEnum};
 use std::path::PathBuf;
 
 /// Parse a single key-value pair
@@ -19,13 +19,13 @@ where
   Ok((key, value))
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ArgEnum, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]
 pub enum Reader {
   Asciidoc,
   Json,
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ArgEnum, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]
 pub enum Writer {
   Html5,
   Docbook,
@@ -40,23 +40,24 @@ pub enum Writer {
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 pub struct Opts {
-  #[clap(short = 'r', long = "reader-format", default_value = "asciidoc")]
-  #[clap(arg_enum)]
+  #[clap(short = 'r', long = "reader-format", default_value_t = Reader::Asciidoc)]
+  #[clap(value_enum)]
   pub readerfmt: Reader,
-  #[clap(short = 'w', long = "writer-format", default_value = "html5")]
-  #[clap(arg_enum)]
+  #[clap(short = 'w', long = "writer-format", default_value_t = Writer::Html5)]
+  #[clap(value_enum)]
   pub writerfmt: Writer,
   #[clap(short = 'e', long = "extension")]
   pub extensions: Vec<String>,
-  #[clap(long, parse(from_os_str))]
+  #[clap(long)]
   pub template: Option<PathBuf>,
-  #[clap(long, parse(from_os_str))]
+  #[clap(long)]
   pub stylesheet: Option<PathBuf>,
-  #[clap(short = 'a', long = "attribute", parse(try_from_str = parse_key_val), number_of_values = 1)]
+  #[clap(short = 'a', long = "attribute")]
+  #[clap(value_parser = parse_key_val::<String, String>, number_of_values = 1)]
   defines: Vec<(String, String)>,
-  #[clap(name = "FILE", parse(from_os_str))]
+  #[clap(name = "FILE")]
   pub input: Option<PathBuf>,
-  #[clap(short = 'o', parse(from_os_str))]
+  #[clap(short = 'o')]
   pub output: Option<PathBuf>,
 }
 
