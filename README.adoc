@@ -24,7 +24,8 @@ lisa:: A flexible <<lisa/lisa.adoc#,literate programming tool>> for both tangle
   and weave. It has some basic functionality right now.
 ansicht:: A <<ansicht/ansicht.adoc#,visual programming tool>> primerily meant
   to use in conjunction with literate programming tools. Currently just a draft.
-dolmetscher:: A translation helper tool. Not started yet.
+dolmetscher:: A <<dolmetscher/dolmetscher.adoc#,translation helper
+  tool>>. Currently just a draft.
 
 I think asciidoc is superior to markdown so we use this as our basic
 input format.

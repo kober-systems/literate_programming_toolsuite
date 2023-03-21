@@ -1,0 +1,227 @@
+= Dolmetscher
+Benjamin Kober <k.o.b.e.r@web.de>
+:toc: left
+
+Übersetzungen von veränderlichen Dokumenten koordinieren.
+
+== Übersicht
+
+=== Motivation
+Literate Programming als neue Herangehensweise an das Programmieren hat
+bei mir eine (für mich) neue Frage aufgeworfen: In welcher Sprache soll
+ich programmieren?
+
+Bisher war es für mich immer absolut klar, ein Programm in Englisch zu
+dokumentieren. Da sich nun aber der Fokus vom Quelltext auf das Darlegen
+von Ideen verschoben hat wäre es von Vorteil die Sprache zu nutzen, in
+welcher ich am leichtesten Ideen vermitteln kann. Auf einmal bekommen
+Dinge, die im normalen Quelltext normalerweise keine Rolle spielen
+(dürfen), wie Gefühle und Humor eine wichtige Bedeutung für das Projekt.
+Daher überlege ich das erste Mal ernsthaft Programme in Deutsch (meiner
+Muttersprache) zu veröffentlichen. footnote:[Bei der Programmiersprache
+geht es also gar nicht mehr so sehr um die Computersprache, sondern um
+die von Menschen verwendete Sprache.]
+
+Will man aber mit einem internationlen Team zusammenarbeiten (und das
+ist besonders bei open source wichtig) so kommt man um englisch nicht
+herum (was wohl Portierung in diesem Zusammenhang bedeutet). Daher ist
+es nützlich ein Werkzeug zu haben, welches einem den Ursprungstext (in
+meinem Fall deutsch) und die Übersetzung (englisch) nebeneinander zeigt.
+Es sollte eine Übersicht liefern, welche Teile des Programms wie weit
+und in welcher Qualität übersetzt sind. Hierbei ergeben sich eine ganze
+Reihe Probleme.
+
+. Im Gegensatz zu einem normalen Buch ist ein Programm normalerweise
+  nicht abgeschlossen (zumindest wird mit der Übersetzung begonnen
+  während das Programm noch nicht abgeschlossen ist) und beide Sprachen
+  müssen parallel gepflegt werden ohne sich ausseinander zu entwickeln.
+  Dabei sollte man die Änderungen zum aktuellen Übersetzungsstand sehen.
+. Beide Programme sollten das gleiche Ausgabeprodukt erzeugen. Es darf
+  keine verschiedenen Sprachvarianten geben, denn das würde zu einem
+  riesen Chaos führen und der Support wie auch die Wartung wären
+  unglaublich aufwendig.
+. Da immer mindestens zwei Sprachen in einem Dokument gemixt sind
+  (Natürliche Sprache und Programmiersprache) ergeben sich ganz ähnliche
+  Fragen, wenn man eine alternative Implementierung in einer anderen
+  Programmiersprache einfügen möchte.
+. ...
+
+=== Architektur
+
+TODO
+
+== Benutzung
+Aus meiner Sicht kommt eine hochwertige Übersetzung durch einen
+mehrschrittigen Prozess zustande:
+
+----
+Eingangstext -> Grobe Übersetzung -> Verfeinerung -> Freigabe
+----
+
+Dabei kann die "Verfeinerung" durchaus aus mehreren Schritten bestehen,
+je nachdem welche Ansprüche man an das Ergebnis stellt.
+
+=== Die Config-Datei
+Bevor wir damit anfangen können, ein Dokument (bzw ein Projekt welches
+aus mehreren Dokumenten bestehen kann) zu übersetzen müssen wir uns
+zunächst Gedanken über die Strukturierung unseres Projektes machen. Da
+sich Projekte sehr stark unterscheiden können kann es auch verschiedene
+Vorgehensweisen für den Übersetzungsprozess geben.
+
+Die Konfiguration halten wir in einer Datei `Dolmetscher.toml` fest,
+welche standardmäßig im Hauptordner des Projektes liegt.
+
+==== Die Hauptsprache
+Zunächst einmal müssen wir festlegen, welches die Hauptsprache für
+ein Projekt ist footnote:[Ich habe keine Idee, wie man ein Projekt
+synchronisieren sollte, welches keine Sprache als "Hauptsprache"
+festlegt und mir fällt auch kein Anwendungsfall ein in dem dass nötig
+wäre. Aber möglicherweise wäre es interessant das zu untersuchen um noch
+größere Flexibilität zu ermöglichen]. Später gilt das Dokument in dieser
+Sprache als das Hauptdokument und alle anderen Dokumente versuchen den
+gleichen Inhalt zu haben.
+
+TODO Beispiel config Eintrag
+
+==== Die Sprachen, in die übersetzt werden soll
+Dann müssen wir auch noch festlegen, in welche Sprachen übersetzt
+werden soll. Es ist auch möglich, dass das eine leere Liste ist. Das
+ist dann nützlich, wenn man zunächst einmal nur die Infrastruktur für
+die Übersetzung schaffen möchte und die Übersetzungen später seperat
+gestartet werden sollen.
+
+TODO Beispiel config Eintrag
+
+==== Grundlegende Ordnerstruktur
+
+TODO Beispiel config Eintrag
+
+==== Übersetzungsprozess festlegen
+Wir können die Schritte festlegen, die ein übersetzter Text durchlaufen
+muss.
+
+----
+Eingangstext -> Grobe Übersetzung -> Verfeinerung -> Freigabe
+----
+
+TODO Die Schritte "Eingangstext" und "Freigabe" können nicht ausgelassen werden, sondern müssen immer als der erste und letzte Schritt bleiben damit das Programm funktioniert. Sollen sie überhaupt in die Konfiguration mit aufgenommen werden?
+
+TODO Beispiel config Eintrag
+
+==== Verwendetes Versionskontrollsystem
+Um den Zustand der Übersetzungen koordinieren zu können benutzen wir ein
+Versionskontrollsystem. Dadurch wird es uns möglich zu erkennen welche
+Zeilen/Absätze etc aktualisiert wurden.
+
+Wenn kein System konfiguriert wurde gehen wir davon aus, dass `git`
+(TODO link) verwendet wird.
+
+Es ist auch möglich gar kein Versionskontrollsystem zu verwenden. Das
+schränkt allerdings unsere Möglichkeiten ein. Wir können dann zwar
+sehen, was verändert wurde, aber nicht in welcher Reihenfolge.
+
+TODO Beispiel config Eintrag
+
+=== Eine Übersetzung in eine neue Sprache starten
+Um eine neue Übersetzung zu starten können wir den Befehl `dolmetscher
+translation add ${language}` aufrufen.
+
+Dabei ist `${language}` das Kürzel der Sprache, in die man übersetzen
+möchte. Wie explizit man diesen Namen wählt bleibt einem selbst
+überlassen. `dolmetscher` interessiert sich dafür nicht, sondern
+es ist lediglich ein Platzhalter. Die Werte "de", "Deutsch" und
+"Übersetzung-von-mir" wären also allesamt erlaubt.
+
+Sobald man den Befehl ausgeführt hat wird für jede Datei in der
+Hauptsprache eine entsprechende Datei in der Übersetzungssprache
+angelegt.
+
+Diese Dokumente unterscheiden sich von den Ursprungsdokumenten vor allem
+dadurch, dass vor jedem Absatz (oder jedem anderen relevanten Block)
+einige Attribute angefügt wurden:
+
+[source, asciidoc]
+.Beispiel für einen generierten Text
+----
+[dolmetscher-level="new", dolmetscher-source-hash="4acde43f7d", dolmetscher-source-vcs-version="a526fed4"]
+This is the paragraph wich will be translated. However as you see this
+is just the original text.
+----
+
+Wenn man mit dem Übersetzen beginnt tauscht man einfach den Text gegen
+die Übersetzung aus. Zudem ändert man den Inhalt von `dolmetscher-level`
+auf die Stufe der erreichten Übersetzungs-Qualität (In unserem Beispiel
+ist es eine erste grobe Übersetzung also wählen wir "basic").
+
+[source, asciidoc]
+.Den Beispieltext übersetzen
+----
+[dolmetscher-level="basic", dolmetscher-source-hash="4acde43f7d", dolmetscher-source-vcs-version="a526fed4"]
+Das ist der Absatz, welcher übersetzt werden soll. Soll ich den nächsten
+Satz wirklich übersetzen? Naja Dolmetscher hat ja keine Ahnung, was ich
+wirklich übersetze :)
+----
+
+TODO
+
+=== Änderungen synchronisieren
+Im Laufe der Zeit werden im Original Text (also dem in der Hauptsprache)
+Absätze geändert, hinzugefügt, verschoben oder entfernt werden.
+Da die Entwicklung des Hauptdokumentes und der Übersetzungen mit
+hoher Wahrscheinlichkeit in unterschiedlicher Geschwindigkeit vor
+sich gehen (im allgemeinen werden sie sogar von unterschiedlichen
+Personen gepflegt) kann man nicht sagen in welchem Zustand sich die
+Übersetzung gerade befindet. Aller Wahrscheinlichkeit nach wird es
+irgendeine Ausprägung von "halbfertig" sein, bei der sich die Absätze in
+unterschiedlichen Stadien der Übersetzungsqualität befinden.
+
+In dieser Situation wünschen wir uns als Übersetzer folgende
+Informationienen während wir übersetzen:
+
+* Welche Änderungen wurden an dem ursprünglichen Text vorgenommen, seit
+  wir das letzte Mal an der Übersetzung dieses Absatzes gearbeitet
+  haben?
+* Wie sieht unsere aktuelle Übersetzung aus?
+* Welche Qualitätsstufe hatte unsere bisherige Übersetzung erreicht.
+
+Diese Informationen helfen uns zu entscheiden, ob wir den entsprechenden
+Absatz einfach ganz neu übersetzen (z.B. wenn sich so viel geändert hat,
+dass vom ursprünglichen Inhalt wenig übrig geblieben ist) oder ob wir
+nur die Änderungen übertragen (wenn nur Kleinigkeiten geändert wurden).
+Es kann sogar sein, dass wir überhaupt nichts verändern müssen, da nur
+etwas an der Formulierung oder ein Schreibfehler behoben wurde und diese
+Anpassungen in der Übersetzung nicht nötig sind.
+
+Es ist auch eine Hilfe zu entscheiden, welche Qualitätsstufe man
+der Übersetzung des Absatzes nun zuordnet (hat man z.B. entschieden
+Änderungen im Haupttext in die bestehende Übersetzung einzuarbeiten,
+so könnte man entscheiden eine niedrigere Qualitätsstufe zu wählen
+um anzuzeigen, dass man noch einmal die Konsitenz des Absatzes im
+Gesamtkontext überprüfen sollte).
+
+Um die für den Übersetzer hilfreichen Informationen in den Text
+einzubauen ruft man den Befehl `dolmetscher sync` auf.
+
+TODO Beschreibung wie sich die Texte und Attribute verändern und wie der Übersetzer damit arbeiten kann.
+
+=== Absätze (Blöcke) als nicht zu übersetzen kennzeichenen
+Manchmal kommt es vor, dass man bestimmte Blöcke nicht übersetzen will,
+sondern sie in allen Übersetzungen im Original belassen möchte.
+
+Das kommt besonders häufig bei literate Programmen (TODO link zu lisa)
+vor, da man ja hier bei allen Übersetzungen dass gleiche Programm
+erzeugen will.
+
+Dazu kann man einen Block mit dem Attribut `dolmetscher-ignore`
+ausstatten (das geht sowohl im Hauptdokument als auch in der
+Übersetzung. Zwar hat es nur in der Übersetzung Auswirkungen, aber da
+alle Attribute synchronisiert werden wirkt sich ein solches Attribut
+im Hauptdokument auf alle Übersetzungen aus). Code-Blöcke werden
+standardmäßig ignoriert (TODO beschreiben, dass man das konfigurieren
+und auch im Einzelfall überschreiben kann).
+
+=== Neue Absätze in einer Übersetzung einfügen und mit dem Hauptdokument synchronisieren
+TODO
+
+== Implementierung
+
