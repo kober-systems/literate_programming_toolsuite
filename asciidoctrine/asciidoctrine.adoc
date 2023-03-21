@@ -194,37 +194,12 @@ TODO TOML Eintrag
 
 Die grundlegende Syntax definieren wir in einer eigenen Datei welche wir in unserer PEG DSL schreiben.
 
+[%collapsible]
+====
 [source, rust, save]
 .src/reader/asciidoc.pest
 ----
-asciidoc = _{ (NEWLINE* ~ block)*  ~ NEWLINE* ~ EOI }
-
-block = {
-  <<block_entries>>
-  // admonition |
-  // example |
-  // fenced |
-  // listing |
-  // literal |
-  // open |
-  // passthrough |
-  // quote |
-  // sidebar |
-  // source |
-  // stem |
-  // table |
-  // verse |
-  image_block |
-  include_macro |
-  delimited_block |
-  list |
-  attribute_entry_block |
-  // Title is nearly the last because it could prevent correct match of others
-  title_block |
-  // paragraph is the last because all others should be checked first
-  paragraph |
-  (!EOI ~ ANY)+
-}
+<<basic_document_structure>>
 
 <<blocks|join="\n\n">>
 
@@ -533,9 +508,47 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> Opti
   element
 }
 ----
+====
 
 == Grundlegender Aufbau eines Asciidoc Dokuments
-TODO
+Asciidoc interpretiert einen Text als eine Sammlung von Bloecken,
+welche durch Leerzeilen getrennt sind. Wenn irgendein Text nicht als
+ein anderer Block interpretiert werden kann, so wird er als Paragraph
+interpretiert. Dadurch ist jedes Text-Dokument eine valide Asciidoc
+Datei.
+
+[[basic_document_structure]]
+[source, rust]
+----
+asciidoc = _{ (NEWLINE* ~ block)*  ~ NEWLINE* ~ EOI }
+
+block = {
+  <<block_entries>>
+  // admonition |
+  // example |
+  // fenced |
+  // listing |
+  // literal |
+  // open |
+  // passthrough |
+  // quote |
+  // sidebar |
+  // source |
+  // stem |
+  // table |
+  // verse |
+  image_block |
+  include_macro |
+  delimited_block |
+  list |
+  attribute_entry_block |
+  // Title is nearly the last because it could prevent correct match of others
+  title_block |
+  // paragraph is the last because all others should be checked first
+  paragraph |
+  (!EOI ~ ANY)+
+}
+----
 
 === Wichtige Konzepte
 TODO Attribut Listen etc
