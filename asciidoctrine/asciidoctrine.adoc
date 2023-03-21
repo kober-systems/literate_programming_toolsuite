@@ -1701,7 +1701,7 @@ Man kann `asciidoctrine` über eine api Schnittstelle erweitern. Dazu werden fü
 
 [[reader]]
 === Neue Datenformate einlesen
-Jedes Eingabeformat muss zunächst in einen <<ast>> ungewandelt werden um von asciidoctrine verarebitet werden zu können. Auch alle intern unterstützten Dateiformate implementieren die gleiche Schnittstelle.
+Jedes Eingabeformat muss zunächst in einen <<ast, Abstract Syntax Tree>> ungewandelt werden um von asciidoctrine verarebitet werden zu können. Auch alle intern unterstützten Dateiformate implementieren die gleiche Schnittstelle.
 
 [[interfaces]]
 [source, rust]
@@ -1713,7 +1713,7 @@ pub trait Reader {
 
 [[extension]]
 === Den AST verarbeiten/modifizieren
-Manchmal will man den <<ast>> verarbeiten und daraus Informationen nutzen (lisa TODO link) verwendet ihn z.B. um daraus Quelltext-Dateien zu extrahieren). Das ermöglicht sehr viele Anwendungsfälle:
+Manchmal will man den <<ast, Abstract Syntax Tree>> verarbeiten und daraus Informationen nutzen (<<../lisa.adoc#, lisa>> verwendet ihn z.B. um daraus Quelltext-Dateien zu extrahieren). Das ermöglicht sehr viele Anwendungsfälle:
 
 * Daten extrahieren und Prüfungen oder Statistiken damit durchführen
 * Rechtschreibprüfung durchführen
@@ -1733,7 +1733,7 @@ pub trait Extension {
 
 [[writer]]
 === Neue Ausgabeformate unterstützen
-Um ein weiteres Ausgabeformat zu implementieren muss die entsprechende Schnittstelle implementiert werden. Sie konsumiert einen <<ast>> und ist dafür verantwortlich eine Datei zu erstellen, welche das Ausgabeformat verwendet.
+Um ein weiteres Ausgabeformat zu implementieren muss die entsprechende Schnittstelle implementiert werden. Sie konsumiert einen <<ast, AST>> und ist dafür verantwortlich eine Datei zu erstellen, welche das Ausgabeformat verwendet.
 
 [[interfaces]]
 [source, rust]
