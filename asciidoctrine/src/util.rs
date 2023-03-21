@@ -72,12 +72,19 @@ impl Environment for Io {
 
 pub struct Cache {
   files: HashMap<String, String>,
+  evaluations: HashMap<(String, String),(
+    bool,
+    String,
+    String,
+    Vec<(String, String)>,
+    Vec<String>)>,
 }
 
 impl Cache {
   pub fn new() -> Self {
     Cache {
       files: HashMap::default(),
+      evaluations: HashMap::default(),
     }
   }
 
@@ -102,9 +109,21 @@ impl Environment for Cache {
     Ok(())
   }
 
-  fn eval(&mut self, _interpreter: &str, _content: &str) -> crate::Result<(bool, String, String)> {
-    // TODO Zugriff auf cache implementieren um zu testen
-    Err(crate::AsciidoctrineError::Childprocess)
+  fn eval(&mut self, interpreter: &str, content: &str) -> crate::Result<(bool, String, String)> {
+    match self.evaluations.remove(
+      &(interpreter.to_string(), content.to_string()))
+    {
+      Some((success, out, err, add, remove)) => {
+        for path in remove.iter() {
+          self.files.remove(path);
+        }
+        for (path, content) in add.into_iter() {
+          self.files.insert(path, content);
+        }
+        Ok((success, out, err))
+      }
+      None => Err(crate::AsciidoctrineError::Childprocess)
+    }
   }
 }
 
