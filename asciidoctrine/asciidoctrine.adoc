@@ -511,7 +511,7 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> Opti
 ====
 
 == Grundlegender Aufbau eines Asciidoc Dokuments
-Asciidoc interpretiert einen Text als eine Sammlung von Bloecken,
+Asciidoc interpretiert einen Text als eine Sammlung von Blöcken,
 welche durch Leerzeilen getrennt sind. Wenn irgendein Text nicht als
 ein anderer Block interpretiert werden kann, so wird er als Paragraph
 interpretiert. Dadurch ist jedes Text-Dokument eine valide Asciidoc
@@ -1151,6 +1151,10 @@ fn process_image<'a>(
 == Tabellen
 TODO
 
+== Abgetrennte Blöcke
+Ein sehr häufig genutztes Element sind abgetrennte Blöcke. Sie erlauben
+einen Text in einem speziellen Style hervorzuheben.
+
 [[blocks]]
 [source, pest]
 ----
@@ -1198,7 +1202,84 @@ delimited_source = {
 }
 
 delimited_verse = { "verse" } // TODO
+----
 
+=== Einklappbare Blöcke
+Einklappbare Blöcke sind nuetzlich, wenn man ergaenzende Informationen
+nur bei Bedarf anzeigen möchte. So kann man die Informationen einbinden,
+ohne dass der normale Leser überfordert wird.
+
+[cols="a,a"]
+|====
+
+....
+[%collapsible]
+====
+Additional Information, that will only be shown on demand.
+====
+....
+
+|
+
+[%collapsible]
+====
+Additional Information, that will only be shown on demand.
+====
+
+[%collapsible]
+.Html Output
+====
+[source, html]
+----
+<details>
+  <summary class="title">Details</summary>
+  <div class="content">
+    <div class="paragraph">
+      <p>Additional Information, that will only be shown on demand.</p>
+    </div>
+  </div>
+</details>
+----
+====
+
+|
+Blöcke können auch standardmäßig geöffnet sein.
+
+....
+[%collapsible%open]
+====
+This Information is visible by default.
+====
+....
+
+|
+
+[%collapsible%open]
+====
+This Information is visible by default.
+====
+
+[%collapsible]
+.Html Output
+====
+[source, html]
+----
+<details open>
+  <summary class="title">Details</summary>
+  <div class="content">
+    <div class="paragraph">
+      <p>This Information is visible by default.</p>
+    </div>
+  </div>
+</details>
+----
+====
+
+|====
+
+[[blocks]]
+[source, pest]
+----
 include_macro = { "include::" ~ path ~ inline_attribute_list }
 ----
 
