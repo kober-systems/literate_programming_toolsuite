@@ -566,6 +566,8 @@ anchor = { inline_anchor ~ NEWLINE }
 inline_anchor = { "[[" ~ (identifier | path) ~ "]]" }
 ----
 
+[%collapsible]
+====
 [[asciidoc_parser_functions]]
 [source, rust]
 ----
@@ -603,6 +605,7 @@ fn process_inline_anchor<'a>(
   base
 }
 ----
+====
 
 ==== Attribute
 TODO
