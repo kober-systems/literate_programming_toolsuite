@@ -1742,10 +1742,7 @@ tatsächlichen Inhalt ersetzt.
 [source, rust]
 ----
 let ast = CodeblockParser::parse(Rule::codeblock, input).expect("couldn't parse input.");
-let mut snippet_params: HashMap<String, ReferenceParam> = HashMap::default();
-let next_key = key;
-<<extract_snippet_params>>
-<<extract_snippet_sub_params>>
+let snippet_params = extract_snippet_params(HashMap::default(), input);
 
 merge_dependencies_inner(ast, snippets, snippet_params, key)
 ----
@@ -1791,36 +1788,46 @@ Referenzen durch Snippets aus der Datenbank.
 let identifier = extract_identifier(&element);
 let join_str = extract_join_str(&element)
   .replace("\\n", "\n");
-let param_key = identifier.to_string() + key;
 
-match snippet_params.get(&param_key) {
+match snippet_params.get(identifier) {
   Some(param) => match param {
     ReferenceParam::Value(param) => output.push_str(&param),
     ReferenceParam::Reference(param) => {
-      let ast = CodeblockParser::parse(Rule::codeblock, &param).expect("couldn't parse input.");
+      match snippets.get(&param) {
+        Some(snippet) => {
+          let input = snippet.get_raw_content(&join_str);
 
-      let next_key = element.as_str().trim_start();
-      <<extract_snippet_params>>
-      let content = merge_dependencies_inner(ast, snippets, snippet_params, next_key);
-      <<substitute_reference_with_content>>
+          let content = if snippet.raw {
+            input
+          } else {
+            let key = element.as_str().trim_start();
+            let ast = CodeblockParser::parse(Rule::codeblock, &input).expect("couldn't parse input.");
+            let snippet_params = extract_snippet_params(snippet_params.clone(), key);
+
+            merge_dependencies_inner(ast, snippets, snippet_params, key)
+          };
+          <<substitute_reference_with_content>>
+        }
+        None => {
+          warn!("Couldn't find snippet dependency `{}` for `{}`", identifier, key);
+        }
+      }
     }
   }
   None => match snippets.get(identifier) {
     Some(snippet) => {
-      if snippet_params.is_empty() {
-        let content = snippet.get_content(&join_str);
-        <<substitute_reference_with_content>>
-      } else {
-        let input = snippet.get_raw_content(&join_str);
-        let ast = CodeblockParser::parse(Rule::codeblock, &input).expect("couldn't parse input.");
-        let mut snippet_params = snippet_params.clone();
+      let input = snippet.get_raw_content(&join_str);
 
-        let next_key = element.as_str().trim_start();
-        <<extract_snippet_params>>
-        <<extract_snippet_sub_params>>
-        let content = merge_dependencies_inner(ast, snippets, snippet_params, next_key);
-        <<substitute_reference_with_content>>
-      }
+      let content = if snippet.raw {
+        input
+      } else {
+        let key = element.as_str().trim_start();
+        let ast = CodeblockParser::parse(Rule::codeblock, &input).expect("couldn't parse input.");
+        let snippet_params = extract_snippet_params(snippet_params.clone(), key);
+
+        merge_dependencies_inner(ast, snippets, snippet_params, key)
+      };
+      <<substitute_reference_with_content>>
     }
     None => {
       warn!("Couldn't find snippet dependency `{}` for `{}`", identifier, key);
@@ -1953,110 +1960,91 @@ fn indent(content: &str, indentation: &str, output: &mut String) -> () {
 Wir müssen auch mögliche Parameter, welche beim Aufruf des Snippets
 eventuell übergeben wurden, herausfiltern und abspeichern.
 
-[[extract_snippet_params]]
+[[codeblock_parser_functions]]
 [source, rust]
 ----
-let mut snippet_params = snippet_params.clone();
-let ref_iter = ast
-  .clone()
-  .filter(|element| match element.as_rule() {
-    Rule::reference => true,
-    _ => false
-  });
-let indent_ref_iter = ast
-  .clone()
-  .filter(|element| match element.as_rule() {
-    Rule::indented_reference => true,
-    _ => false
-  })
-  .flat_map(|element| element.clone().into_inner())
-  .filter(|element| match element.as_rule() {
-    Rule::reference => true,
-    _ => false
-  });
+fn extract_snippet_params<'a>(
+  snippet_params: HashMap<String, ReferenceParam>,
+  param: &str,
+) -> HashMap<String, ReferenceParam> {
+  let mut snippet_params = snippet_params.clone();
+  let mut new_params = snippet_params.clone();
+  let ast = CodeblockParser::parse(Rule::codeblock, &param).expect("couldn't parse input.");
 
-for element in ref_iter
-  .chain(indent_ref_iter)
-{
-  let base_key = element.as_str();
-
-  for element in element
+  let ref_iter = ast
     .clone()
-    .into_inner()
-    .filter(|element| {
-      match element.as_rule() {
-        Rule::attributes => true,
-        _ => false
-      }
+    .filter(|element| match element.as_rule() {
+      Rule::reference => true,
+      _ => false
+    });
+  let indent_ref_iter = ast
+    .clone()
+    .filter(|element| match element.as_rule() {
+      Rule::indented_reference => true,
+      _ => false
     })
     .flat_map(|element| element.clone().into_inner())
     .filter(|element| match element.as_rule() {
-      Rule::attribute_param => true,
+      Rule::reference => true,
       _ => false
-    })
+    });
+
+  for element in ref_iter
+    .chain(indent_ref_iter)
   {
-    let identifier = element
+    for element in element
       .clone()
       .into_inner()
-      .find(|element| match element.as_rule() {
-        Rule::identifier => true,
+      .filter(|element| {
+        match element.as_rule() {
+          Rule::attributes => true,
+          _ => false
+        }
+      })
+      .flat_map(|element| element.clone().into_inner())
+      .filter(|element| match element.as_rule() {
+        Rule::attribute_param => true,
         _ => false
       })
-      .map(|element| element.as_str().to_string())
-      .unwrap();
-    let identifier = identifier + base_key;
-    let value = element
-      .into_inner()
-      .find(|element| match element.as_rule() {
-        Rule::value => true,
-        Rule::reference => true,
-        _ => false
-      })
-      .map(|element| match element.as_rule() {
-        Rule::value => ReferenceParam::Value(element.as_str().to_string()),
-        Rule::reference => ReferenceParam::Reference(element.as_str().to_string()),
-        _ => ReferenceParam::Value("".to_string())
-      })
-      .unwrap();
+    {
+      let identifier = element
+        .clone()
+        .into_inner()
+        .find(|element| match element.as_rule() {
+          Rule::identifier => true,
+          _ => false
+        })
+        .map(|element| element.as_str().to_string())
+        .unwrap();
+      let value = element
+        .into_inner()
+        .find(|element| match element.as_rule() {
+          Rule::value => true,
+          Rule::reference => true,
+          _ => false
+        })
+        .map(|element| match element.as_rule() {
+          Rule::value => Some(ReferenceParam::Value(element.as_str().to_string())),
+          Rule::reference => {
+            match snippet_params.remove(&identifier) {
+              Some(param) => Some(param),
+              None => {
+                Some(ReferenceParam::Reference(extract_identifier(&element).to_string()))
+              }
+            }
 
-    snippet_params.insert(identifier, value);
-  }
-}
-----
+          },
+          _ => None
+        })
+        .unwrap();
 
-[[extract_snippet_sub_params]]
-[source, rust]
-----
-let ref_iter = ast
-  .clone()
-  .filter(|element| match element.as_rule() {
-    Rule::reference => true,
-    _ => false
-  });
-let indent_ref_iter = ast
-  .clone()
-  .filter(|element| match element.as_rule() {
-    Rule::indented_reference => true,
-    _ => false
-  })
-  .flat_map(|element| element.clone().into_inner())
-  .filter(|element| match element.as_rule() {
-    Rule::reference => true,
-    _ => false
-  });
-
-for element in ref_iter
-  .chain(indent_ref_iter)
-{
-      let old_identifier = extract_identifier(&element).to_string();
-  match snippet_params.remove(&(old_identifier.clone() + key)) {
-    Some(v) => {
-      snippet_params.insert(old_identifier.clone() + next_key, v);
-    },
-    None => {
-      //content.push_str(" not_found ");
+      if let Some(value) = value {
+        new_params.insert(identifier, value);
+      }
     }
   }
+
+  new_params
 }
 ----
 
