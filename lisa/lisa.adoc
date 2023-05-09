@@ -2688,6 +2688,7 @@ Um nun die eigentlichen Tests zu erzeugen müssen wir nur noch alle Beschreibung
 [source, js, pipe]
 ----
 let template = lisa.get_snippet("unit-test-template").content;
+template.replace(" // <1>", "");
 let compare_template = lisa.get_snippet("unit-test-compare_outputs-template").content;
 let tests = "";
 
