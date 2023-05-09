@@ -741,7 +741,7 @@ echo "you passed all checks"
 
 Das funktioniert auch, wenn die Snippets eingerückt wurden
 
-[[unittest_indented_param_snippets_input]]
+[[unittest_09indented_param_snippets_input]]
 [source, asciidoc, lisa-raw]
 [outputs="unittest_indented_param_snippets_output"]
 [name="indented_snippets_with_params"]
@@ -788,6 +788,80 @@ category:
 
 category2:
     this is my snippet referenced param text
+----
+
+In einem Snippet kann man Parameter definieren, die in einem aufrufenden
+Snippet überschrieben werden. Manchmal will man dabei auch in einem als
+Parameter übergebenen Snippet (Unter)parameter überschreiben. Das muss
+immer explizit geschehen, denn sonst könnten in einem Snippet Parameter
+überschrieben werden, von denen ein aufrufendes Snippet einige Ebenen
+höher gar keine Ahnung hat. Da das ein bisschen schwer zu verstehen ist,
+schauen wir uns ein Beispiel an:
+
+[[unittest_10deep_nested_param_snippets_input]]
+[source, asciidoc, lisa-raw]
+[outputs="unittest_deep_nested_param_snippets_output"]
+[name="deep_nested_snippets_with_params"]
+....
+We have a basic snippet
+
+[[snippet_with_param]]
+[source, python]
+----
+print("<<echo_text>>")
+----
+
+And we have a snippet that uses it.
+
+[[calling_snippet_one]]
+[source, python]
+----
+def my_function():
+  <<snippet_with_param>>
+  # <<echo_text>>
+----
+
+We have onther snippet that uses it too. But it overwrites the parameter.
+
+[[calling_snippet_two]]
+[source, python]
+----
+def my_other_function():
+  <<snippet_with_param| echo_text := <<echo_text>> >>
+  # <<echo_text>>
+----
+
+When we use these snippets we expect them to do different things. The
+first should have the nested inner snippet untouched and the second
+should use the parameter in the nested snippet.
+
+[source, python, save]
+.nested.py
+----
+<<calling_snippet_one|
+    echo_text:="touch only outer">>
+
+<<calling_snippet_two|
+    echo_text:="touch inner snippet too">>
+----
+
+The default text is [[echo_text]]`untouched`.
+
+....
+
+Die generierte Datei ist:
+
+[[unittest_deep_nested_param_snippets_output]]
+[source, python]
+.nested.py
+----
+def my_function():
+  print("untouched")
+  # touch only outer
+
+def my_other_function():
+  print("touch inner snippet too")
+  # touch inner snippet too
 ----
 
 ====
