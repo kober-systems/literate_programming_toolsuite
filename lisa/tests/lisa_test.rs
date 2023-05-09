@@ -66,6 +66,84 @@ category2:
 }
 
 #[test]
+fn deep_nested_snippets_with_params() -> Result<()> {
+  let content = r#"
+We have a basic snippet
+
+[[snippet_with_param]]
+[source, python]
+----
+print("<<echo_text>>")
+----
+
+And we have a snippet that uses it.
+
+[[calling_snippet_one]]
+[source, python]
+----
+def my_function():
+  <<snippet_with_param>>
+  # <<echo_text>>
+----
+
+We have onther snippet that uses it too. But it overwrites the parameter.
+
+[[calling_snippet_two]]
+[source, python]
+----
+def my_other_function():
+  <<snippet_with_param| echo_text := <<echo_text>> >>
+  # <<echo_text>>
+----
+
+When we use these snippets we expect them to do different things. The
+first should have the nested inner snippet untouched and the second
+should use the parameter in the nested snippet.
+
+[source, python, save]
+.nested.py
+----
+<<calling_snippet_one|
+    echo_text:="touch only outer">>
+
+<<calling_snippet_two|
+    echo_text:="touch inner snippet too">>
+----
+
+The default text is [[echo_text]]`untouched`.
+
+"#;
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::parse_from(vec![""].into_iter());
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
+
+  let mut lisa = Lisa::from_env(env);
+  let _ast = lisa.transform(ast)?;
+
+  // TODO ast vergleichen
+
+  let mut outputs = lisa.into_cache().unwrap();
+
+  assert_eq!(
+  outputs.remove("nested.py").unwrap(),
+  r#"def my_function():
+  print("untouched")
+  # touch only outer
+
+def my_other_function():
+  print("touch inner snippet too")
+  # touch inner snippet too
+"#
+);
+
+
+  assert!(outputs.is_empty());
+
+  Ok(())
+}
+
+#[test]
 fn use_snippets() -> Result<()> {
   let content = r#"
 We need the testmodule for this project.
