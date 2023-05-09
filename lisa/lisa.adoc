@@ -1967,8 +1967,8 @@ fn extract_snippet_params<'a>(
   snippet_params: HashMap<String, ReferenceParam>,
   param: &str,
 ) -> HashMap<String, ReferenceParam> {
-  let mut snippet_params = snippet_params.clone();
-  let mut new_params = snippet_params.clone();
+  let mut snippet_params = snippet_params;
+  let mut new_params = HashMap::default();
   let ast = CodeblockParser::parse(Rule::codeblock, &param).expect("couldn't parse input.");
 
   let ref_iter = ast
