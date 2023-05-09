@@ -232,7 +232,7 @@ impl Lisa {
         for argument in args {
           match argument {
             AttributeValue::Ref("save") => {
-              let path = path.unwrap_or(id.as_str());
+              let path = path.ok_or(Error::Missing)?;
               kind = SnippetType::Save(path.to_string());
             }
             AttributeValue::Ref("eval") => {
