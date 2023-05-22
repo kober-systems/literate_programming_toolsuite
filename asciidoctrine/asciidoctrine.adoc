@@ -2190,7 +2190,82 @@ TODO
 == Tests
 
 === Testumgebung
-TODO
+Um `asciidoctrine` zu testen verwenden wir die im Userguide
+beschriebenen Beispiele.
+
+Der generelle Aufbau eines Tests ist:
+
+[[unit-test-template]]
+[source, rust]
+.Grundlegender Aufbau eines Unit Tests
+----
+#[test]
+fn {test_name}() -> Result<()> {
+  let content = r#"{asciidoc_content}"#;
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::parse_from(vec![""].into_iter());
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
+
+  let mut buf = BufWriter::new(Vec::new());
+  let mut writer = HtmlWriter::new();
+  writer.write(ast, &opts, &mut buf)?;
+
+  let output = String::from_utf8(buf.into_inner()?)?;
+  assert_eq!(
+    output,
+    r#"{expected_content}"#
+  );
+
+  Ok(())
+}
+----
+
+Anschließend packen wir alle Tests in eine Datei:
+
+[source, rust, save]
+.tests/asciidoc_to_html_test.rs
+----
+use anyhow::Result;
+use asciidoctrine::{self, *};
+use clap::Parser;
+use pretty_assertions::assert_eq;
+use std::io::BufWriter;
+
+<<html-unit-tests>>
+----
+
+Um die Tests zu erzeugen gehen wir alle Beispiele im Userguide durch,
+welche mit entsprechenden Attributen gekennzeichnet wurden.
+
+[[html-unit-tests]]
+[source, js, pipe]
+----
+let template = lisa.get_snippet("unit-test-template").content;
+let tests = "";
+
+for name in lisa.get_snippet_names() {
+  if name.contains("unittest_") && name.contains("_input") {
+    let out_template = template;
+    let compare_out = "";
+
+    let snippet = lisa.get_snippet(name);
+    out_template.replace("{test_name}", snippet.attrs.name);
+    let asciidoc_content = "\n" + snippet.content + "\n";
+    asciidoc_content.replace(" -- <1>", "");
+    asciidoc_content.replace(" -- <2>", "");
+    out_template.replace("{asciidoc_content}", asciidoc_content);
+
+    let output_snippet = lisa.get_snippet(snippet.attrs.output);
+    out_template.replace("{expected_content}", output_snippet.content + "\n");
+
+    tests += out_template;
+    tests += "\n\n";
+  }
+}
+
+lisa.store("html-unit-tests", tests);
+----
 
 == Verwandte Projekte
 Es gibt einige Projekte mit vergleichbaren Zielen und teilweise auch einer vergleichbaren Architektur wie asciidoctrine.
