@@ -1212,6 +1212,9 @@ ohne dass der normale Leser überfordert wird.
 [cols="a,a"]
 |====
 
+[[unittest_collapsible_input]]
+[source, asciidoc, lisa-raw]
+[output="collapsible_html_output", name="collapsible_blocks"]
 ....
 [%collapsible]
 ====
@@ -1229,6 +1232,8 @@ Additional Information, that will only be shown on demand.
 [%collapsible]
 .Html Output
 ====
+
+[[collapsible_html_output]]
 [source, html]
 ----
 <details>
