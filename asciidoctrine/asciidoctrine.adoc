@@ -297,24 +297,6 @@ pub struct AsciidocParser;
 
 <<asciidoc_parser_functions|join="\n\n">>
 
-fn process_delimited_inner<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-) -> ElementSpan<'a> {
-  for element in element.into_inner() {
-    match element.as_rule() {
-      Rule::delimited_inner => {
-        base.attributes.push(Attribute {
-          key: "content".to_string(), // TODO
-          value: AttributeValue::Ref(element.as_str()),
-        });
-      }
-      _ => (),
-    };
-  }
-  base
-}
-
 fn concat_elements<'a>(
   element: Pair<'a, asciidoc::Rule>,
   filter: asciidoc::Rule,
@@ -331,34 +313,6 @@ fn concat_elements<'a>(
   } else {
     None
   }
-}
-
-fn process_xref<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-) -> ElementSpan<'a> {
-  base.element = Element::XRef;
-  for element in element.clone().into_inner() {
-    match element.as_rule() {
-      Rule::identifier => {
-        base.attributes.push(Attribute {
-          key: "id".to_string(),
-          value: AttributeValue::Ref(element.as_str()),
-        });
-      }
-      Rule::word => {}
-      _ => (),
-    };
-  }
-
-  if let Some(content) = concat_elements(element, Rule::word, " ") {
-    base.attributes.push(Attribute {
-      key: "content".to_string(),
-      value: AttributeValue::String(content),
-    });
-  };
-
-  base
 }
 
 fn process_inline<'a>(
@@ -661,6 +615,9 @@ TODO
 blocktitle = { "." ~ !"." ~ line ~ NEWLINE }
 ----
 
+[%collapsible]
+====
+
 [[asciidoc_parser_functions]]
 [source, rust]
 ----
@@ -682,6 +639,8 @@ fn process_blocktitle<'a>(
   base
 }
 ----
+
+====
 
 == Document Header
 Viele Dokumente beginnen mit einem Header. Es ist die Hauptüberschrift
@@ -906,12 +865,22 @@ fn process_paragraph<'a>(
 ====
 
 == Listen
+In Texten bieten sich Listen für alle Arten von Aufzählungen an.
+Generell unterscheiden wir drei Arten von Listen:
+
+* Unnummerierte Listen
+* Nummerierte Listen
+* Benannte Listen
 
 [[blocks]]
 [source, pest]
 ----
 list = { bullet_list | numbered_list | labeled_list }
+----
 
+[[blocks]]
+[source, pest]
+----
 list_element = ${
   (
     list_paragraph |
@@ -920,15 +889,6 @@ list_element = ${
 }
 list_paragraph = ${ (inline | other_list_inline)+ }
 other_list_inline = @{ (!empty_lines ~ !EOI ~ !inline ~ !(NEWLINE ~ bullet) ~ !(continuation ~ delimited_block) ~ ANY)+ }
-
-bullet = { ("*"+ | "-"+) }
-bullet_list_element = { bullet ~ list_element ~ (NEWLINE | EOI) }
-bullet_list = { bullet_list_element+ }
-
-numbered_list = { "numbered_list" } // TODO
-
-label_bullet = { (!"::" ~ linechar) ~ "::" }
-labeled_list = { (label_bullet ~ list_element)+ }
 ----
 
 [%collapsible]
@@ -957,6 +917,17 @@ Rule::continuation => None,
 
 === Unnummerierte Listen
 TODO
+
+[[blocks]]
+[source, pest]
+----
+bullet = { ("*"+ | "-"+) }
+bullet_list_element = { bullet ~ list_element ~ (NEWLINE | EOI) }
+bullet_list = { bullet_list_element+ }
+----
+
+[%collapsible]
+====
 
 [[asciidoc_element_rules]]
 [source, rust]
@@ -997,14 +968,29 @@ Rule::bullet_list_element => {
 }
 ----
 
+====
+
 === Nummerierte Listen
 TODO
+
+[[blocks]]
+[source, pest]
+----
+numbered_list = { "numbered_list" } // TODO
+----
 
 === Abhacklisten
 TODO
 
 === Benannte Listen (Description Lists)
 TODO
+
+[[blocks]]
+[source, pest]
+----
+label_bullet = { (!"::" ~ linechar) ~ "::" }
+labeled_list = { (label_bullet ~ list_element)+ }
+----
 
 == Links
 TODO
@@ -1019,6 +1005,9 @@ proto = ${ ("http" ~ "s"?) |
            "git"
          }
 ----
+
+[%collapsible]
+====
 
 [[asciidoc_parser_functions]]
 [source, rust]
@@ -1055,11 +1044,73 @@ fn process_link<'a>(
 }
 ----
 
+====
+
 == Querverweise
 TODO
 
+[[inline_elements]]
+[source, pest]
+----
+xref = !{ "<<" ~ identifier ~ (NEWLINE? ~ "," ~ NEWLINE? ~ word+)? ~ ">>" }
+----
+
+[%collapsible]
+====
+
+[[asciidoc_parser_functions]]
+[source, rust]
+----
+fn process_xref<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+) -> ElementSpan<'a> {
+  base.element = Element::XRef;
+  for element in element.clone().into_inner() {
+    match element.as_rule() {
+      Rule::identifier => {
+        base.attributes.push(Attribute {
+          key: "id".to_string(),
+          value: AttributeValue::Ref(element.as_str()),
+        });
+      }
+      Rule::word => {}
+      _ => (),
+    };
+  }
+
+  if let Some(content) = concat_elements(element, Rule::word, " ") {
+    base.attributes.push(Attribute {
+      key: "content".to_string(),
+      value: AttributeValue::String(content),
+    });
+  };
+
+  base
+}
+----
+
+====
+
 == Fußnoten
 TODO
+
+[[inline_elements]]
+[source, pest]
+----
+footnote = { "footnote:" ~ inline_attribute_list }
+footnoteref = { "footnoteref:" ~ inline_attribute_list }
+
+strong = ${ "*" ~ (!"*" ~ linechar)+ ~ "*" }
+emphasized = @{ "_" ~ (!"_" ~ linechar)+ ~ "_" }
+monospaced = ${ inline_anchor* ~ (("+" ~ (!"+" ~ linechar)+ ~ "+") | ("`" ~ (!"`" ~ linechar)+ ~ "`")) }
+quoted = @{ inline_attribute_list ~ "#" ~ (!"#" ~ linechar)+ ~ "#" }
+
+// TODO Damit werden keine Kommentare zu Beginn eines Paragraphen angezeigt
+comment = { NEWLINE ~ "//" ~ (!NEWLINE ~ ANY)* ~ &NEWLINE }
+
+continuation = { NEWLINE ~ "+" ~ NEWLINE }
+----
 
 == Bilder
 Um Bilder einzubinden verwenden wir die übliche Syntax für Macros mit dem Schlüsselwort _image_.
@@ -1070,6 +1121,9 @@ Um Bilder einzubinden verwenden wir die übliche Syntax für Macros mit dem Schl
 image_block = { anchor* ~ image }
 image = { "image::" ~ (url | path) ~ inline_attribute_list }
 ----
+
+[%collapsible]
+====
 
 [[asciidoc_element_rules]]
 [source, rust]
@@ -1130,6 +1184,8 @@ fn process_image<'a>(
   base
 }
 ----
+
+====
 
 == Tabellen
 TODO
@@ -1232,6 +1288,28 @@ Rule::delimited_block => {
 }
 ----
 
+[[asciidoc_parser_functions]]
+[source, rust]
+----
+fn process_delimited_inner<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+) -> ElementSpan<'a> {
+  for element in element.into_inner() {
+    match element.as_rule() {
+      Rule::delimited_inner => {
+        base.attributes.push(Attribute {
+          key: "content".to_string(), // TODO
+          value: AttributeValue::Ref(element.as_str()),
+        });
+      }
+      _ => (),
+    };
+  }
+  base
+}
+----
+
 ====
 
 === Einklappbare Blöcke
@@ -1312,28 +1390,13 @@ This Information is visible by default.
 
 |====
 
+== Andere Dokumente einbinden
+TODO
+
 [[blocks]]
 [source, pest]
 ----
 include_macro = { "include::" ~ path ~ inline_attribute_list }
-----
-
-[[inline_elements]]
-[source, pest]
-----
-footnote = { "footnote:" ~ inline_attribute_list }
-footnoteref = { "footnoteref:" ~ inline_attribute_list }
-xref = !{ "<<" ~ identifier ~ (NEWLINE? ~ "," ~ NEWLINE? ~ word+)? ~ ">>" }
-
-strong = ${ "*" ~ (!"*" ~ linechar)+ ~ "*" }
-emphasized = @{ "_" ~ (!"_" ~ linechar)+ ~ "_" }
-monospaced = ${ inline_anchor* ~ (("+" ~ (!"+" ~ linechar)+ ~ "+") | ("`" ~ (!"`" ~ linechar)+ ~ "`")) }
-quoted = @{ inline_attribute_list ~ "#" ~ (!"#" ~ linechar)+ ~ "#" }
-
-// TODO Damit werden keine Kommentare zu Beginn eines Paragraphen angezeigt
-comment = { NEWLINE ~ "//" ~ (!NEWLINE ~ ANY)* ~ &NEWLINE }
-
-continuation = { NEWLINE ~ "+" ~ NEWLINE }
 ----
 
 [[generic_pegs]]
