@@ -450,54 +450,7 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> Opti
       }
       Some(base)
     }
-    Rule::delimited_block => {
-      for subelement in element.into_inner() {
-        match subelement.as_rule() {
-          Rule::anchor => {
-            base = process_anchor(subelement, base);
-          }
-          Rule::attribute_list => {
-            base = process_attribute_list(subelement, base);
-          }
-          Rule::blocktitle => {
-            base = process_blocktitle(subelement, base);
-          }
-          // TODO wir müssen die anderen delimitets verarbeiten
-          Rule::delimited_source => {
-            base.element = Element::TypedBlock {
-              kind: BlockType::Listing,
-            };
-            base = process_delimited_inner(subelement, base);
-          }
-          Rule::delimited_literal => {
-            base.element = Element::TypedBlock {
-              kind: BlockType::Listing,
-            };
-            base = process_delimited_inner(subelement, base);
-          }
-          Rule::delimited_comment => {
-            base.element = Element::TypedBlock {
-              kind: BlockType::Comment,
-            };
-            base = process_delimited_inner(subelement, base);
-          }
-          // We just take the attributes at the beginning
-          // of the element.
-          _ => {
-            break;
-          } // TODO improve matching
-        }
-      }
-      Some(base)
-    }
-    Rule::paragraph => Some(process_paragraph(element, base)),
-    Rule::list_paragraph => Some(process_paragraph(element, base)),
     Rule::inline => Some(process_inline(element, base)),
-    Rule::other_list_inline => {
-      base.element = Element::Text;
-      Some(base)
-    }
-    Rule::continuation => None,
     Rule::EOI => None,
     _ => {
       base.element = Element::Error("Not implemented".to_string()); // TODO
@@ -629,6 +582,8 @@ attribute_value = {
 inner_attribute_value = { ( "\\\"" | (!"\"" ~ ANY))* }
 ----
 
+[%collapsible]
+====
 [[asciidoc_parser_functions]]
 [source, rust]
 ----
@@ -695,6 +650,7 @@ fn process_attribute_list<'a>(
   base
 }
 ----
+====
 
 ==== Blocktitel (Elementtitel)
 TODO
@@ -800,6 +756,9 @@ setext_title_style = { ("="{4,} | "-"{4,} | "~"{4,} | "^"{4,} ) ~ &NEWLINE }
 atx_title_style = { "="+ }
 ----
 
+[%collapsible]
+====
+
 [[asciidoc_element_rules]]
 [source, rust]
 ----
@@ -891,6 +850,8 @@ fn process_title<'a>(
 }
 ----
 
+====
+
 == Absätze
 TODO
 
@@ -898,6 +859,15 @@ TODO
 [source, pest]
 ----
 paragraph = ${ (inline | other_inline)+ }
+----
+
+[%collapsible]
+====
+
+[[asciidoc_element_rules]]
+[source, rust]
+----
+Rule::paragraph => Some(process_paragraph(element, base)),
 ----
 
 [[asciidoc_parser_functions]]
@@ -933,6 +903,8 @@ fn process_paragraph<'a>(
 }
 ----
 
+====
+
 == Listen
 
 [[blocks]]
@@ -959,6 +931,9 @@ label_bullet = { (!"::" ~ linechar) ~ "::" }
 labeled_list = { (label_bullet ~ list_element)+ }
 ----
 
+[%collapsible]
+====
+
 [[asciidoc_element_rules]]
 [source, rust]
 ----
@@ -970,7 +945,15 @@ Rule::list => {
   }
   Some(base)
 }
+Rule::list_paragraph => Some(process_paragraph(element, base)),
+Rule::other_list_inline => {
+  base.element = Element::Text;
+  Some(base)
+}
+Rule::continuation => None,
 ----
+
+====
 
 === Unnummerierte Listen
 TODO
@@ -1203,6 +1186,53 @@ delimited_source = {
 
 delimited_verse = { "verse" } // TODO
 ----
+
+[[asciidoc_element_rules]]
+[source, rust]
+----
+Rule::delimited_block => {
+  for subelement in element.into_inner() {
+    match subelement.as_rule() {
+      Rule::anchor => {
+        base = process_anchor(subelement, base);
+      }
+      Rule::attribute_list => {
+        base = process_attribute_list(subelement, base);
+      }
+      Rule::blocktitle => {
+        base = process_blocktitle(subelement, base);
+      }
+      // TODO wir müssen die anderen delimitets verarbeiten
+      Rule::delimited_source => {
+        base.element = Element::TypedBlock {
+          kind: BlockType::Listing,
+        };
+        base = process_delimited_inner(subelement, base);
+      }
+      Rule::delimited_literal => {
+        base.element = Element::TypedBlock {
+          kind: BlockType::Listing,
+        };
+        base = process_delimited_inner(subelement, base);
+      }
+      Rule::delimited_comment => {
+        base.element = Element::TypedBlock {
+          kind: BlockType::Comment,
+        };
+        base = process_delimited_inner(subelement, base);
+      }
+      // We just take the attributes at the beginning
+      // of the element.
+      _ => {
+        break;
+      } // TODO improve matching
+    }
+  }
+  Some(base)
+}
+----
+
+====
 
 === Einklappbare Blöcke
 Einklappbare Blöcke sind nuetzlich, wenn man ergaenzende Informationen
