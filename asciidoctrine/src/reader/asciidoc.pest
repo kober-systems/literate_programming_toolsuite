@@ -168,9 +168,10 @@ proto = ${ ("http" ~ "s"?) |
            "git"
          }
 
+xref = !{ "<<" ~ identifier ~ (NEWLINE? ~ "," ~ NEWLINE? ~ word+)? ~ ">>" }
+
 footnote = { "footnote:" ~ inline_attribute_list }
 footnoteref = { "footnoteref:" ~ inline_attribute_list }
-xref = !{ "<<" ~ identifier ~ (NEWLINE? ~ "," ~ NEWLINE? ~ word+)? ~ ">>" }
 
 strong = ${ "*" ~ (!"*" ~ linechar)+ ~ "*" }
 emphasized = @{ "_" ~ (!"_" ~ linechar)+ ~ "_" }

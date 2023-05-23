@@ -285,6 +285,34 @@ fn process_link<'a>(
   base
 }
 
+fn process_xref<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+) -> ElementSpan<'a> {
+  base.element = Element::XRef;
+  for element in element.clone().into_inner() {
+    match element.as_rule() {
+      Rule::identifier => {
+        base.attributes.push(Attribute {
+          key: "id".to_string(),
+          value: AttributeValue::Ref(element.as_str()),
+        });
+      }
+      Rule::word => {}
+      _ => (),
+    };
+  }
+
+  if let Some(content) = concat_elements(element, Rule::word, " ") {
+    base.attributes.push(Attribute {
+      key: "content".to_string(),
+      value: AttributeValue::String(content),
+    });
+  };
+
+  base
+}
+
 fn process_image<'a>(
   element: Pair<'a, asciidoc::Rule>,
   mut base: ElementSpan<'a>,
@@ -372,34 +400,6 @@ fn concat_elements<'a>(
   } else {
     None
   }
-}
-
-fn process_xref<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-) -> ElementSpan<'a> {
-  base.element = Element::XRef;
-  for element in element.clone().into_inner() {
-    match element.as_rule() {
-      Rule::identifier => {
-        base.attributes.push(Attribute {
-          key: "id".to_string(),
-          value: AttributeValue::Ref(element.as_str()),
-        });
-      }
-      Rule::word => {}
-      _ => (),
-    };
-  }
-
-  if let Some(content) = concat_elements(element, Rule::word, " ") {
-    base.attributes.push(Attribute {
-      key: "content".to_string(),
-      value: AttributeValue::String(content),
-    });
-  };
-
-  base
 }
 
 fn process_inline<'a>(
