@@ -521,6 +521,7 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> Opti
       }
       Some(base)
     }
+    Rule::paragraph => Some(process_paragraph(element, base)),
     Rule::list => {
       for subelement in element.into_inner() {
         if let Some(e) = process_element(subelement, env) {
@@ -529,6 +530,12 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> Opti
       }
       Some(base)
     }
+    Rule::list_paragraph => Some(process_paragraph(element, base)),
+    Rule::other_list_inline => {
+      base.element = Element::Text;
+      Some(base)
+    }
+    Rule::continuation => None,
     Rule::bullet_list => {
       base.element = Element::List;
 
@@ -564,14 +571,6 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> Opti
       Some(base)
     }
     Rule::image_block => Some(process_image(element, base, env)),
-    Rule::block => {
-      for subelement in element.into_inner() {
-        if let Some(e) = process_element(subelement, env) {
-          base = e;
-        }
-      }
-      Some(base)
-    }
     Rule::delimited_block => {
       for subelement in element.into_inner() {
         match subelement.as_rule() {
@@ -612,14 +611,15 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> Opti
       }
       Some(base)
     }
-    Rule::paragraph => Some(process_paragraph(element, base)),
-    Rule::list_paragraph => Some(process_paragraph(element, base)),
-    Rule::inline => Some(process_inline(element, base)),
-    Rule::other_list_inline => {
-      base.element = Element::Text;
+    Rule::block => {
+      for subelement in element.into_inner() {
+        if let Some(e) = process_element(subelement, env) {
+          base = e;
+        }
+      }
       Some(base)
     }
-    Rule::continuation => None,
+    Rule::inline => Some(process_inline(element, base)),
     Rule::EOI => None,
     _ => {
       base.element = Element::Error("Not implemented".to_string()); // TODO
