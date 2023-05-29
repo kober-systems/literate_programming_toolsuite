@@ -1434,6 +1434,38 @@ echo "hello world!"
 ----
 ====
 
+|
+
+[[unittest_sourcecode_block_input]]
+[source, asciidoc, lisa-raw]
+[output="sourceblock_html_output", name="sourcecode_blocks"]
+----
+[source, bash]
+....
+echo "hello world!"
+....
+----
+
+|
+
+[source, bash]
+....
+echo "hello world!"
+....
+
+[%collapsible]
+.Html Output
+====
+
+[[sourceblock_html_output]]
+[source, html]
+----
+<div class="listingblock">
+  <pre>echo "hello world!"</pre>
+</div>
+----
+====
+
 |====
 
 == Beispiel Blöcke
