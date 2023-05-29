@@ -1212,7 +1212,7 @@ delimited_block = {
   (
     //delimited_admonition |
     delimited_comment |
-    //delimited_example |
+    delimited_example |
     //delimited_fenced |
     //delimited_listing |
     delimited_literal |
@@ -1243,6 +1243,12 @@ delimited_literal = {
 
 delimited_source = {
   PUSH("-"{4,}) ~ NEWLINE ~
+  delimited_inner ~
+  NEWLINE ~ POP ~ &(NEWLINE | EOI)
+}
+
+delimited_example = {
+  PUSH("="{4,}) ~ NEWLINE ~
   delimited_inner ~
   NEWLINE ~ POP ~ &(NEWLINE | EOI)
 }
@@ -1284,6 +1290,12 @@ Rule::delimited_block => {
         };
         base = process_delimited_inner(subelement, base, env);
       }
+      Rule::delimited_example => {
+        base.element = Element::TypedBlock {
+          kind: BlockType::Example,
+        };
+        base = process_delimited_inner(subelement, base, env);
+      }
       // We just take the attributes at the beginning
       // of the element.
       _ => {
@@ -1306,6 +1318,15 @@ fn process_delimited_inner<'a>(
   for element in element.into_inner() {
     match element.as_rule() {
       Rule::delimited_inner => {
+        if let Element::TypedBlock { kind: BlockType::Example } = base.element {
+          let ast = AsciidocParser::parse(Rule::asciidoc, element.as_str()).unwrap();
+
+          for element in ast {
+            if let Some(e) = process_element(element, env) {
+              base.children.push(e);
+            }
+          }
+        }
         base.attributes.push(Attribute {
           key: "content".to_string(), // TODO
           value: AttributeValue::Ref(element.as_str()),
@@ -1671,6 +1692,23 @@ Element::TypedBlock { kind } => {
   if kind == &BlockType::Comment {
     // Comments are not printed in html
     // TODO provide option to print comments
+    return Ok(());
+  }
+  if kind == &BlockType::Example {
+    out.write_all(b"<details>\n")?;
+
+    let title = input.get_attribute("title").unwrap_or("Details");
+    out.write_all(&format!("  <summary class=\"title\">{}</summary>\n", title).as_bytes())?;
+
+    out.write_all(b"  <div class=\"content\">\n")?;
+    out.write_all(b"    <div class=\"paragraph\">\n")?;
+    for element in input.children.iter() {
+      write_html(element, indent + 3, out)?;
+    }
+    out.write_all(b"    </div>\n")?;
+    out.write_all(b"  </div>\n")?;
+    out.write_all(b"</details>\n")?;
+
     return Ok(());
   }
 
