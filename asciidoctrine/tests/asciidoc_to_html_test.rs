@@ -147,6 +147,81 @@ This is a subsubsubheader
 }
 
 #[test]
+fn inline_bold() -> Result<()> {
+  let content = r#"
+Some text is *bold*.
+"#;
+  let reader = AsciidocReader::new();
+  let mut opts = options::Opts::parse_from(vec!["--template", "-"].into_iter());
+  opts.template = Some("-".into());
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
+
+  let mut buf = BufWriter::new(Vec::new());
+  let mut writer = HtmlWriter::new();
+  writer.write(ast, &opts, &mut buf)?;
+
+  let output = String::from_utf8(buf.into_inner()?)?;
+  assert_eq!(
+    output,
+    r#"<p>Some text is <strong>bold</strong>.</p>
+"#
+  );
+
+  Ok(())
+}
+
+#[test]
+fn inline_italic() -> Result<()> {
+  let content = r#"
+Some text is _italic_.
+"#;
+  let reader = AsciidocReader::new();
+  let mut opts = options::Opts::parse_from(vec!["--template", "-"].into_iter());
+  opts.template = Some("-".into());
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
+
+  let mut buf = BufWriter::new(Vec::new());
+  let mut writer = HtmlWriter::new();
+  writer.write(ast, &opts, &mut buf)?;
+
+  let output = String::from_utf8(buf.into_inner()?)?;
+  assert_eq!(
+    output,
+    r#"<p>Some text is <em>italic</em>.</p>
+"#
+  );
+
+  Ok(())
+}
+
+#[test]
+fn inline_monospaced() -> Result<()> {
+  let content = r#"
+Some text is `monospaced`.
+"#;
+  let reader = AsciidocReader::new();
+  let mut opts = options::Opts::parse_from(vec!["--template", "-"].into_iter());
+  opts.template = Some("-".into());
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
+
+  let mut buf = BufWriter::new(Vec::new());
+  let mut writer = HtmlWriter::new();
+  writer.write(ast, &opts, &mut buf)?;
+
+  let output = String::from_utf8(buf.into_inner()?)?;
+  assert_eq!(
+    output,
+    r#"<p>Some text is <code>monospaced</code>.</p>
+"#
+  );
+
+  Ok(())
+}
+
+#[test]
 fn sourcecode_blocks() -> Result<()> {
   let content = r#"
 [source, bash]
