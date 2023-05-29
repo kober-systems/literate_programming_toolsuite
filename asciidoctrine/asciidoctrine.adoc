@@ -2138,6 +2138,15 @@ pub enum AttributeValue<'a> {
   Ref(&'a str),
 }
 
+impl AttributeValue<'_> {
+  pub fn as_str(&self) -> &str {
+    match self {
+      AttributeValue::Ref(value) => value,
+      AttributeValue::String(value) => value.as_str(),
+    }
+  }
+}
+
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct Attribute<'a> {
   pub key: String,
