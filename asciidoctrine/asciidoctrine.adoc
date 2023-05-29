@@ -951,6 +951,44 @@ fn process_title<'a>(
 
 ====
 
+[cols="a,a"]
+|====
+
+[[unittest_setext_header_input]]
+[source, asciidoc, lisa-raw]
+[output="setext_header_html_output", name="headers_setext_format"]
+....
+This is a header
+================
+
+This is a subheader
+-------------------
+
+This is a subsubheader
+~~~~~~~~~~~~~~~~~~~~~~
+
+This is a subsubsubheader
+^^^^^^^^^^^^^^^^^^^^^^^^^
+....
+
+|
+
+[%collapsible]
+.Html Output
+====
+
+[[setext_header_html_output]]
+[source, html]
+----
+<h1>This is a header</h1>
+<h2 id="_this_is_a_subheader">This is a subheader</h2>
+<h3 id="_this_is_a_subsubheader">This is a subsubheader</h3>
+<h4 id="_this_is_a_subsubsubheader">This is a subsubsubheader</h4>
+----
+====
+
+|====
+
 == Absätze
 TODO
 
