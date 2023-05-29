@@ -1,6 +1,7 @@
 asciidoc = _{ (NEWLINE* ~ block)*  ~ NEWLINE* ~ EOI }
 
 block = {
+  delimited_block |
   header |
   // admonition |
   // example |
@@ -17,7 +18,6 @@ block = {
   // verse |
   image_block |
   include_macro |
-  delimited_block |
   list |
   attribute_entry_block |
   // Title is nearly the last because it could prevent correct match of others
@@ -26,6 +26,29 @@ block = {
   paragraph |
   (!EOI ~ ANY)+
 }
+
+
+delimited_block = {
+  (anchor | attribute_list | blocktitle)* ~
+  (
+    //delimited_admonition |
+    delimited_comment |
+    delimited_example |
+    //delimited_fenced |
+    //delimited_listing |
+    delimited_literal |
+    //delimited_open |
+    //delimited_passthrough |
+    //delimited_quote |
+    //delimited_sidebar |
+    delimited_source |
+    //delimited_stem |
+    //delimited_table |
+    delimited_verse
+  )
+}
+
+delimited_inner = @{ (!(NEWLINE ~ PEEK) ~ ANY)* }
 
 header = {
   title ~
@@ -78,28 +101,6 @@ image = { "image::" ~ (url | path) ~ inline_attribute_list }
 
 attribute_entry = { ":" ~ identifier ~ ":" ~ identifier? ~ &NEWLINE }
 attribute_entry_block = { attribute_entry ~ NEWLINE }
-
-delimited_block = {
-  (anchor | attribute_list | blocktitle)* ~
-  (
-    //delimited_admonition |
-    delimited_comment |
-    delimited_example |
-    //delimited_fenced |
-    //delimited_listing |
-    delimited_literal |
-    //delimited_open |
-    //delimited_passthrough |
-    //delimited_quote |
-    //delimited_sidebar |
-    delimited_source |
-    //delimited_stem |
-    //delimited_table |
-    delimited_verse
-  )
-}
-
-delimited_inner = @{ (!(NEWLINE ~ PEEK) ~ ANY)* }
 
 delimited_comment = {
   PUSH("/"{4,}) ~ NEWLINE ~

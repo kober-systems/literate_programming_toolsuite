@@ -164,6 +164,34 @@ fn process_blocktitle<'a>(
   base
 }
 
+fn process_delimited_inner<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+  env: &mut Env,
+) -> ElementSpan<'a> {
+  for element in element.into_inner() {
+    match element.as_rule() {
+      Rule::delimited_inner => {
+        if let Element::TypedBlock { kind: BlockType::Example } = base.element {
+          let ast = AsciidocParser::parse(Rule::asciidoc, element.as_str()).unwrap();
+
+          for element in ast {
+            if let Some(e) = process_element(element, env) {
+              base.children.push(e);
+            }
+          }
+        }
+        base.attributes.push(Attribute {
+          key: "content".to_string(), // TODO
+          value: AttributeValue::Ref(element.as_str()),
+        });
+      }
+      _ => (),
+    };
+  }
+  base
+}
+
 fn process_title<'a>(
   element: Pair<'a, asciidoc::Rule>,
   mut base: ElementSpan<'a>,
@@ -366,34 +394,6 @@ fn process_image<'a>(
   base
 }
 
-fn process_delimited_inner<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-  env: &mut Env,
-) -> ElementSpan<'a> {
-  for element in element.into_inner() {
-    match element.as_rule() {
-      Rule::delimited_inner => {
-        if let Element::TypedBlock { kind: BlockType::Example } = base.element {
-          let ast = AsciidocParser::parse(Rule::asciidoc, element.as_str()).unwrap();
-
-          for element in ast {
-            if let Some(e) = process_element(element, env) {
-              base.children.push(e);
-            }
-          }
-        }
-        base.attributes.push(Attribute {
-          key: "content".to_string(), // TODO
-          value: AttributeValue::Ref(element.as_str()),
-        });
-      }
-      _ => (),
-    };
-  }
-  base
-}
-
 fn concat_elements<'a>(
   element: Pair<'a, asciidoc::Rule>,
   filter: asciidoc::Rule,
@@ -492,6 +492,51 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> Opti
   let mut base = set_span(&element);
 
   let element = match element.as_rule() {
+    Rule::delimited_block => {
+      for subelement in element.into_inner() {
+        match subelement.as_rule() {
+          Rule::anchor => {
+            base = process_anchor(subelement, base);
+          }
+          Rule::attribute_list => {
+            base = process_attribute_list(subelement, base);
+          }
+          Rule::blocktitle => {
+            base = process_blocktitle(subelement, base);
+          }
+          Rule::delimited_comment => {
+            base.element = Element::TypedBlock {
+              kind: BlockType::Comment,
+            };
+            base = process_delimited_inner(subelement, base, env);
+          }
+          Rule::delimited_source => {
+            base.element = Element::TypedBlock {
+              kind: BlockType::Listing,
+            };
+            base = process_delimited_inner(subelement, base, env);
+          }
+          Rule::delimited_literal => {
+            base.element = Element::TypedBlock {
+              kind: BlockType::Listing,
+            };
+            base = process_delimited_inner(subelement, base, env);
+          }
+          Rule::delimited_example => {
+            base.element = Element::TypedBlock {
+              kind: BlockType::Example,
+            };
+            base = process_delimited_inner(subelement, base, env);
+          }
+          // We just take the attributes at the beginning
+          // of the element.
+          _ => {
+            break;
+          } // TODO improve matching
+        }
+      }
+      Some(base)
+    }
     Rule::header => {
       for subelement in element.into_inner() {
         match subelement.as_rule() {
@@ -581,52 +626,6 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> Opti
       Some(base)
     }
     Rule::image_block => Some(process_image(element, base, env)),
-    Rule::delimited_block => {
-      for subelement in element.into_inner() {
-        match subelement.as_rule() {
-          Rule::anchor => {
-            base = process_anchor(subelement, base);
-          }
-          Rule::attribute_list => {
-            base = process_attribute_list(subelement, base);
-          }
-          Rule::blocktitle => {
-            base = process_blocktitle(subelement, base);
-          }
-          // TODO wir müssen die anderen delimitets verarbeiten
-          Rule::delimited_source => {
-            base.element = Element::TypedBlock {
-              kind: BlockType::Listing,
-            };
-            base = process_delimited_inner(subelement, base, env);
-          }
-          Rule::delimited_literal => {
-            base.element = Element::TypedBlock {
-              kind: BlockType::Listing,
-            };
-            base = process_delimited_inner(subelement, base, env);
-          }
-          Rule::delimited_comment => {
-            base.element = Element::TypedBlock {
-              kind: BlockType::Comment,
-            };
-            base = process_delimited_inner(subelement, base, env);
-          }
-          Rule::delimited_example => {
-            base.element = Element::TypedBlock {
-              kind: BlockType::Example,
-            };
-            base = process_delimited_inner(subelement, base, env);
-          }
-          // We just take the attributes at the beginning
-          // of the element.
-          _ => {
-            break;
-          } // TODO improve matching
-        }
-      }
-      Some(base)
-    }
     Rule::block => {
       for subelement in element.into_inner() {
         if let Some(e) = process_element(subelement, env) {

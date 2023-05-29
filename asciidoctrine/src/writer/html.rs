@@ -177,7 +177,7 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
       };
 
       if kind == &BlockType::Listing {
-        out.write_all(b"<pre>")?;
+        out.write_all(b"  <pre>")?;
       }
 
       let content = input.get_attribute("content").unwrap_or(input.content);
