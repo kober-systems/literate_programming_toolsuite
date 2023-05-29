@@ -954,9 +954,9 @@ fn process_title<'a>(
 [cols="a,a"]
 |====
 
-[[unittest_setext_header_input]]
+[[unittest_header_setext_input]]
 [source, asciidoc, lisa-raw]
-[output="setext_header_html_output", name="headers_setext_format"]
+[output="setext_header_html_output", name="setext_headers"]
 ....
 This is a header
 ================
@@ -978,6 +978,38 @@ This is a subsubsubheader
 ====
 
 [[setext_header_html_output]]
+[source, html]
+----
+<h1>This is a header</h1>
+<h2 id="_this_is_a_subheader">This is a subheader</h2>
+<h3 id="_this_is_a_subsubheader">This is a subsubheader</h3>
+<h4 id="_this_is_a_subsubsubheader">This is a subsubsubheader</h4>
+----
+====
+
+|
+Auch Titel im ATX Format werden erkannt.
+
+[[unittest_header_atx_input]]
+[source, asciidoc, lisa-raw]
+[output="atx_header_html_output", name="atx_headers"]
+....
+= This is a header
+
+== This is a subheader
+
+=== This is a subsubheader
+
+==== This is a subsubsubheader
+....
+
+|
+
+[%collapsible]
+.Html Output
+====
+
+[[atx_header_html_output]]
 [source, html]
 ----
 <h1>This is a header</h1>
