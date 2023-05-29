@@ -374,6 +374,15 @@ fn process_delimited_inner<'a>(
   for element in element.into_inner() {
     match element.as_rule() {
       Rule::delimited_inner => {
+        if let Element::TypedBlock { kind: BlockType::Example } = base.element {
+          let ast = AsciidocParser::parse(Rule::asciidoc, element.as_str()).unwrap();
+
+          for element in ast {
+            if let Some(e) = process_element(element, env) {
+              base.children.push(e);
+            }
+          }
+        }
         base.attributes.push(Attribute {
           key: "content".to_string(), // TODO
           value: AttributeValue::Ref(element.as_str()),
@@ -600,6 +609,12 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> Opti
           Rule::delimited_comment => {
             base.element = Element::TypedBlock {
               kind: BlockType::Comment,
+            };
+            base = process_delimited_inner(subelement, base, env);
+          }
+          Rule::delimited_example => {
+            base.element = Element::TypedBlock {
+              kind: BlockType::Example,
             };
             base = process_delimited_inner(subelement, base, env);
           }

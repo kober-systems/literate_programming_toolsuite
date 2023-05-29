@@ -129,6 +129,23 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
         // TODO provide option to print comments
         return Ok(());
       }
+      if kind == &BlockType::Example {
+        out.write_all(b"<details>\n")?;
+
+        let title = input.get_attribute("title").unwrap_or("Details");
+        out.write_all(&format!("  <summary class=\"title\">{}</summary>\n", title).as_bytes())?;
+
+        out.write_all(b"  <div class=\"content\">\n")?;
+        out.write_all(b"    <div class=\"paragraph\">\n")?;
+        for element in input.children.iter() {
+          write_html(element, indent + 3, out)?;
+        }
+        out.write_all(b"    </div>\n")?;
+        out.write_all(b"  </div>\n")?;
+        out.write_all(b"</details>\n")?;
+
+        return Ok(());
+      }
 
       out.write_all(b"<div ")?;
 

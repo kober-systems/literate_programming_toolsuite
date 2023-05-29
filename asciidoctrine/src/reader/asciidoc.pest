@@ -84,7 +84,7 @@ delimited_block = {
   (
     //delimited_admonition |
     delimited_comment |
-    //delimited_example |
+    delimited_example |
     //delimited_fenced |
     //delimited_listing |
     delimited_literal |
@@ -115,6 +115,12 @@ delimited_literal = {
 
 delimited_source = {
   PUSH("-"{4,}) ~ NEWLINE ~
+  delimited_inner ~
+  NEWLINE ~ POP ~ &(NEWLINE | EOI)
+}
+
+delimited_example = {
+  PUSH("="{4,}) ~ NEWLINE ~
   delimited_inner ~
   NEWLINE ~ POP ~ &(NEWLINE | EOI)
 }
