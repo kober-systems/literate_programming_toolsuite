@@ -1022,7 +1022,10 @@ Auch Titel im ATX Format werden erkannt.
 |====
 
 == Absätze
-TODO
+Absätze sind die meistgenutzen Elemente in Texten. Ihre Verwendung
+ergibt sich ganz natürlich. Alles was an einem Stück geschrieben wurde
+(und kein anderer Block ist) ist ein Absatz. Absätze werden durch eine
+oder mehrere Leerzeilen getrennt.
 
 [[blocks]]
 [source, pest]
@@ -1073,6 +1076,93 @@ fn process_paragraph<'a>(
 ----
 
 ====
+
+== Textformattierung
+Innerhalb von Blöcken will man oft Texte vormattieren. Folgende
+Formatierungen werden unterstützt:
+
+[cols="a,a"]
+|====
+
+*Fett*
+
+[[unittest_inline_bold_input]]
+[source, asciidoc, lisa-raw]
+[output="inline_bold_html_output", name="inline_bold"]
+....
+Some text is *bold*.
+....
+
+|
+
+Some text is *bold*.
+
+[%collapsible]
+.Html Output
+====
+
+[[inline_bold_html_output]]
+[source, html]
+----
+<p>Some text is <strong>bold</strong>.</p>
+----
+
+====
+
+|
+
+_Kursiv_
+
+[[unittest_inline_italic_input]]
+[source, asciidoc, lisa-raw]
+[output="inline_italic_html_output", name="inline_italic"]
+....
+Some text is _italic_.
+....
+
+|
+
+Some text is _italic_.
+
+[%collapsible]
+.Html Output
+====
+
+[[inline_italic_html_output]]
+[source, html]
+----
+<p>Some text is <em>italic</em>.</p>
+----
+
+====
+
+|
+`Monospaced`
+
+[[unittest_inline_monospaced_input]]
+[source, asciidoc, lisa-raw]
+[output="inline_monospaced_html_output", name="inline_monospaced"]
+....
+Some text is `monospaced`.
+....
+
+|
+
+Some text is `monospaced`.
+
+[%collapsible]
+.Html Output
+====
+
+[[inline_monospaced_html_output]]
+[source, html]
+----
+<p>Some text is <code>monospaced</code>.</p>
+----
+
+====
+
+|====
 
 == Listen
 In Texten bieten sich Listen für alle Arten von Aufzählungen an.
