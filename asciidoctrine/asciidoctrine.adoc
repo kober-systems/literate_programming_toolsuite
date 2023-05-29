@@ -1194,6 +1194,18 @@ TODO
 Ein sehr häufig genutztes Element sind abgetrennte Blöcke. Sie erlauben
 einen Text in einem speziellen Style hervorzuheben.
 
+Der generelle Aufbau ist folgender:
+
+[[delimited_block_template]]
+[source, pest]
+----
+delimited_<<blocktype>> = {
+  PUSH("<<delimiter>>"{4,}) ~ NEWLINE ~
+  delimited_inner ~
+  NEWLINE ~ POP ~ &(NEWLINE | EOI)
+}
+----
+
 [%collapsible]
 ====
 
@@ -1229,29 +1241,21 @@ delimited_block = {
 
 delimited_inner = @{ (!(NEWLINE ~ PEEK) ~ ANY)* }
 
-delimited_comment = {
-  PUSH("/"{4,}) ~ NEWLINE ~
-  delimited_inner ~
-  NEWLINE ~ POP ~ &(NEWLINE | EOI)
-}
+<<delimited_block_template|
+    blocktype := "comment",
+    delimiter := "/" >>
 
-delimited_literal = {
-  PUSH("."{4,}) ~ NEWLINE ~
-  delimited_inner ~
-  NEWLINE ~ POP ~ &(NEWLINE | EOI)
-}
+<<delimited_block_template|
+    blocktype := "literal",
+    delimiter := "." >>
 
-delimited_source = {
-  PUSH("-"{4,}) ~ NEWLINE ~
-  delimited_inner ~
-  NEWLINE ~ POP ~ &(NEWLINE | EOI)
-}
+<<delimited_block_template|
+    blocktype := "source",
+    delimiter := "-" >>
 
-delimited_example = {
-  PUSH("="{4,}) ~ NEWLINE ~
-  delimited_inner ~
-  NEWLINE ~ POP ~ &(NEWLINE | EOI)
-}
+<<delimited_block_template|
+    blocktype := "example",
+    delimiter := "=" >>
 
 delimited_verse = { "verse" } // TODO
 ----
