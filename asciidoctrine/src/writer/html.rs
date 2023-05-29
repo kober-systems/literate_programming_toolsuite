@@ -129,8 +129,21 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
         // TODO provide option to print comments
         return Ok(());
       }
-      if kind == &BlockType::Example {
-        out.write_all(b"<details>\n")?;
+      if kind == &BlockType::Example &&
+          input.positional_attributes.iter()
+            .find(
+              |&attr| attr.as_str().find("%collapsible").is_some()
+            ).is_some()
+      {
+        if input.positional_attributes.iter()
+          .find(
+            |&attr| attr.as_str().find("%open").is_some()
+          ).is_some()
+        {
+          out.write_all(b"<details open>\n")?;
+        } else {
+          out.write_all(b"<details>\n")?;
+        }
 
         let title = input.get_attribute("title").unwrap_or("Details");
         out.write_all(&format!("  <summary class=\"title\">{}</summary>\n", title).as_bytes())?;
