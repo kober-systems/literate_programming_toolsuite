@@ -1391,6 +1391,9 @@ Additional Information, that will only be shown on demand.
 |
 Blöcke können auch standardmäßig geöffnet sein.
 
+[[unittest_collapsible_open_input]]
+[source, asciidoc, lisa-raw]
+[output="collapsible_open_html_output", name="collapsible_blocks_open"]
 ....
 [%collapsible%open]
 ====
@@ -1408,6 +1411,7 @@ This Information is visible by default.
 [%collapsible]
 .Html Output
 ====
+[[collapsible_open_html_output]]
 [source, html]
 ----
 <details open>
