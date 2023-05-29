@@ -13,7 +13,7 @@ Additional Information, that will only be shown on demand.
 ====
 "#;
   let reader = AsciidocReader::new();
-  let opts = options::Opts::parse_from(vec![""].into_iter());
+  let mut opts = options::Opts::parse_from(vec!["--template", "-"].into_iter());
   let mut env = util::Env::Cache(util::Cache::new());
   let ast = reader.parse(content, &opts, &mut env)?;
 

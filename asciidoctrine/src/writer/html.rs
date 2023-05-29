@@ -46,7 +46,11 @@ impl<T: io::Write> crate::Writer<T> for HtmlWriter {
     match &args.template {
       Some(path) => {
         let path = path.to_str().expect("path to stylesheet unreadable");
-        let template = self.io.read_to_string(path)?;
+        let template = if path == "-" {
+          "{{body}}".to_string()
+        } else {
+          self.io.read_to_string(path)?
+        };
         tera
           .add_raw_template("default.html", &template)
           .expect("couldn't load default template");
