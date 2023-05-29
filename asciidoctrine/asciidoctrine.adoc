@@ -458,13 +458,20 @@ block = {
 ----
 
 === Wichtige Konzepte
+Einige Elemente sind in ASCIIdoc wiederkehrend und können in
+verschiedenen Kontexten verwendet werden. Die wichtigsten von ihnen
+gehen wir jetzt durch.
+
 TODO Attribut Listen etc
 
 ==== Elemente
 TODO
 
 ==== Anker
-TODO
+Oft möchte man Blöcke, Absätze etc referenzieren um sich später darauf
+zu beziehen. Asciidoc stellt dafür Anker zur Verfügung. Grundlegend sind
+es einfach Identifier (also Namen), welche man in `[[` und `]]` einrahmt
+und vor das entsprechende Element bzw vor den Block stellt.
 
 [[peg_building_blocks]]
 [source, pest]
@@ -515,7 +522,12 @@ fn process_inline_anchor<'a>(
 ====
 
 ==== Attribute
-TODO
+Man kann jedem Element Eigenschaften (Attribute) zuordnen. Diese können
+beispielsweise später verwendet werden um beim rendern bestimmte Styles
+anzuwenden.
+
+Um einem Element Attribute zuzuordnen rahmt man die Liste der Attribute
+in `[` und `]` und stellt sie dem Element bzw Block vorran.
 
 [[peg_building_blocks]]
 [source, pest]
@@ -527,6 +539,22 @@ inline_attribute_list = {
   "[" ~ (attribute ~ ("," ~ attribute)* )? ~ "]"
 }
 
+----
+
+Grundsätzlich gibt es zwei Arten von Attributen: Benannte und
+Unbenannte.
+
+Unbenannte Attribute werden einfach ein oder abgeschaltet. Deshalb
+ist es nicht nötig, ihnen einen Wert zuzuweisen. Wenn sie in der
+Attributliste auftauchen, sind sie automatisch eingeschaltet.
+
+Benannte Attribute können unterschiedliche Werte annehmen. Deshalb
+bekommen sie einen Namen, an den ein Wert übergeben wird, namch dem
+Schema `name=wert`.
+
+[[peg_building_blocks]]
+[source, pest]
+----
 attribute = { named_attribute | attribute_value }
 named_attribute = { identifier ~ "=" ~ attribute_value }
 attribute_value = {
