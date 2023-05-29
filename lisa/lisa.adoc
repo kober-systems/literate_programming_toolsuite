@@ -2493,7 +2493,7 @@ impl LisaWrapper {
         }
 
         let mut out: HashMap<rhai::ImmutableString, rhai::Dynamic> = HashMap::default();
-        out.insert("content".into(), snippet.content.clone().into());
+        out.insert("content".into(), snippet.get_raw_content("\n").into());
         out.insert("attrs".into(), attributes.into());
 
         out.into()
