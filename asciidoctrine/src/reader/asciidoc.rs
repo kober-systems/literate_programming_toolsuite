@@ -282,6 +282,76 @@ fn process_paragraph<'a>(
   base
 }
 
+fn process_inline<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+) -> ElementSpan<'a> {
+  for element in element.into_inner() {
+    match element.as_rule() {
+      Rule::link => {
+        base = process_link(element, base);
+      }
+      Rule::xref => {
+        base = process_xref(element, base);
+      }
+      Rule::monospaced => {
+        base.element = Element::Styled;
+        base.attributes.push(Attribute {
+          key: "style".to_string(),
+          value: AttributeValue::Ref("monospaced"),
+        });
+
+        if let Some(content) = concat_elements(element.clone(), Rule::linechar, "") {
+          base.attributes.push(Attribute {
+            key: "content".to_string(),
+            value: AttributeValue::String(content),
+          });
+        };
+        for subelement in element.into_inner() {
+          match subelement.as_rule() {
+            Rule::inline_anchor => {
+              base = process_inline_anchor(subelement, base);
+            }
+            _ => (),
+          }
+        }
+      }
+      Rule::strong => {
+        base.element = Element::Styled;
+        base.attributes.push(Attribute {
+          key: "style".to_string(),
+          value: AttributeValue::Ref("strong"),
+        });
+
+        if let Some(content) = concat_elements(element, Rule::linechar, "") {
+          base.attributes.push(Attribute {
+            key: "content".to_string(),
+            value: AttributeValue::String(content),
+          });
+        };
+      }
+      Rule::emphasized => {
+        base.element = Element::Styled;
+        base.attributes.push(Attribute {
+          key: "style".to_string(),
+          value: AttributeValue::Ref("em"),
+        });
+
+        if let Some(content) = concat_elements(element, Rule::linechar, "") {
+          base.attributes.push(Attribute {
+            key: "content".to_string(),
+            value: AttributeValue::String(content),
+          });
+        };
+      }
+      _ => {
+        base.element = Element::Error("Not implemented".to_string());
+      }
+    };
+  }
+  base
+}
+
 fn process_link<'a>(
   element: Pair<'a, asciidoc::Rule>,
   mut base: ElementSpan<'a>,
@@ -410,62 +480,6 @@ fn concat_elements<'a>(
   } else {
     None
   }
-}
-
-fn process_inline<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-) -> ElementSpan<'a> {
-  for element in element.into_inner() {
-    match element.as_rule() {
-      Rule::link => {
-        base = process_link(element, base);
-      }
-      Rule::xref => {
-        base = process_xref(element, base);
-      }
-      Rule::monospaced => {
-        base.element = Element::Styled;
-        base.attributes.push(Attribute {
-          key: "style".to_string(),
-          value: AttributeValue::Ref("monospaced"),
-        });
-
-        if let Some(content) = concat_elements(element.clone(), Rule::linechar, "") {
-          base.attributes.push(Attribute {
-            key: "content".to_string(),
-            value: AttributeValue::String(content),
-          });
-        };
-        for subelement in element.into_inner() {
-          match subelement.as_rule() {
-            Rule::inline_anchor => {
-              base = process_inline_anchor(subelement, base);
-            }
-            _ => (),
-          }
-        }
-      }
-      Rule::strong => {
-        base.element = Element::Styled;
-        base.attributes.push(Attribute {
-          key: "style".to_string(),
-          value: AttributeValue::Ref("strong"),
-        });
-
-        if let Some(content) = concat_elements(element, Rule::linechar, "") {
-          base.attributes.push(Attribute {
-            key: "content".to_string(),
-            value: AttributeValue::String(content),
-          });
-        };
-      }
-      _ => {
-        base.element = Element::Error("Not implemented".to_string());
-      }
-    };
-  }
-  base
 }
 
 fn set_span<'a>(element: &Pair<'a, asciidoc::Rule>) -> ElementSpan<'a> {

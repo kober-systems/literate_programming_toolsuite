@@ -240,6 +240,8 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
         out.write_all(b"<code>")?;
       } else if style == "strong" {
         out.write_all(b"<strong>")?;
+      } else if style == "em" {
+        out.write_all(b"<em>")?;
       }
 
       out.write_all(content.as_bytes())?;
@@ -248,6 +250,8 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
         out.write_all(b"</code>")?;
       } else if style == "strong" {
         out.write_all(b"</strong>")?;
+      } else if style == "em" {
+        out.write_all(b"</em>")?;
       };
     }
     _ => {

@@ -168,6 +168,14 @@ inline = {
 }
 other_inline = @{ (!empty_lines ~ !EOI ~ !inline ~ ANY)+ }
 
+strong = ${ "*" ~ (!"*" ~ linechar)+ ~ "*" }
+
+emphasized = ${ "_" ~ (!"_" ~ linechar)+ ~ "_" }
+
+monospaced = ${ inline_anchor* ~ (("+" ~ (!"+" ~ linechar)+ ~ "+") | ("`" ~ (!"`" ~ linechar)+ ~ "`")) }
+
+continuation = { NEWLINE ~ "+" ~ NEWLINE }
+
 link = ${ url ~ inline_attribute_list }
 url = ${proto ~ "://" ~ path}
 proto = ${ ("http" ~ "s"?) |
@@ -180,15 +188,10 @@ xref = !{ "<<" ~ identifier ~ (NEWLINE? ~ "," ~ NEWLINE? ~ word+)? ~ ">>" }
 footnote = { "footnote:" ~ inline_attribute_list }
 footnoteref = { "footnoteref:" ~ inline_attribute_list }
 
-strong = ${ "*" ~ (!"*" ~ linechar)+ ~ "*" }
-emphasized = @{ "_" ~ (!"_" ~ linechar)+ ~ "_" }
-monospaced = ${ inline_anchor* ~ (("+" ~ (!"+" ~ linechar)+ ~ "+") | ("`" ~ (!"`" ~ linechar)+ ~ "`")) }
 quoted = @{ inline_attribute_list ~ "#" ~ (!"#" ~ linechar)+ ~ "#" }
 
 // TODO Damit werden keine Kommentare zu Beginn eines Paragraphen angezeigt
 comment = { NEWLINE ~ "//" ~ (!NEWLINE ~ ANY)* ~ &NEWLINE }
-
-continuation = { NEWLINE ~ "+" ~ NEWLINE }
 
 ////////////////////////////////////////////////////////////////////////////////
 // generics
