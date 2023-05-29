@@ -369,6 +369,7 @@ fn process_image<'a>(
 fn process_delimited_inner<'a>(
   element: Pair<'a, asciidoc::Rule>,
   mut base: ElementSpan<'a>,
+  env: &mut Env,
 ) -> ElementSpan<'a> {
   for element in element.into_inner() {
     match element.as_rule() {
@@ -588,19 +589,19 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> Opti
             base.element = Element::TypedBlock {
               kind: BlockType::Listing,
             };
-            base = process_delimited_inner(subelement, base);
+            base = process_delimited_inner(subelement, base, env);
           }
           Rule::delimited_literal => {
             base.element = Element::TypedBlock {
               kind: BlockType::Listing,
             };
-            base = process_delimited_inner(subelement, base);
+            base = process_delimited_inner(subelement, base, env);
           }
           Rule::delimited_comment => {
             base.element = Element::TypedBlock {
               kind: BlockType::Comment,
             };
-            base = process_delimited_inner(subelement, base);
+            base = process_delimited_inner(subelement, base, env);
           }
           // We just take the attributes at the beginning
           // of the element.
