@@ -75,6 +75,78 @@ This Information is visible by default.
 }
 
 #[test]
+fn atx_headers() -> Result<()> {
+  let content = r#"
+= This is a header
+
+== This is a subheader
+
+=== This is a subsubheader
+
+==== This is a subsubsubheader
+"#;
+  let reader = AsciidocReader::new();
+  let mut opts = options::Opts::parse_from(vec!["--template", "-"].into_iter());
+  opts.template = Some("-".into());
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
+
+  let mut buf = BufWriter::new(Vec::new());
+  let mut writer = HtmlWriter::new();
+  writer.write(ast, &opts, &mut buf)?;
+
+  let output = String::from_utf8(buf.into_inner()?)?;
+  assert_eq!(
+    output,
+    r#"<h1>This is a header</h1>
+<h2 id="_this_is_a_subheader">This is a subheader</h2>
+<h3 id="_this_is_a_subsubheader">This is a subsubheader</h3>
+<h4 id="_this_is_a_subsubsubheader">This is a subsubsubheader</h4>
+"#
+  );
+
+  Ok(())
+}
+
+#[test]
+fn setext_headers() -> Result<()> {
+  let content = r#"
+This is a header
+================
+
+This is a subheader
+-------------------
+
+This is a subsubheader
+~~~~~~~~~~~~~~~~~~~~~~
+
+This is a subsubsubheader
+^^^^^^^^^^^^^^^^^^^^^^^^^
+"#;
+  let reader = AsciidocReader::new();
+  let mut opts = options::Opts::parse_from(vec!["--template", "-"].into_iter());
+  opts.template = Some("-".into());
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
+
+  let mut buf = BufWriter::new(Vec::new());
+  let mut writer = HtmlWriter::new();
+  writer.write(ast, &opts, &mut buf)?;
+
+  let output = String::from_utf8(buf.into_inner()?)?;
+  assert_eq!(
+    output,
+    r#"<h1>This is a header</h1>
+<h2 id="_this_is_a_subheader">This is a subheader</h2>
+<h3 id="_this_is_a_subsubheader">This is a subsubheader</h3>
+<h4 id="_this_is_a_subsubsubheader">This is a subsubsubheader</h4>
+"#
+  );
+
+  Ok(())
+}
+
+#[test]
 fn sourcecode_blocks() -> Result<()> {
   let content = r#"
 [source, bash]
