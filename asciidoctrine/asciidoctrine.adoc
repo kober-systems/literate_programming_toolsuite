@@ -1502,7 +1502,7 @@ impl<T: io::Write> crate::Writer<T> for HtmlWriter {
     let mut buf = io::BufWriter::new(Vec::new());
 
     for element in ast.elements.iter() {
-      write_html(element, &mut buf)?;
+      write_html(element, 0, &mut buf)?;
     }
     let bytes = buf.into_inner()?;
 
@@ -1550,7 +1550,7 @@ fn escape_text(input: &str) -> String {
 }
 
 // TODO Styles etc
-fn write_html<T: io::Write>(input: &ElementSpan, out: &mut T) -> Result<()> {
+fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> Result<()> {
   match &input.element {
     <<format_html_element>>
     Element::Text => {
@@ -1617,9 +1617,10 @@ Element::Title { level } => {
 [source, rust]
 ----
 Element::Paragraph => {
+  out.write_all(&b"  ".repeat(indent))?;
   out.write_all(b"<p>")?;
   for element in input.children.iter() {
-    write_html(element, out)?;
+    write_html(element, indent, out)?;
   }
   out.write_all(b"</p>\n")?;
 }
@@ -1643,7 +1644,7 @@ Element::List => {
         out.write_all(b"</ul>\n")?;
         level = item_level;
       }
-      write_html(element, out)?;
+      write_html(element, indent, out)?;
     }
   }
   out.write_all(b"</ul>\n")?;
@@ -1651,7 +1652,7 @@ Element::List => {
 Element::ListItem(_level) => {
   out.write_all(b"<li>\n")?;
   for element in input.children.iter() {
-    write_html(element, out)?;
+    write_html(element, indent, out)?;
   }
   out.write_all(b"</li>\n")?;
 }
