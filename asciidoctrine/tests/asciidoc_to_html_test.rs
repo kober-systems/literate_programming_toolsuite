@@ -228,6 +228,10 @@ fn sourcecode_blocks() -> Result<()> {
 ----
 echo "hello world!"
 ----
+[source, bash]
+....
+echo "hello world!"
+....
 "#;
   let reader = AsciidocReader::new();
   let mut opts = options::Opts::parse_from(vec!["--template", "-"].into_iter());
@@ -243,6 +247,9 @@ echo "hello world!"
   assert_eq!(
     output,
     r#"<div class="listingblock">
+  <pre>echo "hello world!"</pre>
+</div>
+<div class="listingblock">
   <pre>echo "hello world!"</pre>
 </div>
 "#
