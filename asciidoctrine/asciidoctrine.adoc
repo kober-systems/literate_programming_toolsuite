@@ -315,62 +315,6 @@ fn concat_elements<'a>(
   }
 }
 
-fn process_inline<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-) -> ElementSpan<'a> {
-  for element in element.into_inner() {
-    match element.as_rule() {
-      Rule::link => {
-        base = process_link(element, base);
-      }
-      Rule::xref => {
-        base = process_xref(element, base);
-      }
-      Rule::monospaced => {
-        base.element = Element::Styled;
-        base.attributes.push(Attribute {
-          key: "style".to_string(),
-          value: AttributeValue::Ref("monospaced"),
-        });
-
-        if let Some(content) = concat_elements(element.clone(), Rule::linechar, "") {
-          base.attributes.push(Attribute {
-            key: "content".to_string(),
-            value: AttributeValue::String(content),
-          });
-        };
-        for subelement in element.into_inner() {
-          match subelement.as_rule() {
-            Rule::inline_anchor => {
-              base = process_inline_anchor(subelement, base);
-            }
-            _ => (),
-          }
-        }
-      }
-      Rule::strong => {
-        base.element = Element::Styled;
-        base.attributes.push(Attribute {
-          key: "style".to_string(),
-          value: AttributeValue::Ref("strong"),
-        });
-
-        if let Some(content) = concat_elements(element, Rule::linechar, "") {
-          base.attributes.push(Attribute {
-            key: "content".to_string(),
-            value: AttributeValue::String(content),
-          });
-        };
-      }
-      _ => {
-        base.element = Element::Error("Not implemented".to_string());
-      }
-    };
-  }
-  base
-}
-
 fn set_span<'a>(element: &Pair<'a, asciidoc::Rule>) -> ElementSpan<'a> {
   let (start_line, start_col) = element.as_span().start_pos().line_col();
   let (end_line, end_col) = element.as_span().end_pos().line_col();
@@ -1093,6 +1037,15 @@ Formatierungen werden unterstützt:
 Some text is *bold*.
 ....
 
+[%collapsible]
+====
+[[inline_elements]]
+[source, pest]
+----
+strong = ${ "*" ~ (!"*" ~ linechar)+ ~ "*" }
+----
+====
+
 |
 
 Some text is *bold*.
@@ -1120,6 +1073,16 @@ _Kursiv_
 Some text is _italic_.
 ....
 
+
+[%collapsible]
+====
+[[inline_elements]]
+[source, pest]
+----
+emphasized = ${ "_" ~ (!"_" ~ linechar)+ ~ "_" }
+----
+====
+
 |
 
 Some text is _italic_.
@@ -1146,6 +1109,16 @@ Some text is _italic_.
 Some text is `monospaced`.
 ....
 
+[%collapsible]
+====
+[[inline_elements]]
+[source, pest]
+----
+monospaced = ${ inline_anchor* ~ (("+" ~ (!"+" ~ linechar)+ ~ "+") | ("`" ~ (!"`" ~ linechar)+ ~ "`")) }
+----
+
+====
+
 |
 
 Some text is `monospaced`.
@@ -1163,6 +1136,83 @@ Some text is `monospaced`.
 ====
 
 |====
+
+[%collapsible]
+====
+[[asciidoc_parser_functions]]
+[source, rust]
+----
+fn process_inline<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+) -> ElementSpan<'a> {
+  for element in element.into_inner() {
+    match element.as_rule() {
+      Rule::link => {
+        base = process_link(element, base);
+      }
+      Rule::xref => {
+        base = process_xref(element, base);
+      }
+      Rule::monospaced => {
+        base.element = Element::Styled;
+        base.attributes.push(Attribute {
+          key: "style".to_string(),
+          value: AttributeValue::Ref("monospaced"),
+        });
+
+        if let Some(content) = concat_elements(element.clone(), Rule::linechar, "") {
+          base.attributes.push(Attribute {
+            key: "content".to_string(),
+            value: AttributeValue::String(content),
+          });
+        };
+        for subelement in element.into_inner() {
+          match subelement.as_rule() {
+            Rule::inline_anchor => {
+              base = process_inline_anchor(subelement, base);
+            }
+            _ => (),
+          }
+        }
+      }
+      Rule::strong => {
+        base.element = Element::Styled;
+        base.attributes.push(Attribute {
+          key: "style".to_string(),
+          value: AttributeValue::Ref("strong"),
+        });
+
+        if let Some(content) = concat_elements(element, Rule::linechar, "") {
+          base.attributes.push(Attribute {
+            key: "content".to_string(),
+            value: AttributeValue::String(content),
+          });
+        };
+      }
+      Rule::emphasized => {
+        base.element = Element::Styled;
+        base.attributes.push(Attribute {
+          key: "style".to_string(),
+          value: AttributeValue::Ref("em"),
+        });
+
+        if let Some(content) = concat_elements(element, Rule::linechar, "") {
+          base.attributes.push(Attribute {
+            key: "content".to_string(),
+            value: AttributeValue::String(content),
+          });
+        };
+      }
+      _ => {
+        base.element = Element::Error("Not implemented".to_string());
+      }
+    };
+  }
+  base
+}
+----
+====
 
 == Listen
 In Texten bieten sich Listen für alle Arten von Aufzählungen an.
@@ -1211,6 +1261,12 @@ Rule::other_list_inline => {
   Some(base)
 }
 Rule::continuation => None,
+----
+
+[[inline_elements]]
+[source, pest]
+----
+continuation = { NEWLINE ~ "+" ~ NEWLINE }
 ----
 
 ====
@@ -1401,15 +1457,7 @@ TODO
 footnote = { "footnote:" ~ inline_attribute_list }
 footnoteref = { "footnoteref:" ~ inline_attribute_list }
 
-strong = ${ "*" ~ (!"*" ~ linechar)+ ~ "*" }
-emphasized = @{ "_" ~ (!"_" ~ linechar)+ ~ "_" }
-monospaced = ${ inline_anchor* ~ (("+" ~ (!"+" ~ linechar)+ ~ "+") | ("`" ~ (!"`" ~ linechar)+ ~ "`")) }
 quoted = @{ inline_attribute_list ~ "#" ~ (!"#" ~ linechar)+ ~ "#" }
-
-// TODO Damit werden keine Kommentare zu Beginn eines Paragraphen angezeigt
-comment = { NEWLINE ~ "//" ~ (!NEWLINE ~ ANY)* ~ &NEWLINE }
-
-continuation = { NEWLINE ~ "+" ~ NEWLINE }
 ----
 
 == Bilder
@@ -1497,6 +1545,13 @@ Dokument für den Leser erscheint. Asciidoc biete dazu Kommentare an.
 
 [%collapsible]
 ====
+
+[[inline_elements]]
+[source, pest]
+----
+// TODO Damit werden keine Kommentare zu Beginn eines Paragraphen angezeigt
+comment = { NEWLINE ~ "//" ~ (!NEWLINE ~ ANY)* ~ &NEWLINE }
+----
 
 [[blocks]]
 [source, pest]
