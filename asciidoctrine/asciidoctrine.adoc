@@ -1194,12 +1194,19 @@ TODO
 Ein sehr häufig genutztes Element sind abgetrennte Blöcke. Sie erlauben
 einen Text in einem speziellen Style hervorzuheben.
 
+[%collapsible]
+====
+
 [[blocks]]
 [source, pest]
 ----
 attribute_entry = { ":" ~ identifier ~ ":" ~ identifier? ~ &NEWLINE }
 attribute_entry_block = { attribute_entry ~ NEWLINE }
+----
 
+[[blocks]]
+[source, pest]
+----
 delimited_block = {
   (anchor | attribute_list | blocktitle)* ~
   (
