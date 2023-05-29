@@ -446,7 +446,6 @@ block = {
   // verse |
   image_block |
   include_macro |
-  delimited_block |
   list |
   attribute_entry_block |
   // Title is nearly the last because it could prevent correct match of others
@@ -635,7 +634,8 @@ fn process_attribute_list<'a>(
 ====
 
 ==== Blocktitel (Elementtitel)
-TODO
+Blöcke haben oft ihre eigenen Titel. In Asciidoc werden sie durch eine
+Zeile vor dem Block gekennzeichnet, welche mit einem `.` beginnt.
 
 [[peg_building_blocks]]
 [source, pest]
@@ -658,6 +658,118 @@ fn process_blocktitle<'a>(
       Rule::line => {
         base.attributes.push(Attribute {
           key: "title".to_string(), // TODO
+          value: AttributeValue::Ref(element.as_str()),
+        });
+      }
+      _ => (),
+    };
+  }
+  base
+}
+----
+
+====
+
+==== Abgetrennte Blöcke
+Ein sehr häufig genutztes Element sind abgetrennte Blöcke. Sie erlauben
+einen Text in einem speziellen Style hervorzuheben.
+
+Der generelle Aufbau ist folgender:
+
+[[delimited_block_template]]
+[source, pest]
+----
+delimited_<<blocktype>> = {
+  PUSH("<<delimiter>>"{4,}) ~ NEWLINE ~
+  delimited_inner ~
+  NEWLINE ~ POP ~ &(NEWLINE | EOI)
+}
+----
+
+[%collapsible]
+====
+
+[[block_entries]]
+[source, pest]
+----
+delimited_block |
+----
+
+[[blocks]]
+[source, pest]
+----
+delimited_block = {
+  (anchor | attribute_list | blocktitle)* ~
+  (
+    //delimited_admonition |
+    delimited_comment |
+    delimited_example |
+    //delimited_fenced |
+    //delimited_listing |
+    delimited_literal |
+    //delimited_open |
+    //delimited_passthrough |
+    //delimited_quote |
+    //delimited_sidebar |
+    delimited_source |
+    //delimited_stem |
+    //delimited_table |
+    delimited_verse
+  )
+}
+
+delimited_inner = @{ (!(NEWLINE ~ PEEK) ~ ANY)* }
+----
+
+[[asciidoc_element_rules]]
+[source, rust]
+----
+Rule::delimited_block => {
+  for subelement in element.into_inner() {
+    match subelement.as_rule() {
+      Rule::anchor => {
+        base = process_anchor(subelement, base);
+      }
+      Rule::attribute_list => {
+        base = process_attribute_list(subelement, base);
+      }
+      Rule::blocktitle => {
+        base = process_blocktitle(subelement, base);
+      }
+      <<delimited_block_rules>>
+      // We just take the attributes at the beginning
+      // of the element.
+      _ => {
+        break;
+      } // TODO improve matching
+    }
+  }
+  Some(base)
+}
+----
+
+[[asciidoc_parser_functions]]
+[source, rust]
+----
+fn process_delimited_inner<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+  env: &mut Env,
+) -> ElementSpan<'a> {
+  for element in element.into_inner() {
+    match element.as_rule() {
+      Rule::delimited_inner => {
+        if let Element::TypedBlock { kind: BlockType::Example } = base.element {
+          let ast = AsciidocParser::parse(Rule::asciidoc, element.as_str()).unwrap();
+
+          for element in ast {
+            if let Some(e) = process_element(element, env) {
+              base.children.push(e);
+            }
+          }
+        }
+        base.attributes.push(Attribute {
+          key: "content".to_string(), // TODO
           value: AttributeValue::Ref(element.as_str()),
         });
       }
@@ -1218,21 +1330,10 @@ fn process_image<'a>(
 == Tabellen
 TODO
 
-== Abgetrennte Blöcke
-Ein sehr häufig genutztes Element sind abgetrennte Blöcke. Sie erlauben
-einen Text in einem speziellen Style hervorzuheben.
-
-Der generelle Aufbau ist folgender:
-
-[[delimited_block_template]]
-[source, pest]
-----
-delimited_<<blocktype>> = {
-  PUSH("<<delimiter>>"{4,}) ~ NEWLINE ~
-  delimited_inner ~
-  NEWLINE ~ POP ~ &(NEWLINE | EOI)
-}
-----
+== Kommentare
+Manchmal möchte man nur einen Kommentar für den Author eines Textes
+(also meistens für sich selbst) festhalten, ohne dass dieser am Ende im
+Dokument für den Leser erscheint. Asciidoc biete dazu Kommentare an.
 
 [%collapsible]
 ====
@@ -1240,39 +1341,38 @@ delimited_<<blocktype>> = {
 [[blocks]]
 [source, pest]
 ----
-attribute_entry = { ":" ~ identifier ~ ":" ~ identifier? ~ &NEWLINE }
-attribute_entry_block = { attribute_entry ~ NEWLINE }
+<<delimited_block_template|
+    blocktype := "comment",
+    delimiter := "/" >>
 ----
+
+[[delimited_block_rules]]
+[source, rust]
+----
+Rule::delimited_comment => {
+  base.element = Element::TypedBlock {
+    kind: BlockType::Comment,
+  };
+  base = process_delimited_inner(subelement, base, env);
+}
+----
+
+====
+
+== Quellcode Blöcke
+Gerade Markup-Formate wie Asciidoc bieten sich an, um Quellcode Blöcke
+einzubinden, da sie -- genauso wie Quelltext -- in reinen Textdateien
+abgespeichert werden.
+
+Sie können als abgetrennte Blöcke mit `-` oder `.` gekennzeichnet
+werden.
+
+[%collapsible]
+====
 
 [[blocks]]
 [source, pest]
 ----
-delimited_block = {
-  (anchor | attribute_list | blocktitle)* ~
-  (
-    //delimited_admonition |
-    delimited_comment |
-    delimited_example |
-    //delimited_fenced |
-    //delimited_listing |
-    delimited_literal |
-    //delimited_open |
-    //delimited_passthrough |
-    //delimited_quote |
-    //delimited_sidebar |
-    delimited_source |
-    //delimited_stem |
-    //delimited_table |
-    delimited_verse
-  )
-}
-
-delimited_inner = @{ (!(NEWLINE ~ PEEK) ~ ANY)* }
-
-<<delimited_block_template|
-    blocktype := "comment",
-    delimiter := "/" >>
-
 <<delimited_block_template|
     blocktype := "literal",
     delimiter := "." >>
@@ -1280,7 +1380,73 @@ delimited_inner = @{ (!(NEWLINE ~ PEEK) ~ ANY)* }
 <<delimited_block_template|
     blocktype := "source",
     delimiter := "-" >>
+----
 
+[[delimited_block_rules]]
+[source, rust]
+----
+Rule::delimited_source => {
+  base.element = Element::TypedBlock {
+    kind: BlockType::Listing,
+  };
+  base = process_delimited_inner(subelement, base, env);
+}
+Rule::delimited_literal => {
+  base.element = Element::TypedBlock {
+    kind: BlockType::Listing,
+  };
+  base = process_delimited_inner(subelement, base, env);
+}
+----
+
+====
+
+[cols="a,a"]
+|====
+
+[[unittest_sourcecode_block_input]]
+[source, asciidoc, lisa-raw]
+[output="sourceblock_html_output", name="sourcecode_blocks"]
+....
+[source, bash]
+----
+echo "hello world!"
+----
+....
+
+|
+
+[source, bash]
+----
+echo "hello world!"
+----
+
+[%collapsible]
+.Html Output
+====
+
+[[sourceblock_html_output]]
+[source, html]
+----
+<div class="listingblock">
+  <pre>echo "hello world!"</pre>
+</div>
+----
+====
+
+|====
+
+== Beispiel Blöcke
+Manchmal möchte man Inhalte als Beispiel kennzeichnen. Um das zu tun,
+packt man den entsprechenden Inhalt in einen abgetrennten Block aus `=`
+Zeichen.
+
+[%collapsible]
+====
+
+[[blocks]]
+[source, pest]
+----
 <<delimited_block_template|
     blocktype := "example",
     delimiter := "=" >>
@@ -1288,93 +1454,21 @@ delimited_inner = @{ (!(NEWLINE ~ PEEK) ~ ANY)* }
 delimited_verse = { "verse" } // TODO
 ----
 
-[[asciidoc_element_rules]]
+[[delimited_block_rules]]
 [source, rust]
 ----
-Rule::delimited_block => {
-  for subelement in element.into_inner() {
-    match subelement.as_rule() {
-      Rule::anchor => {
-        base = process_anchor(subelement, base);
-      }
-      Rule::attribute_list => {
-        base = process_attribute_list(subelement, base);
-      }
-      Rule::blocktitle => {
-        base = process_blocktitle(subelement, base);
-      }
-      // TODO wir müssen die anderen delimitets verarbeiten
-      Rule::delimited_source => {
-        base.element = Element::TypedBlock {
-          kind: BlockType::Listing,
-        };
-        base = process_delimited_inner(subelement, base, env);
-      }
-      Rule::delimited_literal => {
-        base.element = Element::TypedBlock {
-          kind: BlockType::Listing,
-        };
-        base = process_delimited_inner(subelement, base, env);
-      }
-      Rule::delimited_comment => {
-        base.element = Element::TypedBlock {
-          kind: BlockType::Comment,
-        };
-        base = process_delimited_inner(subelement, base, env);
-      }
-      Rule::delimited_example => {
-        base.element = Element::TypedBlock {
-          kind: BlockType::Example,
-        };
-        base = process_delimited_inner(subelement, base, env);
-      }
-      // We just take the attributes at the beginning
-      // of the element.
-      _ => {
-        break;
-      } // TODO improve matching
-    }
-  }
-  Some(base)
-}
-----
-
-[[asciidoc_parser_functions]]
-[source, rust]
-----
-fn process_delimited_inner<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-  env: &mut Env,
-) -> ElementSpan<'a> {
-  for element in element.into_inner() {
-    match element.as_rule() {
-      Rule::delimited_inner => {
-        if let Element::TypedBlock { kind: BlockType::Example } = base.element {
-          let ast = AsciidocParser::parse(Rule::asciidoc, element.as_str()).unwrap();
-
-          for element in ast {
-            if let Some(e) = process_element(element, env) {
-              base.children.push(e);
-            }
-          }
-        }
-        base.attributes.push(Attribute {
-          key: "content".to_string(), // TODO
-          value: AttributeValue::Ref(element.as_str()),
-        });
-      }
-      _ => (),
-    };
-  }
-  base
+Rule::delimited_example => {
+  base.element = Element::TypedBlock {
+    kind: BlockType::Example,
+  };
+  base = process_delimited_inner(subelement, base, env);
 }
 ----
 
 ====
 
 === Einklappbare Blöcke
-Einklappbare Blöcke sind nuetzlich, wenn man ergaenzende Informationen
+Einklappbare Blöcke sind nützlich, wenn man ergaenzende Informationen
 nur bei Bedarf anzeigen möchte. So kann man die Informationen einbinden,
 ohne dass der normale Leser überfordert wird.
 
@@ -1778,7 +1872,7 @@ Element::TypedBlock { kind } => {
   };
 
   if kind == &BlockType::Listing {
-    out.write_all(b"<pre>")?;
+    out.write_all(b"  <pre>")?;
   }
 
   let content = input.get_attribute("content").unwrap_or(input.content);
