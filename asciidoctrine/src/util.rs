@@ -1,7 +1,7 @@
-use std::fs;
-use std::path::Path;
-use std::io::{self, ErrorKind, Write};
 use std::collections::HashMap;
+use std::fs;
+use std::io::{self, ErrorKind, Write};
+use std::path::Path;
 use std::process::{Command, Stdio};
 
 pub trait Environment {
