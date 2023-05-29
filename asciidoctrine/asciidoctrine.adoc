@@ -1702,7 +1702,9 @@ Element::TypedBlock { kind } => {
     // TODO provide option to print comments
     return Ok(());
   }
-  if kind == &BlockType::Example {
+  if kind == &BlockType::Example &&
+      input.positional_attributes.iter().find(|&attr| attr.as_str() == "%collapsible").is_some()
+  {
     out.write_all(b"<details>\n")?;
 
     let title = input.get_attribute("title").unwrap_or("Details");
