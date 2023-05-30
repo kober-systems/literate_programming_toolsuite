@@ -1,5 +1,5 @@
 = Dolmetscher
-Benjamin Kober <k.o.b.e.r@web.de>
+Benjamin Kober <bk@kober-systems.com>
 :toc: left
 
 Übersetzungen von veränderlichen Dokumenten koordinieren.
