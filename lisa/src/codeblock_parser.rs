@@ -9,7 +9,7 @@ pub struct CodeblockParser;
 #[derive(Debug, Clone)]
 enum ReferenceParam {
   Value(String),
-  Reference(String),
+  Reference(String, HashMap<String, ReferenceParam>),
 }
 
 fn merge_dependencies_inner<'a>(
@@ -23,107 +23,35 @@ fn merge_dependencies_inner<'a>(
   for element in ast {
     match element.as_rule() {
       Rule::reference => {
+        let key = element.as_str().trim_start();
         let identifier = extract_identifier(&element);
-        let join_str = extract_join_str(&element)
-          .replace("\\n", "\n");
+        let join_str = extract_join_str(&element).replace("\\n", "\n");
 
-        match snippet_params.get(identifier) {
-          Some(param) => match param {
-            ReferenceParam::Value(param) => output.push_str(&param),
-            ReferenceParam::Reference(param) => {
-              match snippets.get(&param) {
-                Some(snippet) => {
-                  let input = snippet.get_raw_content(&join_str);
-
-                  let content = if snippet.raw {
-                    input
-                  } else {
-                    let key = element.as_str().trim_start();
-                    let ast = CodeblockParser::parse(Rule::codeblock, &input).expect("couldn't parse input.");
-                    let snippet_params = extract_snippet_params(snippet_params.clone(), key);
-
-                    merge_dependencies_inner(ast, snippets, snippet_params, key)
-                  };
-                  output.push_str(&content);
-                }
-                None => {
-                  warn!("Couldn't find snippet dependency `{}` for `{}`", identifier, key);
-                }
-              }
-            }
-          }
-          None => match snippets.get(identifier) {
-            Some(snippet) => {
-              let input = snippet.get_raw_content(&join_str);
-
-              let content = if snippet.raw {
-                input
-              } else {
-                let key = element.as_str().trim_start();
-                let ast = CodeblockParser::parse(Rule::codeblock, &input).expect("couldn't parse input.");
-                let snippet_params = extract_snippet_params(snippet_params.clone(), key);
-
-                merge_dependencies_inner(ast, snippets, snippet_params, key)
-              };
-              output.push_str(&content);
-            }
-            None => {
-              warn!("Couldn't find snippet dependency `{}` for `{}`", identifier, key);
-            }
-          }
-        }
+        substitude_params(
+          identifier,
+          snippets,
+          snippet_params.clone(),
+          &join_str,
+          key,
+          &mut output,
+        );
       }
       Rule::indented_reference => {
+        let mut indented_output = String::new();
         let indentation = extract_indentation(&element);
+        let key = element.as_str().trim_start();
         let identifier = extract_identifier(&element);
-        let join_str = extract_join_str(&element)
-          .replace("\\n", "\n");
+        let join_str = extract_join_str(&element).replace("\\n", "\n");
 
-        match snippet_params.get(identifier) {
-          Some(param) => match param {
-            ReferenceParam::Value(param) => output.push_str(&param),
-            ReferenceParam::Reference(param) => {
-              match snippets.get(&param) {
-                Some(snippet) => {
-                  let input = snippet.get_raw_content(&join_str);
-
-                  let content = if snippet.raw {
-                    input
-                  } else {
-                    let key = element.as_str().trim_start();
-                    let ast = CodeblockParser::parse(Rule::codeblock, &input).expect("couldn't parse input.");
-                    let snippet_params = extract_snippet_params(snippet_params.clone(), key);
-
-                    merge_dependencies_inner(ast, snippets, snippet_params, key)
-                  };
-                  indent(&content, indentation, &mut output);
-                }
-                None => {
-                  warn!("Couldn't find snippet dependency `{}` for `{}`", identifier, key);
-                }
-              }
-            }
-          }
-          None => match snippets.get(identifier) {
-            Some(snippet) => {
-              let input = snippet.get_raw_content(&join_str);
-
-              let content = if snippet.raw {
-                input
-              } else {
-                let key = element.as_str().trim_start();
-                let ast = CodeblockParser::parse(Rule::codeblock, &input).expect("couldn't parse input.");
-                let snippet_params = extract_snippet_params(snippet_params.clone(), key);
-
-                merge_dependencies_inner(ast, snippets, snippet_params, key)
-              };
-              indent(&content, indentation, &mut output);
-            }
-            None => {
-              warn!("Couldn't find snippet dependency `{}` for `{}`", identifier, key);
-            }
-          }
-        }
+        substitude_params(
+          identifier,
+          snippets,
+          snippet_params.clone(),
+          &join_str,
+          key,
+          &mut indented_output,
+        );
+        indent(&indented_output, indentation, &mut output);
       }
       Rule::code => {
         output.push_str(element.as_str());
@@ -132,6 +60,61 @@ fn merge_dependencies_inner<'a>(
     }
   }
   output
+}
+
+fn substitude_params(
+  identifier: &str,
+  snippets: &SnippetDB,
+  snippet_params: HashMap<String, ReferenceParam>,
+  join_str: &str,
+  key: &str,
+  output: &mut String,
+) {
+  match snippet_params.get(identifier) {
+    Some(param) => match param {
+      ReferenceParam::Value(param) => output.push_str(&param),
+      ReferenceParam::Reference(param, subparams) => {
+
+        if param != identifier {
+          substitude_params(
+            &param,
+            snippets,
+            snippet_params.clone(),
+            join_str,
+            key,
+            output,
+          );
+        } else {
+          warn!(
+            "Self referencing snippet dependency `{}` for `{}`",
+            identifier, key
+          );
+        }
+      }
+    }
+    None => match snippets.get(identifier) {
+      Some(snippet) => {
+        let input = snippet.get_raw_content(&join_str);
+
+        let content = if snippet.raw {
+          input
+        } else {
+          let ast = CodeblockParser::parse(Rule::codeblock, &input).expect("couldn't parse input.");
+
+          let snippet_params = extract_snippet_params(snippet_params, key);
+
+          merge_dependencies_inner(ast, snippets, snippet_params, key)
+        };
+        output.push_str(&content);
+      }
+      None => {
+          warn!(
+            "Couldn't find snippet dependency `{}` for `{}`",
+            identifier, key
+          );
+      }
+    }
+  }
 }
 
 fn extract_identifier<'a>(element: &pest::iterators::Pair<'a, codeblock_parser::Rule>) -> &'a str {
@@ -288,8 +271,7 @@ fn extract_snippet_params<'a>(
           Rule::reference => match snippet_params.remove(&identifier) {
             Some(param) => Some(param),
             None => {
-                Some(ReferenceParam::Reference(extract_identifier(&element).to_string()))
-              }
+              Some(ReferenceParam::Reference(extract_identifier(&element).to_string(), HashMap::default()))
             }
           },
           _ => None,
