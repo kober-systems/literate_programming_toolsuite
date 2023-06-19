@@ -1,5 +1,5 @@
 = Lisa - LIterate Scripting for Asciidoc
-Benjamin Kober <k.o.b.e.r@web.de>
+Benjamin Kober <benko@kober-systems.com>
 :toc: left
 
 Ein literate programming Werkzeug.
