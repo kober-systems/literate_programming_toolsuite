@@ -1801,7 +1801,7 @@ value = @{ ( !"\"" ~ ANY | "\\\"")* }
 #[derive(Debug, Clone)]
 enum ReferenceParam {
   Value(String),
-  Reference(String),
+  Reference(String, HashMap<String, ReferenceParam>),
 }
 ----
 
@@ -1901,9 +1901,11 @@ fn merge_dependencies_inner<'a>(
         <<get_modified_snippet>>
       }
       Rule::indented_reference => {
+        let mut indented_output = String::new();
         let indentation = extract_indentation(&element);
         <<get_modified_snippet|
-            substitute_reference_with_content:=<<substitute_indented_reference_with_content>>>>
+            output_variable := <<indented_output>>>>
+        indent(&indented_output, indentation, &mut output); // <2>
       }
       Rule::code => {
         output.push_str(element.as_str());
@@ -1914,80 +1916,109 @@ fn merge_dependencies_inner<'a>(
   output
 }
 ----
+<2> Bei eingerückten Referenzen muss zusätzlich jede Zeile des Inhalts
+    eingerückt werden. Deswegen wird statt [[output_variable]]`output`
+    zunächst [[indented_output]]`indented_output` verwendet.
+
+[[get_modified_snippet]]
+[source, rust]
+----
+let key = element.as_str().trim_start();
+let identifier = extract_identifier(&element);
+let join_str = extract_join_str(&element).replace("\\n", "\n");
+
+substitude_params(
+  identifier,
+  snippets,
+  snippet_params.clone(),
+  &join_str,
+  key,
+  &mut <<output_variable>>,
+);
+----
 
 Das einsetzen der Snippets läuft immer etwa gleich ab: Entweder es
 gibt einen Parameter welcher ersetzt werden muss oder man ersetzt die
 Referenzen durch Snippets aus der Datenbank.
 
-[[get_modified_snippet]]
+[[codeblock_parser_functions]]
 [source, rust]
 ----
-let identifier = extract_identifier(&element);
-let join_str = extract_join_str(&element)
-  .replace("\\n", "\n");
-
-match snippet_params.get(identifier) {
-  Some(param) => match param {
-    ReferenceParam::Value(param) => output.push_str(&param),
-    ReferenceParam::Reference(param) => {
-      match snippets.get(&param) {
-        Some(snippet) => {
-          let input = snippet.get_raw_content(&join_str);
-
-          let content = if snippet.raw {
-            input
-          } else {
-            let key = element.as_str().trim_start();
-            let ast = CodeblockParser::parse(Rule::codeblock, &input).expect("couldn't parse input.");
-            let snippet_params = extract_snippet_params(snippet_params.clone(), key);
-
-            merge_dependencies_inner(ast, snippets, snippet_params, key)
-          };
-          <<substitute_reference_with_content>>
-        }
-        None => {
-          warn!("Couldn't find snippet dependency `{}` for `{}`", identifier, key);
-        }
+fn substitude_params(
+  identifier: &str,
+  snippets: &SnippetDB,
+  snippet_params: HashMap<String, ReferenceParam>,
+  join_str: &str,
+  key: &str,
+  output: &mut String,
+) {
+  match snippet_params.get(identifier) {
+    Some(param) => match param {
+      ReferenceParam::Value(param) => output.push_str(&param),
+      ReferenceParam::Reference(param, subparams) => {
+        <<use_snippet_parameter>>
       }
     }
-  }
-  None => match snippets.get(identifier) {
-    Some(snippet) => {
-      let input = snippet.get_raw_content(&join_str);
-
-      let content = if snippet.raw {
-        input
-      } else {
-        let key = element.as_str().trim_start();
-        let ast = CodeblockParser::parse(Rule::codeblock, &input).expect("couldn't parse input.");
-        let snippet_params = extract_snippet_params(snippet_params.clone(), key);
-
-        merge_dependencies_inner(ast, snippets, snippet_params, key)
-      };
-      <<substitute_reference_with_content>>
-    }
-    None => {
-      warn!("Couldn't find snippet dependency `{}` for `{}`", identifier, key);
+    None => match snippets.get(identifier) {
+      <<use_snippet_from_database>>
     }
   }
 }
 ----
 
-Bei normalen Referenzen kann der Inhalt einfach ersetzt werden.
+Wenn es einen Parameter gibt und der Parameter eine Referenz ist,
+versuchen wir diese Referenz herauszusuchen. Das ist im Grunde die
+gleiche Prozedur die wir bis jetzt auch schon angewendet haben. Die
+Funktion kann also sich selbst aufrufen.
 
-[[substitute_reference_with_content]]
+Allerdings müssen wir sicher gehen, dass der Name des Parameters nicht
+der gleiche ist, wie die Referenz. Ansonsten würde sich die Funktion
+endlos selbst aufrufen.
+
+[[use_snippet_parameter]]
 [source, rust]
 ----
-output.push_str(&content);
+<<insert_subparams>>
+if param != identifier {
+  substitude_params(
+    &param,
+    snippets,
+    snippet_params.clone(),
+    join_str,
+    key,
+    output,
+  );
+} else {
+  warn!(
+    "Self referencing snippet dependency `{}` for `{}`",
+    identifier, key
+  );
+}
 ----
 
-Bei eingerückten Referenzen muss zusätzlich jede Zeile des Inhalts
-eingerückt werden.
-
-[[substitute_indented_reference_with_content]]
+[[use_snippet_from_database]]
 [source, rust]
 ----
-indent(&content, indentation, &mut output);
+Some(snippet) => {
+  let input = snippet.get_raw_content(&join_str);
+
+  let content = if snippet.raw {
+    input
+  } else {
+    let ast = CodeblockParser::parse(Rule::codeblock, &input).expect("couldn't parse input.");
+
+    let snippet_params = extract_snippet_params(snippet_params, key);
+
+    merge_dependencies_inner(ast, snippets, snippet_params, key)
+  };
+  output.push_str(&content);
+}
+None => {
+    warn!(
+      "Couldn't find snippet dependency `{}` for `{}`",
+      identifier, key
+    );
+}
 ----
 
 [[codeblock_parser_functions]]
@@ -2152,12 +2183,12 @@ fn extract_snippet_params<'a>(
         })
         .map(|element| match element.as_rule() {
           Rule::value => {
-            Some(ReferenceParam::Value(element.as_str().to_string())),
+            Some(ReferenceParam::Value(element.as_str().to_string()))
           }
           Rule::reference => match snippet_params.remove(&identifier) {
             Some(param) => Some(param),
             None => {
-              Some(ReferenceParam::Reference(extract_identifier(&element).to_string()))
+              Some(ReferenceParam::Reference(extract_identifier(&element).to_string(), HashMap::default()))
             }
           },
           _ => None,
