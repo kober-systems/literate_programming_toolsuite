@@ -157,31 +157,29 @@ fn extract_identifier<'a>(element: &pest::iterators::Pair<'a, codeblock_parser::
 fn extract_join_str<'a>(element: &pest::iterators::Pair<'a, codeblock_parser::Rule>) -> &'a str {
   match element.as_rule() {
     Rule::reference => {
-      match element.clone().into_inner()
-        .find(|element| {
-          match element.as_rule() {
-            Rule::attributes => true,
-            _ => false
-          }
+      match element
+        .clone()
+        .into_inner()
+        .find(|element| match element.as_rule() {
+          Rule::attributes => true,
+          _ => false,
         }) {
-        Some(element) => {
-          extract_join_str(&element)
-        }
-        None => "\n"
+        Some(element) => extract_join_str(&element),
+        None => "\n",
       }
     }
     Rule::attributes => {
-      match element.clone().into_inner()
-        .find(|element| {
-          match element.as_rule() {
-            Rule::attribute => {
-              let mut attribute = element.clone().into_inner();
-              let key = attribute.next().unwrap();
+      match element
+        .clone()
+        .into_inner()
+        .find(|element| match element.as_rule() {
+          Rule::attribute => {
+            let mut attribute = element.clone().into_inner();
+            let key = attribute.next().unwrap();
 
-              key.as_str() == "join"
-            },
-            _ => false
+            key.as_str() == "join"
           }
+          _ => false,
         }) {
         Some(element) => {
           let mut attribute = element.clone().into_inner();
@@ -190,21 +188,19 @@ fn extract_join_str<'a>(element: &pest::iterators::Pair<'a, codeblock_parser::Ru
 
           value.as_str()
         }
-        None => "\n"
+        None => "\n",
       }
     }
     Rule::indented_reference => {
-      match element.clone().into_inner()
-        .find(|element| {
-          match element.as_rule() {
-            Rule::reference => true,
-            _ => false,
-          }
+      match element
+        .clone()
+        .into_inner()
+        .find(|element| match element.as_rule() {
+          Rule::reference => true,
+          _ => false,
         }) {
-        Some(element) => {
-          extract_join_str(&element)
-        }
-        None => "\n"
+        Some(element) => extract_join_str(&element),
+        None => "\n",
       }
     }
     _ => "\n",
@@ -241,40 +237,34 @@ fn extract_snippet_params<'a>(
   let mut new_params = HashMap::default();
   let ast = CodeblockParser::parse(Rule::codeblock, &param).expect("couldn't parse input.");
 
-  let ref_iter = ast
-    .clone()
-    .filter(|element| match element.as_rule() {
-      Rule::reference => true,
-      _ => false
-    });
+  let ref_iter = ast.clone().filter(|element| match element.as_rule() {
+    Rule::reference => true,
+    _ => false,
+  });
   let indent_ref_iter = ast
     .clone()
     .filter(|element| match element.as_rule() {
       Rule::indented_reference => true,
-      _ => false
+      _ => false,
     })
     .flat_map(|element| element.clone().into_inner())
     .filter(|element| match element.as_rule() {
       Rule::reference => true,
-      _ => false
+      _ => false,
     });
 
-  for element in ref_iter
-    .chain(indent_ref_iter)
-  {
+  for element in ref_iter.chain(indent_ref_iter) {
     for element in element
       .clone()
       .into_inner()
-      .filter(|element| {
-        match element.as_rule() {
-          Rule::attributes => true,
-          _ => false
-        }
+      .filter(|element| match element.as_rule() {
+        Rule::attributes => true,
+        _ => false,
       })
       .flat_map(|element| element.clone().into_inner())
       .filter(|element| match element.as_rule() {
         Rule::attribute_param => true,
-        _ => false
+        _ => false,
       })
     {
       let identifier = element
@@ -282,7 +272,7 @@ fn extract_snippet_params<'a>(
         .into_inner()
         .find(|element| match element.as_rule() {
           Rule::identifier => true,
-          _ => false
+          _ => false,
         })
         .map(|element| element.as_str().to_string())
         .unwrap();
@@ -291,20 +281,18 @@ fn extract_snippet_params<'a>(
         .find(|element| match element.as_rule() {
           Rule::value => true,
           Rule::reference => true,
-          _ => false
+          _ => false,
         })
         .map(|element| match element.as_rule() {
           Rule::value => Some(ReferenceParam::Value(element.as_str().to_string())),
-          Rule::reference => {
-            match snippet_params.remove(&identifier) {
-              Some(param) => Some(param),
-              None => {
+          Rule::reference => match snippet_params.remove(&identifier) {
+            Some(param) => Some(param),
+            None => {
                 Some(ReferenceParam::Reference(extract_identifier(&element).to_string()))
               }
             }
-
           },
-          _ => None
+          _ => None,
         })
         .unwrap();
 
