@@ -622,7 +622,7 @@ print("\n");
 #[test]
 fn snippets_with_params() -> Result<()> {
   let content = r#"
-There is a function we want to use in different contexts.
+There is a snippet we want to use in different contexts.
 
 [[test_condition]]
 [source, sh]
@@ -669,6 +669,54 @@ and exit code [[custom_exit_code]]`42`.
                  exit_code:=<<custom_exit_code>>>>
 ----
 
+What about more deeply nested snippets? Let's say we have another
+condition where we want something to be done when it is met instead of
+finishing the program.
+
+[[process_condition]]
+[source, sh]
+----
+if [[ <<condition>> ]] then
+  echo "<<info_message| condition:=<<condition>> >>"
+  <<do_something>>
+fi
+----
+
+As the default info we put out
+[[info_message]]`the condition <<condition>> was met` and call a
+function [[do_something]]`myfunc($1)`.
+
+[[checks]]
+[source, sh]
+----
+<<process_condition| condition:="-f $1">>
+----
+
+But now suppose we want to process a certain function if `$2` exists but
+when [[inner_condition]]`-f $1` matches too we want to do something additionally.
+
+In this case we have to nest our snippets at a deeper level.
+
+[[checks]]
+[source, sh]
+----
+<<process_condition|condition:="-f $2",
+    do_something := <<deep_nested_snippet|
+      inner_do_something := "nestedfunc($1, $2)"
+      >>
+    >>
+----
+
+[[deep_nested_snippet]]
+[source, sh]
+----
+<<process_condition|
+    condition:="test_default_condition($2)" >>
+<<process_condition|
+    condition:=<<inner_condition>>,
+    do_something:=<<inner_do_something>> >>
+----
+
 Now we put all of these conditions at the beginning of our script.
 
 [source, sh, save]
@@ -704,6 +752,21 @@ fi
 if [[ -f nested_params.txt ]] then
   echo "return from nested param snippet with code 42"
   exit 42
+fi
+if [[ -f $1 ]] then
+  echo "the condition -f $1 was met"
+  myfunc($1)
+fi
+if [[ -f $2 ]] then
+  echo "the condition -f $2 was met"
+  if [[ test_default_condition($2) ]] then
+    echo "the condition test_default_condition($2) was met"
+    myfunc($1)
+  fi
+  if [[ -f $1 ]] then
+    echo "the condition -f $1 was met"
+    nestedfunc($1, $2)
+  fi
 fi
 
 echo "you passed all checks"
