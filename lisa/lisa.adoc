@@ -1976,15 +1976,20 @@ versuchen wir diese Referenz herauszusuchen. Das ist im Grunde die
 gleiche Prozedur die wir bis jetzt auch schon angewendet haben. Die
 Funktion kann also sich selbst aufrufen.
 
-Allerdings müssen wir sicher gehen, dass der Name des Parameters nicht
-der gleiche ist, wie die Referenz. Ansonsten würde sich die Funktion
-endlos selbst aufrufen.
+Dabei müssen wir einiges beachten:
+
+* Zunächst müssen wir sicher gehen, dass der Name des Parameters nicht
+  der gleiche ist, wie die Referenz. Ansonsten würde sich die Funktion
+  endlos selbst aufrufen.
+* Außerdem haben Referenzen manchmal eigene Parameter. Diese müssen wir
+  ebenfalls auslesen.
 
 [[use_snippet_parameter]]
 [source, rust]
 ----
 <<insert_subparams>>
 if param != identifier {
+  snippet_params_history.push(params);
   substitude_params(
     &param,
     snippets,
@@ -2000,6 +2005,26 @@ if param != identifier {
   );
 }
 ----
+
+Wenn wir eine Referenz haben übernehmen wir die Parameter der Referenz.
+
+[[insert_subparams]]
+[source, rust]
+----
+let mut params = snippet_params.clone();
+for (key, value) in subparams.iter() {
+  params.insert(key.to_string(), value.clone());
+}
+----
+
+Wenn der Snippet aus der Datenbank übernommen wird, gibt es zwei
+Möglichkeiten:
+
+* Wenn er vorhanden ist können wir ihn einfach übernehmen (und natürlich
+  die Parameter ersetzen)
+* Wenn er nicht vorhanden ist, prüfen wir, ob Parameter in einer
+  Referenz übergeben wurden. Falls ja, übernehmen wir diese. Falls
+  nicht, geben wir eine Warnung aus und lassen den Snippet leer.
 
 [[use_snippet_from_database]]
 [source, rust]
@@ -2020,12 +2045,35 @@ Some(snippet) => {
   output.push_str(&content);
 }
 None => {
+  snippet_params_history.pop(); // <1>
+  if let Some(params) = snippet_params_history.pop() {
+    if params.get(identifier).is_some() {
+      snippet_params_history.push(params);
+      substitude_params(
+        identifier,
+        snippets,
+        snippet_params_history,
+        join_str,
+        key,
+        output,
+      );
+    } else {
+      warn!(
+        "Couldn't find snippet dependency `{}` for `{}`",
+        identifier, key
+      );
+    }
+  } else {
     warn!(
       "Couldn't find snippet dependency `{}` for `{}`",
       identifier, key
     );
+  }
 }
 ----
+<1> Parameter wurden oft in der vorigen Ebene übergeben. Deshalb gehen
+    wir in der Historie einen Schritt zurück um zu schauen, ob welche
+    übergeben wurden.
 
 [[codeblock_parser_functions]]
 [source, rust]
@@ -2186,13 +2234,23 @@ fn extract_snippet_params(snippet_params_history: SnippetParams, param: &str) ->
           _ => false,
         })
         .map(|element| match element.as_rule() {
-          Rule::value => {
-            Some(ReferenceParam::Value(element.as_str().to_string()))
-          }
+          Rule::value => Some(ReferenceParam::Value(element.as_str().to_string())),
           Rule::reference => match snippet_params.remove(&identifier) {
             Some(param) => Some(param),
             None => {
-              Some(ReferenceParam::Reference(extract_identifier(&element).to_string(), HashMap::default()))
+              let inner_params =
+                extract_snippet_params(snippet_params_history.clone(), element.as_str())
+                  .pop()
+                  .unwrap_or_default();
+              let identifier = extract_identifier(&element);
+
+              match snippet_params.remove(identifier) {
+                Some(param) => Some(param),
+                None => Some(ReferenceParam::Reference(
+                  identifier.to_string(),
+                  inner_params,
+                )),
+              }
             }
           },
           _ => None,
