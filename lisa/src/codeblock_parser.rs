@@ -12,10 +12,12 @@ enum ReferenceParam {
   Reference(String, HashMap<String, ReferenceParam>),
 }
 
+type SnippetParams = Vec<HashMap<String, ReferenceParam>>;
+
 fn merge_dependencies_inner<'a>(
   ast: pest::iterators::Pairs<'a, codeblock_parser::Rule>,
   snippets: &SnippetDB,
-  snippet_params: HashMap<String, ReferenceParam>,
+  snippet_params: SnippetParams,
   key: &str,
 ) -> String {
   let mut output = String::new();
@@ -65,21 +67,28 @@ fn merge_dependencies_inner<'a>(
 fn substitude_params(
   identifier: &str,
   snippets: &SnippetDB,
-  snippet_params: HashMap<String, ReferenceParam>,
+  snippet_params_history: SnippetParams,
   join_str: &str,
   key: &str,
   output: &mut String,
 ) {
+  let mut snippet_params_history = snippet_params_history;
+  let snippet_params = snippet_params_history.pop().unwrap_or_default();
+
   match snippet_params.get(identifier) {
     Some(param) => match param {
       ReferenceParam::Value(param) => output.push_str(&param),
       ReferenceParam::Reference(param, subparams) => {
-
+        let mut params = snippet_params.clone();
+        for (key, value) in subparams.iter() {
+          params.insert(key.to_string(), value.clone());
+        }
         if param != identifier {
+          snippet_params_history.push(params);
           substitude_params(
             &param,
             snippets,
-            snippet_params.clone(),
+            snippet_params_history,
             join_str,
             key,
             output,
@@ -91,7 +100,7 @@ fn substitude_params(
           );
         }
       }
-    }
+    },
     None => match snippets.get(identifier) {
       Some(snippet) => {
         let input = snippet.get_raw_content(&join_str);
@@ -101,19 +110,40 @@ fn substitude_params(
         } else {
           let ast = CodeblockParser::parse(Rule::codeblock, &input).expect("couldn't parse input.");
 
-          let snippet_params = extract_snippet_params(snippet_params, key);
+          snippet_params_history.push(snippet_params);
+          let snippet_params = extract_snippet_params(snippet_params_history, key);
 
           merge_dependencies_inner(ast, snippets, snippet_params, key)
         };
         output.push_str(&content);
       }
       None => {
+        snippet_params_history.pop();
+        if let Some(params) = snippet_params_history.pop() {
+          if params.get(identifier).is_some() {
+            snippet_params_history.push(params);
+            substitude_params(
+              identifier,
+              snippets,
+              snippet_params_history,
+              join_str,
+              key,
+              output,
+            );
+          } else {
+            warn!(
+              "Couldn't find snippet dependency `{}` for `{}`",
+              identifier, key
+            );
+          }
+        } else {
           warn!(
             "Couldn't find snippet dependency `{}` for `{}`",
             identifier, key
           );
+        }
       }
-    }
+    },
   }
 }
 
@@ -212,13 +242,11 @@ fn indent(content: &str, indentation: &str, output: &mut String) -> () {
   }
 }
 
-fn extract_snippet_params<'a>(
-  snippet_params: HashMap<String, ReferenceParam>,
-  param: &str,
-) -> HashMap<String, ReferenceParam> {
-  let mut snippet_params = snippet_params;
+fn extract_snippet_params(snippet_params_history: SnippetParams, param: &str) -> SnippetParams {
+  let mut snippet_params = snippet_params_history.clone().pop().unwrap();
   let mut new_params = HashMap::default();
   let ast = CodeblockParser::parse(Rule::codeblock, &param).expect("couldn't parse input.");
+  let mut snippet_params_history = snippet_params_history;
 
   let ref_iter = ast.clone().filter(|element| match element.as_rule() {
     Rule::reference => true,
@@ -271,7 +299,19 @@ fn extract_snippet_params<'a>(
           Rule::reference => match snippet_params.remove(&identifier) {
             Some(param) => Some(param),
             None => {
-              Some(ReferenceParam::Reference(extract_identifier(&element).to_string(), HashMap::default()))
+              let inner_params =
+                extract_snippet_params(snippet_params_history.clone(), element.as_str())
+                  .pop()
+                  .unwrap_or_default();
+              let identifier = extract_identifier(&element);
+
+              match snippet_params.remove(identifier) {
+                Some(param) => Some(param),
+                None => Some(ReferenceParam::Reference(
+                  identifier.to_string(),
+                  inner_params,
+                )),
+              }
             }
           },
           _ => None,
@@ -284,7 +324,8 @@ fn extract_snippet_params<'a>(
     }
   }
 
-  new_params
+  snippet_params_history.push(new_params);
+  snippet_params_history
 }
 
 /// Extracts the ids of used snippets from a depending snippet
@@ -311,7 +352,7 @@ pub fn get_dependencies(input: &str) -> Vec<&str> {
 /// Merges the snippets into the depending snippet
 pub fn merge_dependencies(input: &str, snippets: &SnippetDB, key: &str) -> String {
   let ast = CodeblockParser::parse(Rule::codeblock, input).expect("couldn't parse input.");
-  let snippet_params = extract_snippet_params(HashMap::default(), input);
+  let snippet_params = extract_snippet_params(Vec::from([HashMap::default()]), input);
 
   merge_dependencies_inner(ast, snippets, snippet_params, key)
 }
