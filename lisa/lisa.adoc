@@ -2482,7 +2482,7 @@ match &snippet.kind {
     self.save(path, &snippet.content)?;
   }
   SnippetType::Pipe => {
-    <<do_pipe>>
+    self.pipe(&snippet.content, &db)?;
   }
 }
 ----
@@ -2574,6 +2574,17 @@ verwenden https://github.com/jonathandturner/rhai[rhai] als Interpreter.
 rhai = "1.3"
 ----
 
+[[internal_functions]]
+[source, rust]
+----
+/// Use a snippet to manipulate the db instead of using it directly
+pub fn pipe(&mut self, content: &str, db: &Rc<RefCell<SnippetDB>>) -> Result<(), Error> {
+  <<do_pipe>>
+
+  Ok(())
+}
+----
+
 Jede `pipe` bekommt ihre eigene Script Umgebung.
 
 [[do_pipe]]
@@ -2593,7 +2604,7 @@ engine.register_fn("store", LisaWrapper::store);
 engine.register_fn("get_snippet", LisaWrapper::get_snippet);
 engine.register_fn("get_snippet_names", LisaWrapper::get_snippet_names);
 
-engine.eval_with_scope::<()>(&mut scope, &snippet.content)
+engine.eval_with_scope::<()>(&mut scope, content)
   .unwrap_or_else(|e| {
     error!("Piping of snippet failed:\n {}", e);
   });
