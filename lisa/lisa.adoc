@@ -2565,7 +2565,8 @@ if success {
 ----
 
 ==== Pipe: Snippets dynamisch erzeugen
-Beim `pipe` Befehl werden snippets als interne Scripte ausgeführt. Wir verwenden https://github.com/jonathandturner/rhai[rhai] als Interpreter.
+Beim `pipe` Befehl werden snippets als interne Scripte ausgeführt. Wir
+verwenden https://github.com/jonathandturner/rhai[rhai] als Interpreter.
 
 [[cargo_dependencies]]
 [source, toml]
