@@ -367,6 +367,30 @@ impl Lisa {
     Ok(())
   }
 
+  /// Use a snippet to manipulate the db instead of using it directly
+  pub fn pipe(&mut self, content: &str, db: &Rc<RefCell<SnippetDB>>) -> Result<(), Error> {
+    let mut engine = rhai::Engine::new();
+
+    let mut scope = rhai::Scope::new();
+
+    let wrapper = LisaWrapper {
+      snippets: Rc::clone(&db)
+    };
+    scope.push_constant("lisa", wrapper);
+
+    engine.register_type_with_name::<LisaWrapper>("LisaType");
+    engine.register_fn("store", LisaWrapper::store);
+    engine.register_fn("get_snippet", LisaWrapper::get_snippet);
+    engine.register_fn("get_snippet_names", LisaWrapper::get_snippet_names);
+
+    engine.eval_with_scope::<()>(&mut scope, content)
+      .unwrap_or_else(|e| {
+        error!("Piping of snippet failed:\n {}", e);
+      });
+
+    Ok(())
+  }
+
   pub fn from_env(env: util::Env) -> Self {
     let mut base = Lisa::new();
     base.env = env;
@@ -452,24 +476,7 @@ impl Lisa {
             self.save(path, &snippet.content)?;
           }
           SnippetType::Pipe => {
-            let mut engine = rhai::Engine::new();
-
-            let mut scope = rhai::Scope::new();
-
-            let wrapper = LisaWrapper {
-              snippets: Rc::clone(&db)
-            };
-            scope.push_constant("lisa", wrapper);
-
-            engine.register_type_with_name::<LisaWrapper>("LisaType");
-            engine.register_fn("store", LisaWrapper::store);
-            engine.register_fn("get_snippet", LisaWrapper::get_snippet);
-            engine.register_fn("get_snippet_names", LisaWrapper::get_snippet_names);
-
-            engine.eval_with_scope::<()>(&mut scope, &snippet.content)
-              .unwrap_or_else(|e| {
-                error!("Piping of snippet failed:\n {}", e);
-              });
+            self.pipe(&snippet.content, &db)?;
           }
         }
       }
