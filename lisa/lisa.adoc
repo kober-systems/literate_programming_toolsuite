@@ -1709,7 +1709,7 @@ pub struct CodeblockParser;
 <<codeblock_parser_functions|join="\n\n">>
 
 /// Extracts the ids of used snippets from a depending snippet
-pub fn get_dependencies(input: &str) -> Vec<&str> {
+pub fn get_dependencies(input: &str) -> Vec<String> {
   <<get_dependencies>>
 }
 
@@ -2390,16 +2390,34 @@ let ast = CodeblockParser::parse(Rule::codeblock, input).expect("couldn't parse 
 for element in ast {
   match element.as_rule() {
     Rule::reference => {
-      depends_on_ids.push(extract_identifier(&element));
+      depends_on_ids.push(extract_identifier(&element).to_string());
+      <<get_dependencies_of_parameters>>
     }
     Rule::indented_reference => {
-      depends_on_ids.push(extract_identifier(&element));
+      depends_on_ids.push(extract_identifier(&element).to_string());
+      <<get_dependencies_of_parameters>>
     }
     _ => (),
   }
 }
 
 depends_on_ids
+----
+
+Snippets sind nicht nur von den Referenzen abhängig, die direkt
+vorkommen, sondern auch von den Referenzen in den Snippet Parametern.
+
+[[get_dependencies_of_parameters]]
+[source, rust]
+----
+let params = extract_snippet_params(Vec::default(), element.as_str())
+  .pop()
+  .unwrap_or_default();
+for param in params.into_values() {
+  if let ReferenceParam::Reference(identifier, _) = param {
+    depends_on_ids.push(identifier.clone());
+  }
+}
 ----
 
 === Ausgaben erzeugen
