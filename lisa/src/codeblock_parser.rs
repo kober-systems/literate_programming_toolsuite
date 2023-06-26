@@ -243,7 +243,7 @@ fn indent(content: &str, indentation: &str, output: &mut String) -> () {
 }
 
 fn extract_snippet_params(snippet_params_history: SnippetParams, param: &str) -> SnippetParams {
-  let mut snippet_params = snippet_params_history.clone().pop().unwrap();
+  let mut snippet_params = snippet_params_history.clone().pop().unwrap_or_default();
   let mut new_params = HashMap::default();
   let ast = CodeblockParser::parse(Rule::codeblock, &param).expect("couldn't parse input.");
   let mut snippet_params_history = snippet_params_history;
@@ -329,7 +329,7 @@ fn extract_snippet_params(snippet_params_history: SnippetParams, param: &str) ->
 }
 
 /// Extracts the ids of used snippets from a depending snippet
-pub fn get_dependencies(input: &str) -> Vec<&str> {
+pub fn get_dependencies(input: &str) -> Vec<String> {
   let mut depends_on_ids = Vec::new();
 
   let ast = CodeblockParser::parse(Rule::codeblock, input).expect("couldn't parse input.");
@@ -337,10 +337,26 @@ pub fn get_dependencies(input: &str) -> Vec<&str> {
   for element in ast {
     match element.as_rule() {
       Rule::reference => {
-        depends_on_ids.push(extract_identifier(&element));
+        depends_on_ids.push(extract_identifier(&element).to_string());
+        let params = extract_snippet_params(Vec::default(), element.as_str())
+          .pop()
+          .unwrap_or_default();
+        for param in params.into_values() {
+          if let ReferenceParam::Reference(identifier, _) = param {
+            depends_on_ids.push(identifier.clone());
+          }
+        }
       }
       Rule::indented_reference => {
-        depends_on_ids.push(extract_identifier(&element));
+        depends_on_ids.push(extract_identifier(&element).to_string());
+        let params = extract_snippet_params(Vec::default(), element.as_str())
+          .pop()
+          .unwrap_or_default();
+        for param in params.into_values() {
+          if let ReferenceParam::Reference(identifier, _) = param {
+            depends_on_ids.push(identifier.clone());
+          }
+        }
       }
       _ => (),
     }
