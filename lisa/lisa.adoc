@@ -1860,15 +1860,15 @@ tatsächlichen Inhalte ersetzt werden. Dazu benutzen wir die Funktion
 ----
 if snippet.children.len() > 0 {
   let mut children = Vec::new();
-  for mut child in snippet.children.clone().into_iter() {
-    let content = child.content.clone();
+  for mut child in snippet.children.into_iter() {
+    let content = child.content;
     let content = codeblock_parser::merge_dependencies(content.as_str(), &snippets, key);
     child.content = content;
     children.push(child);
   }
   snippet.children = children;
 } else {
-  let content = snippet.content.clone();
+  let content = snippet.content;
   let content = codeblock_parser::merge_dependencies(content.as_str(), &snippets, key);
   snippet.content = content;
 }
