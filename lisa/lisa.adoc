@@ -2182,7 +2182,7 @@ eventuell übergeben wurden, herausfiltern und abspeichern.
 [source, rust]
 ----
 fn extract_snippet_params(snippet_params_history: SnippetParams, param: &str) -> SnippetParams {
-  let mut snippet_params = snippet_params_history.clone().pop().unwrap();
+  let mut snippet_params = snippet_params_history.clone().pop().unwrap_or_default();
   let mut new_params = HashMap::default();
   let ast = CodeblockParser::parse(Rule::codeblock, &param).expect("couldn't parse input.");
   let mut snippet_params_history = snippet_params_history;
