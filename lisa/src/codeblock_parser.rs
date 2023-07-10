@@ -85,20 +85,15 @@ fn substitude_params(
         }
         if param != identifier {
           snippet_params_history.push(params);
-          substitude_params(
-            &param,
-            snippets,
-            snippet_params_history,
-            join_str,
-            key,
-            output,
-          );
-        } else {
-          warn!(
-            "Self referencing snippet dependency `{}` for `{}`",
-            identifier, key
-          );
         }
+        substitude_params(
+          &param,
+          snippets,
+          snippet_params_history,
+          join_str,
+          key,
+          output,
+        );
       }
     },
     None => match snippets.get(identifier) {
