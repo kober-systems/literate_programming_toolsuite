@@ -1981,6 +1981,9 @@ Dabei müssen wir einiges beachten:
 * Zunächst müssen wir sicher gehen, dass der Name des Parameters nicht
   der gleiche ist, wie die Referenz. Ansonsten würde sich die Funktion
   endlos selbst aufrufen.
+** Falls der Parameter identisch ist, durchsuchen wir die 
+   Aufrufhierarchie um zu überprüfen, ob einer der aufrufenden Snippets
+   den Parameter definert hat.
 * Außerdem haben Referenzen manchmal eigene Parameter. Diese müssen wir
   ebenfalls auslesen.
 
@@ -1998,12 +2001,15 @@ if param != identifier {
     key,
     output,
   );
-} else {
-  warn!(
-    "Self referencing snippet dependency `{}` for `{}`",
-    identifier, key
-  );
 }
+substitude_params(
+  &param,
+  snippets,
+  snippet_params_history,
+  join_str,
+  key,
+  output,
+);
 ----
 
 Wenn wir eine Referenz haben übernehmen wir die Parameter der Referenz.
