@@ -843,7 +843,7 @@ referenced param text
 Die erzeugte Datei ist folgende:
 
 [[unittest_indented_param_snippets_output]]
-[source, sh]
+[source, yaml]
 .sample.yaml
 ----
 category:
