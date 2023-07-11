@@ -927,6 +927,86 @@ def my_other_function():
   # touch inner snippet too
 ----
 
+Man kann auch eine Art Aufruf-Hierarchie machen, indem man
+parametrisierte Snippets als Parameter einsetzt. Um das zu erklären
+gehen wir nochmal auf das Beispiel einer yaml Konfigurationsdatei ein.
+
+[[unittest_params_in_param_snippets_input]]
+[source, asciidoc, lisa-raw]
+[outputs="unittest_params_in_param_snippets_output"]
+[name="snippets_with_nested_params"]
+....
+We have a snippet
+
+[[inner_snippet]]
+[source, yaml]
+----
+this is my snippet <<text>>
+----
+
+And we indent it
+
+[[category_template]]
+[source, yaml]
+----
+category:
+    <<inner_snippet|
+        text:="my param text">>
+
+category2:
+    <<value_category2>>
+----
+
+Normally our `value_category2` is like this
+
+[[value_category2]]
+[source, yaml]
+----
+<<inner_snippet|
+    text:=<<referenced_param>> >>
+----
+
+And here we have a param we reference
+
+[[referenced_param]]
+[source, yaml]
+----
+referenced param text
+----
+
+But in the end we want to use our `category_template` twice. Once in the
+normal way and once with a substtuted inner snippet.
+
+[source, yaml, save]
+.sample.yaml
+----
+<<category_template>>
+
+<<category_template|
+    value_category2:=<<inner_snippet|
+      text:="substituted with a param inside a param">> >>
+----
+....
+
+Die erzeugte Datei ist folgende:
+
+[[unittest_params_in_param_snippets_output]]
+[source, yaml]
+.sample.yaml
+----
+category:
+    this is my snippet my param text
+
+category2:
+    this is my snippet referenced param text
+
+category:
+    this is my snippet my param text
+
+category2:
+    this is my snippet substituted with a param inside a param
+----
+
 ====
 
 [[transform]]
