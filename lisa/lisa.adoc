@@ -1881,7 +1881,7 @@ value = @{ ( !"\"" ~ ANY | "\\\"")* }
 #[derive(Debug, Clone)]
 enum ReferenceParam {
   Value(String),
-  Reference(String, HashMap<String, ReferenceParam>),
+  Reference(String, String),
 }
 
 type SnippetParams = Vec<HashMap<String, ReferenceParam>>;
@@ -2070,38 +2070,20 @@ Dabei müssen wir einiges beachten:
 [[use_snippet_parameter]]
 [source, rust]
 ----
-<<insert_subparams>>
 if param != identifier {
-  snippet_params_history.push(params);
-  substitude_params(
-    &param,
-    snippets,
-    snippet_params_history,
-    join_str,
-    key,
-    output,
-  );
+  snippet_params_history.push(snippet_params.clone());
 }
 substitude_params(
   &param,
   snippets,
   snippet_params_history,
   join_str,
-  key,
+  &subparams, // <1>
   output,
 );
 ----
-
-Wenn wir eine Referenz haben übernehmen wir die Parameter der Referenz.
-
-[[insert_subparams]]
-[source, rust]
-----
-let mut params = snippet_params.clone();
-for (key, value) in subparams.iter() {
-  params.insert(key.to_string(), value.clone());
-}
-----
+<1> Beim extrahieren der Parameter verwenden wir im Fall einer Referenz
+    die beim Aufruf festgelegten Parameter.
 
 Wenn der Snippet aus der Datenbank übernommen wird, gibt es zwei
 Möglichkeiten:
@@ -2324,10 +2306,7 @@ fn extract_snippet_params(snippet_params_history: SnippetParams, param: &str) ->
           Rule::reference => match snippet_params.remove(&identifier) {
             Some(param) => Some(param),
             None => {
-              let inner_params =
-                extract_snippet_params(snippet_params_history.clone(), element.as_str())
-                  .pop()
-                  .unwrap_or_default();
+              let inner_params = element.as_str().to_string();
               let identifier = extract_identifier(&element);
 
               match snippet_params.remove(identifier) {
