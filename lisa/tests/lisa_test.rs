@@ -144,6 +144,94 @@ def my_other_function():
 }
 
 #[test]
+fn snippets_with_nested_params() -> Result<()> {
+  let content = r#"
+We have a snippet
+
+[[inner_snippet]]
+[source, yaml]
+----
+this is my snippet <<text>>
+----
+
+And we indent it
+
+[[category_template]]
+[source, yaml]
+----
+category:
+    <<inner_snippet|
+        text:="my param text">>
+
+category2:
+    <<value_category2>>
+----
+
+Normally our `value_category2` is like this
+
+[[value_category2]]
+[source, yaml]
+----
+<<inner_snippet|
+    text:=<<referenced_param>> >>
+----
+
+And here we have a param we reference
+
+[[referenced_param]]
+[source, yaml]
+----
+referenced param text
+----
+
+But in the end we want to use our `category_template` twice. Once in the
+normal way and once with a substtuted inner snippet.
+
+[source, yaml, save]
+.sample.yaml
+----
+<<category_template>>
+
+<<category_template|
+    value_category2:=<<inner_snippet|
+      text:="substituted with a param inside a param">> >>
+----
+"#;
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::parse_from(vec![""].into_iter());
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
+
+  let mut lisa = Lisa::from_env(env);
+  let _ast = lisa.transform(ast)?;
+
+  // TODO ast vergleichen
+
+  let mut outputs = lisa.into_cache().unwrap();
+
+  assert_eq!(
+  outputs.remove("sample.yaml").unwrap(),
+  r#"category:
+    this is my snippet my param text
+
+category2:
+    this is my snippet referenced param text
+
+category:
+    this is my snippet my param text
+
+category2:
+    this is my snippet substituted with a param inside a param
+"#
+);
+
+
+  assert!(outputs.is_empty());
+
+  Ok(())
+}
+
+#[test]
 fn use_snippets() -> Result<()> {
   let content = r#"
 We need the testmodule for this project.
