@@ -9,7 +9,7 @@ pub struct CodeblockParser;
 #[derive(Debug, Clone)]
 enum ReferenceParam {
   Value(String),
-  Reference(String, HashMap<String, ReferenceParam>),
+  Reference(String, String),
 }
 
 type SnippetParams = Vec<HashMap<String, ReferenceParam>>;
@@ -79,23 +79,19 @@ fn substitude_params(
     Some(param) => match param {
       ReferenceParam::Value(param) => output.push_str(&param),
       ReferenceParam::Reference(param, subparams) => {
-        let mut params = snippet_params.clone();
-        for (key, value) in subparams.iter() {
-          params.insert(key.to_string(), value.clone());
-        }
         if param != identifier {
-          snippet_params_history.push(params);
+          snippet_params_history.push(snippet_params.clone());
         }
         substitude_params(
           &param,
           snippets,
           snippet_params_history,
           join_str,
-          key,
+          &subparams,
           output,
         );
       }
-    },
+    }
     None => match snippets.get(identifier) {
       Some(snippet) => {
         let input = snippet.get_raw_content(&join_str);
@@ -294,10 +290,7 @@ fn extract_snippet_params(snippet_params_history: SnippetParams, param: &str) ->
           Rule::reference => match snippet_params.remove(&identifier) {
             Some(param) => Some(param),
             None => {
-              let inner_params =
-                extract_snippet_params(snippet_params_history.clone(), element.as_str())
-                  .pop()
-                  .unwrap_or_default();
+              let inner_params = element.as_str().to_string();
               let identifier = extract_identifier(&element);
 
               match snippet_params.remove(identifier) {
