@@ -34,6 +34,8 @@ pub enum AsciidoctrineError {
   Utf8(#[from] std::str::Utf8Error),
   #[error("Child process stdin has not been captured!")]
   Childprocess,
+  #[error("malformed ast structure")]
+  MalformedAst,
 }
 
 type Result<T> = std::result::Result<T, AsciidoctrineError>;
