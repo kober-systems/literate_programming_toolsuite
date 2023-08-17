@@ -31,6 +31,7 @@ pub enum Writer {
   Docbook,
   Pdf,
   Json,
+  Docx,
   // The asciidoc output makes it possible
   // to use this tool as a preprocessor for
   // other asciidoc tools while it is maturing
