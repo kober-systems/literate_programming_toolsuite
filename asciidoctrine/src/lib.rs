@@ -16,6 +16,7 @@ pub use reader::asciidoc::AsciidocReader;
 pub use reader::json::JsonReader;
 mod writer;
 pub use writer::html::HtmlWriter;
+pub use writer::docx::DocxWriter;
 pub use writer::json::JsonWriter;
 
 #[derive(Error, Debug)]
@@ -32,6 +33,8 @@ pub enum AsciidoctrineError {
   Template(#[from] tera::Error),
   #[error(transparent)]
   Utf8(#[from] std::str::Utf8Error),
+  #[error(transparent)]
+  Docx(#[from] docx_rs::DocxError),
   #[error("Child process stdin has not been captured!")]
   Childprocess,
   #[error("malformed ast structure")]

@@ -6,7 +6,7 @@ use anyhow::{bail, Context, Result};
 use asciidoctrine::*;
 use lisa::*;
 use std::fs;
-use std::io::{self, BufWriter, Read, Write};
+use std::io::{self, Read, Write};
 
 fn main() -> Result<()> {
   simple_logger::init()?;
@@ -15,12 +15,6 @@ fn main() -> Result<()> {
   let reader: Box<dyn Reader> = match opts.readerfmt {
     options::Reader::Asciidoc => Box::new(AsciidocReader::new()),
     options::Reader::Json => Box::new(JsonReader::new()),
-  };
-
-  let mut writer: Box<dyn Writer<BufWriter<Box<dyn Write>>>> = match opts.writerfmt {
-    options::Writer::Html5 => Box::new(HtmlWriter::new()),
-    options::Writer::Json => Box::new(JsonWriter::new()),
-    _ => bail!("not yet supported"),
   };
 
   // read the input
@@ -70,8 +64,22 @@ fn main() -> Result<()> {
     Some(output) => Box::new(fs::File::create(output).context("Could not open output file")?),
     None => Box::new(io::stdout()),
   };
-  let output = BufWriter::new(output);
-  writer.write(ast, &opts, output)?;
+
+  match opts.writerfmt {
+    options::Writer::Html5 => HtmlWriter::new().write(ast, &opts, output)?,
+    options::Writer::Json => JsonWriter::new().write(ast, &opts, output)?,
+    options::Writer::Docx => match &opts.output {
+      Some(output) => {
+        DocxWriter::new().write(
+          ast,
+          &opts,
+          fs::File::create(output).context("Could not open output file")?,
+        )?;
+      }
+      None => bail!("docx cant only be written to file not to stdout"),
+    },
+    _ => bail!("not yet supported"),
+  };
 
   Ok(())
 }
