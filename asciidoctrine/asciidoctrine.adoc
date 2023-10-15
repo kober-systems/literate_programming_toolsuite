@@ -1,6 +1,6 @@
 ASCIIdoctrine
 =============
-Benjamin Kober <k.o.b.e.r@web.de>
+Benjamin Kober <benk@kober-systems.com>
 :toc: left
 // In diesem Dokument wird der ganze Quelltext angezeigt.
 :code:
