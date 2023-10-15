@@ -12,7 +12,7 @@ impl DocxWriter {
 }
 
 impl<T: io::Write + io::Seek> crate::Writer<T> for DocxWriter {
-  fn write<'a>(&mut self, ast: AST, _args: &options::Opts, mut out: T) -> Result<()> {
+  fn write<'a>(&mut self, ast: AST, _args: &options::Opts, out: T) -> Result<()> {
     let doc = ast
       .elements
       .iter()
@@ -47,6 +47,14 @@ fn paragraph(input: &ElementSpan, out: Paragraph) -> Result<Paragraph> {
 
 fn write_doc(input: &ElementSpan, out: Docx) -> Result<Docx> {
   match &input.element {
+    Element::Title { level } => {
+      let title = input.get_attribute("name").unwrap_or("");
+      let p = Paragraph::new()
+        .add_run(Run::new().add_text(title))
+        .outline_lvl(*level as usize)
+        .style(&format!("Heading{}", level));
+      Ok(out.add_paragraph(p))
+    }
     Element::Paragraph => {
       let p = input
         .children
@@ -56,7 +64,12 @@ fn write_doc(input: &ElementSpan, out: Docx) -> Result<Docx> {
     }
     Element::Text | Element::Link => Err(AsciidoctrineError::MalformedAst),
     _ => {
-      Err(crate::AsciidoctrineError::Childprocess) // TODO Error
+      error!(
+        "<NOT-YET-SUPPORTED:{:?}>{}</NOT-YET-SUPPORTED>\n",
+        input.element, input.content
+      );
+
+      Ok(out)
     }
   }
 }
