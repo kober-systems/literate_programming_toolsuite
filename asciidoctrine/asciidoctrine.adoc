@@ -1,6 +1,6 @@
 ASCIIdoctrine
 =============
-Benjamin Kober <benk@kober-systems.com>
+Benjamin Kober <benko@kober-systems.com>
 :toc: left
 // In diesem Dokument wird der ganze Quelltext angezeigt.
 :code:
@@ -130,6 +130,7 @@ pub use reader::asciidoc::AsciidocReader;
 pub use reader::json::JsonReader;
 mod writer;
 pub use writer::html::HtmlWriter;
+pub use writer::docx::DocxWriter;
 pub use writer::json::JsonWriter;
 ----
 <1> `ast` definiert das allgemeine Zwischenformat für alle Dokumente.
@@ -152,8 +153,12 @@ pub enum AsciidoctrineError {
   Template(#[from] tera::Error),
   #[error(transparent)]
   Utf8(#[from] std::str::Utf8Error),
+  #[error(transparent)]
+  Docx(#[from] docx_rs::DocxError),
   #[error("Child process stdin has not been captured!")]
   Childprocess,
+  #[error("malformed ast structure")]
+  MalformedAst,
 }
 
 type Result<T> = std::result::Result<T, AsciidoctrineError>;
@@ -1864,6 +1869,7 @@ beschrieben werden (sowie wie man Formatierungsanpassungen vornehmen kann)
 .src/writer/mod.rs
 ----
 pub mod html;
+pub mod docx;
 pub mod json;
 ----
 
@@ -2287,6 +2293,7 @@ pub enum Writer {
   Docbook,
   Pdf,
   Json,
+  Docx,
   // The asciidoc output makes it possible
   // to use this tool as a preprocessor for
   // other asciidoc tools while it is maturing
