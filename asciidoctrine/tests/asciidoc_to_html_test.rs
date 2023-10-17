@@ -5,6 +5,132 @@ use pretty_assertions::assert_eq;
 use std::io::BufWriter;
 
 #[test]
+fn bullet_list_with_dashes() -> Result<()> {
+  let content = r#"
+- This
+- is
+- a
+- list
+-- with subpoints
+--- and deeper
+---- nested subpoints
+- Next normal point
+"#;
+  let reader = AsciidocReader::new();
+  let mut opts = options::Opts::parse_from(vec!["--template", "-"].into_iter());
+  opts.template = Some("-".into());
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
+
+  let mut buf = BufWriter::new(Vec::new());
+  let mut writer = HtmlWriter::new();
+  writer.write(ast, &opts, &mut buf)?;
+
+  let output = String::from_utf8(buf.into_inner()?)?;
+  assert_eq!(
+    output,
+    r#"<ul>
+  <li>
+    <p>This</p>
+  </li>
+  <li>
+  <p>is</p>
+  </li>
+  <li>
+    <p>a</p>
+  </li>
+  <li>
+    <p>list</p>
+    <ul>
+      <li>
+        <p>with subpoints</p>
+        <ul>
+          <li>
+            <p>and deeper</p>
+            <ul>
+              <li>
+                <p>nested subpoints</p>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li>
+    <p>Next normal point</p>
+  </li>
+</ul>
+"#
+  );
+
+  Ok(())
+}
+
+#[test]
+fn bullet_list() -> Result<()> {
+  let content = r#"
+* This
+* is
+* a
+* list
+** with subpoints
+*** and deeper
+**** nested subpoints
+* Next normal point
+"#;
+  let reader = AsciidocReader::new();
+  let mut opts = options::Opts::parse_from(vec!["--template", "-"].into_iter());
+  opts.template = Some("-".into());
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
+
+  let mut buf = BufWriter::new(Vec::new());
+  let mut writer = HtmlWriter::new();
+  writer.write(ast, &opts, &mut buf)?;
+
+  let output = String::from_utf8(buf.into_inner()?)?;
+  assert_eq!(
+    output,
+    r#"<ul>
+  <li>
+    <p>This</p>
+  </li>
+  <li>
+  <p>is</p>
+  </li>
+  <li>
+    <p>a</p>
+  </li>
+  <li>
+    <p>list</p>
+    <ul>
+      <li>
+        <p>with subpoints</p>
+        <ul>
+          <li>
+            <p>and deeper</p>
+            <ul>
+              <li>
+                <p>nested subpoints</p>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li>
+    <p>Next normal point</p>
+  </li>
+</ul>
+"#
+  );
+
+  Ok(())
+}
+
+#[test]
 fn collapsible_blocks() -> Result<()> {
   let content = r#"
 [%collapsible]
