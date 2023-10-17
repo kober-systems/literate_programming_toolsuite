@@ -348,6 +348,53 @@ Some text is `monospaced`.
 }
 
 #[test]
+fn numbered_list() -> Result<()> {
+  let content = r#"
+. This
+. is
+. a
+.. nested
+. numbered list
+"#;
+  let reader = AsciidocReader::new();
+  let mut opts = options::Opts::parse_from(vec!["--template", "-"].into_iter());
+  opts.template = Some("-".into());
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
+
+  let mut buf = BufWriter::new(Vec::new());
+  let mut writer = HtmlWriter::new();
+  writer.write(ast, &opts, &mut buf)?;
+
+  let output = String::from_utf8(buf.into_inner()?)?;
+  assert_eq!(
+    output,
+    r#"<ol class="arabic">
+  <li>
+    <p>This</p>
+  </li>
+  <li>
+    <p>is</p>
+  </li>
+  <li>
+    <p>a</p>
+    <ol class="loweralpha" type="a">
+      <li>
+        <p>nested</p>
+      </li>
+    </ol>
+  </li>
+  <li>
+    <p>numbered list</p>
+  </li>
+</ol>
+"#
+  );
+
+  Ok(())
+}
+
+#[test]
 fn sourcecode_blocks() -> Result<()> {
   let content = r#"
 [source, bash]
