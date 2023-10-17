@@ -1384,7 +1384,6 @@ bullet_list = { bullet_list_element+ }
 
 |
 
-
 [[unittest_bullet_list_dashes_input]]
 [source, asciidoc, lisa-raw]
 [output="bullet_list_html_output", name="bullet_list_with_dashes"]
@@ -1457,13 +1456,68 @@ Rule::bullet_list_element => {
 ====
 
 === Nummerierte Listen
-TODO
+Manchmal möchte man die genaue Reihenfolge explizit vorgeben. In
+diesem Fall verwendet man eine nummerierte Liste. Wir können die
+Nummeriungspunkte mit `.` darstellen.
 
 [[blocks]]
 [source, pest]
 ----
 numbered_list = { "numbered_list" } // TODO
 ----
+
+[cols="a,a"]
+|====
+
+[[unittest_numbered_list_input]]
+[source, asciidoc, lisa-raw]
+[output="numbered_list_html_output", name="numbered_list"]
+....
+. This
+. is
+. a
+.. nested
+. numbered list
+....
+
+|
+
+. This
+. is
+. a
+.. nested
+. numbered list
+
+[%collapsible]
+.Html Output
+====
+
+[[numbered_list_html_output]]
+[source, html]
+----
+<ol class="arabic">
+  <li>
+    <p>This</p>
+  </li>
+  <li>
+    <p>is</p>
+  </li>
+  <li>
+    <p>a</p>
+    <ol class="loweralpha" type="a">
+      <li>
+        <p>nested</p>
+      </li>
+    </ol>
+  </li>
+  <li>
+    <p>numbered list</p>
+  </li>
+</ol>
+----
+====
+
+|====
 
 === Abhacklisten
 TODO
