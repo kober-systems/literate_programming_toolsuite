@@ -2,3 +2,4 @@
 .asciidoctor
 target
 *.png
+result*
