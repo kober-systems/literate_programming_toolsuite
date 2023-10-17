@@ -922,6 +922,18 @@ This is a subsubsubheader
 
 |
 
+This is a header
+================
+
+This is a subheader
+-------------------
+
+This is a subsubheader
+~~~~~~~~~~~~~~~~~~~~~~
+
+This is a subsubsubheader
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
 [%collapsible]
 .Html Output
 ====
@@ -953,6 +965,14 @@ Auch Titel im ATX Format werden erkannt.
 ....
 
 |
+
+= This is a header
+
+== This is a subheader
+
+=== This is a subsubheader
+
+==== This is a subsubsubheader
 
 [%collapsible]
 .Html Output
@@ -1277,8 +1297,12 @@ continuation = { NEWLINE ~ "+" ~ NEWLINE }
 ====
 
 === Unnummerierte Listen
-TODO
+Unnummerierte Listen können mit `*` oder mit `-` erzeugt werden. Um eine
+weitere Einrückung zu erzeugen kann man mehrere Punkte hintereinander
+hängen (z.B. `**`).
 
+[%collapsible]
+====
 [[blocks]]
 [source, pest]
 ----
@@ -1286,6 +1310,107 @@ bullet = { ("*"+ | "-"+) }
 bullet_list_element = { bullet ~ list_element ~ (NEWLINE | EOI) }
 bullet_list = { bullet_list_element+ }
 ----
+====
+
+[cols="a,a"]
+|====
+
+[[unittest_bullet_list_input]]
+[source, asciidoc, lisa-raw]
+[output="bullet_list_html_output", name="bullet_list"]
+....
+* This
+* is
+* a
+* list
+** with subpoints
+*** and deeper
+**** nested subpoints
+* Next normal point
+....
+
+|
+
+* This
+* is
+* a
+* list
+** with subpoints
+*** and deeper
+**** nested subpoints
+* Next normal point
+
+[%collapsible]
+.Html Output
+====
+
+[[bullet_list_html_output]]
+[source, html]
+----
+<ul>
+  <li>
+    <p>This</p>
+  </li>
+  <li>
+  <p>is</p>
+  </li>
+  <li>
+    <p>a</p>
+  </li>
+  <li>
+    <p>list</p>
+    <ul>
+      <li>
+        <p>with subpoints</p>
+        <ul>
+          <li>
+            <p>and deeper</p>
+            <ul>
+              <li>
+                <p>nested subpoints</p>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li>
+    <p>Next normal point</p>
+  </li>
+</ul>
+----
+====
+
+|
+
+
+[[unittest_bullet_list_dashes_input]]
+[source, asciidoc, lisa-raw]
+[output="bullet_list_html_output", name="bullet_list_with_dashes"]
+....
+- This
+- is
+- a
+- list
+-- with subpoints
+--- and deeper
+---- nested subpoints
+- Next normal point
+....
+
+|
+
+- This
+- is
+- a
+- list
+-- with subpoints
+--- and deeper
+---- nested subpoints
+- Next normal point
+
+|====
 
 [%collapsible]
 ====
