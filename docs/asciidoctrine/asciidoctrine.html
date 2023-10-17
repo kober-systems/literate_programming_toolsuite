@@ -514,7 +514,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <h1>ASCIIdoctrine</h1>
 <div class="details">
 <span id="author" class="author">Benjamin Kober</span><br>
-<span id="email" class="email"><a href="mailto:k.o.b.e.r@web.de">k.o.b.e.r@web.de</a></span><br>
+<span id="email" class="email"><a href="mailto:benko@kober-systems.com">benko@kober-systems.com</a></span><br>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
@@ -797,6 +797,7 @@ Modulen zu:</p>
 <span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">reader</span>::<span class="tok-n">json</span>::<span class="tok-n">JsonReader</span><span class="tok-p">;</span><span class="tok-w"></span>
 <span class="tok-k">mod</span> <span class="tok-nn">writer</span><span class="tok-p">;</span><span class="tok-w"></span>
 <span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">writer</span>::<span class="tok-n">html</span>::<span class="tok-n">HtmlWriter</span><span class="tok-p">;</span><span class="tok-w"></span>
+<span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">writer</span>::<span class="tok-n">docx</span>::<span class="tok-n">DocxWriter</span><span class="tok-p">;</span><span class="tok-w"></span>
 <span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">writer</span>::<span class="tok-n">json</span>::<span class="tok-n">JsonWriter</span><span class="tok-p">;</span><span class="tok-w"></span></code></pre>
 </div>
 </div>
@@ -825,8 +826,12 @@ Modulen zu:</p>
 <span class="tok-w">  </span><span class="tok-n">Template</span><span class="tok-p">(</span><span class="tok-cp">#[from]</span><span class="tok-w"> </span><span class="tok-n">tera</span>::<span class="tok-n">Error</span><span class="tok-p">),</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-cp">#[error(transparent)]</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-n">Utf8</span><span class="tok-p">(</span><span class="tok-cp">#[from]</span><span class="tok-w"> </span><span class="tok-n">std</span>::<span class="tok-kt">str</span>::<span class="tok-n">Utf8Error</span><span class="tok-p">),</span><span class="tok-w"></span>
+<span class="tok-w">  </span><span class="tok-cp">#[error(transparent)]</span><span class="tok-w"></span>
+<span class="tok-w">  </span><span class="tok-n">Docx</span><span class="tok-p">(</span><span class="tok-cp">#[from]</span><span class="tok-w"> </span><span class="tok-n">docx_rs</span>::<span class="tok-n">DocxError</span><span class="tok-p">),</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-cp">#[error(</span><span class="tok-s">&quot;Child process stdin has not been captured!&quot;</span><span class="tok-cp">)]</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-n">Childprocess</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">  </span><span class="tok-cp">#[error(</span><span class="tok-s">&quot;malformed ast structure&quot;</span><span class="tok-cp">)]</span><span class="tok-w"></span>
+<span class="tok-w">  </span><span class="tok-n">MalformedAst</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-p">}</span><span class="tok-w"></span>
 
 <span class="tok-k">type</span> <span class="tok-nb">Result</span><span class="tok-o">&lt;</span><span class="tok-n">T</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">std</span>::<span class="tok-n">result</span>::<span class="tok-nb">Result</span><span class="tok-o">&lt;</span><span class="tok-n">T</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">AsciidoctrineError</span><span class="tok-o">&gt;</span><span class="tok-p">;</span><span class="tok-w"></span></code></pre>
@@ -2806,7 +2811,9 @@ beschrieben werden (sowie wie man Formatierungsanpassungen vornehmen kann)</p>
 <div class="title">src/writer/mod.rs</div>
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><table class="linenotable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><pre><span></span><span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">mod</span> <span class="tok-nn">html</span><span class="tok-p">;</span><span class="tok-w"></span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><pre><span></span><span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">mod</span> <span class="tok-nn">html</span><span class="tok-p">;</span><span class="tok-w"></span>
+<span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">mod</span> <span class="tok-nn">docx</span><span class="tok-p">;</span><span class="tok-w"></span>
 <span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">mod</span> <span class="tok-nn">json</span><span class="tok-p">;</span><span class="tok-w"></span>
 </pre></td></tr></table></code></pre>
 </div>
@@ -3448,6 +3455,7 @@ Unresolved directive in asciidoctrine.adoc - include::src/output/json-ast.adoc[]
 <span class="tok-w">  </span><span class="tok-n">Docbook</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-n">Pdf</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-n">Json</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">  </span><span class="tok-n">Docx</span><span class="tok-p">,</span><span class="tok-w"></span>
 <span class="tok-w">  </span><span class="tok-c1">// The asciidoc output makes it possible</span>
 <span class="tok-w">  </span><span class="tok-c1">// to use this tool as a preprocessor for</span>
 <span class="tok-w">  </span><span class="tok-c1">// other asciidoc tools while it is maturing</span>
