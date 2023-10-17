@@ -4,10 +4,11 @@ Ansicht - Ein Werkzeug zum Skizzieren von Funktionsarchitekturen
 Einführung
 ----------
 Wenn ich ein neues Softwareprodukt entwerfe (oder irgendeine Art von
-Process/Projekt etc) beginne ich fast immer mit einer Art Gedankenmodell (In
-Wirklichkeit gibt es davor meistens ein Research Phase, eine Analyse des
-Problems und der Ausgangslage, aber sobald ich einen konkreten Lösungsweg
-entwerfe beginne ich meistens mit einem Gedankenmodell).
+Process/Projekt etc) beginne ich fast immer mit einer Art Gedankenmodell
+footnote:[In Wirklichkeit gibt es davor meistens ein Research Phase,
+eine Analyse des Problems und der Ausgangslage, aber sobald ich
+einen konkreten Lösungsweg entwerfe beginne ich meistens mit einem
+Gedankenmodell].
 
 Dieses lässt sich fast immer am besten als Grafik entwerfen. Im Allgemeinen
 folgt es einer Graphen-Struktur (denn fast immer werden strukturelle
@@ -24,13 +25,13 @@ der Zeit entstehen aber einige Probleme:
   Dokumentation) und die Software driften langsam auseinander.
 * Andere Programmierer arbeiten an dem Projekt mit. Sie verändern die
   Architektur und die Dokumentation wird irreführend und fehlerhaft. Manchmal
-  geht auch das grundlegende Architekturprinzip kaput und die Software wird
+  geht auch das grundlegende Architekturprinzip kaputt und die Software wird
   komplexer und schwerer zu warten.
 * Durch Refaktoring werden Namen verändert. Diese Namen werden oft nicht (oder
   verspätet) in der Grafik aktualisiert.
 
-Diese und weitere Problemehängen fast immer mit Projektalterung und
-Komplexitätszuwachs zusammen. Eines der hervorstehenden Symptome (oder auch der
+Diese und weitere Probleme hängen fast immer mit Projektalterung und
+Komplexitätszuwachs zusammen. Eines der hervorstechenden Symptome (oder auch der
 Ursachen. Wahrscheinlich beides.) ist ein Auseinanderdriften von Dokumentation
 und Code.
 
@@ -71,12 +72,13 @@ Diese Probleme müssen nicht zwangsläufig mit dem Lösungsansatz zu tun haben a
 bei den vorhandenen Tools sind sie zu beobachten.
 
 === Mein eigener Workflow
-In meinem persönlichen Arbeitsfluss bevorzuge ich es Diagramme mit einfachen
-Werkzeugen zu erstellen (die Definition von einfach ist dabei, was ich als
-einafach und angenehm empfinde :) bei denen ich mich auf die visuellen Aspekte
-konzentrieren kann (z.B. Freihand, Inkscape -> Svg, ditaa -> ascii art, yed ->
-graphml). Auf diese Weise kann man aus der resultierenden Grafik leicht die
-Funktionsweise der Software verstehen.
+In meinem persönlichen Arbeitsfluss bevorzuge ich es Diagramme mit
+einfachen Werkzeugen zu erstellen footnote:[die Definition von einfach
+ist dabei, was ich als einafach und angenehm empfinde :) ] bei denen
+ich mich auf die visuellen Aspekte konzentrieren kann (z.B. Freihand,
+Inkscape -> Svg, ditaa -> ascii art, yed -> graphml). Auf diese Weise
+kann man aus der resultierenden Grafik leicht die Funktionsweise der
+Software verstehen.
 
 == Übersicht
 
