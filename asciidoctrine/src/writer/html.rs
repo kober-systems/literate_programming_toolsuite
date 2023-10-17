@@ -4,6 +4,18 @@ use crate::{options, Result};
 use std::io;
 use tera::{Context, Tera};
 
+const HIGHLIGHTED_CODE_TAG: &str = "code";
+const STRONG_TAG: &str = "strong";
+const EM_TAG: &str = "em";
+
+struct ElementStyle {
+  tag: &'static str,
+}
+
+const MONOSPACED_STYLE: ElementStyle = ElementStyle { tag: HIGHLIGHTED_CODE_TAG };
+const STRONG_STYLE: ElementStyle = ElementStyle { tag: STRONG_TAG };
+const EM_STYLE: ElementStyle = ElementStyle { tag: EM_TAG };
+
 pub struct HtmlWriter {
   io: crate::util::Env,
 }
@@ -68,11 +80,6 @@ impl<T: io::Write> crate::Writer<T> for HtmlWriter {
   }
 }
 
-fn escape_text(input: &str) -> String {
-  input.replace("<", "&lt;").replace(">", "&gt;")
-}
-
-// TODO Styles etc
 fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> Result<()> {
   match &input.element {
     Element::Title { level } => {
@@ -140,13 +147,13 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
             |&attr| attr.as_str().find("%open").is_some()
           ).is_some()
         {
-          out.write_all(b"<details open>\n")?;
+          write_open_tag("details open", out)?;
         } else {
-          out.write_all(b"<details>\n")?;
+          write_open_tag("details", out)?;
         }
 
         let title = input.get_attribute("title").unwrap_or("Details");
-        out.write_all(&format!("  <summary class=\"title\">{}</summary>\n", title).as_bytes())?;
+        out.write_all(&format!("\n  <summary class=\"title\">{}</summary>\n", title).as_bytes())?;
 
         out.write_all(b"  <div class=\"content\">\n")?;
         out.write_all(b"    <div class=\"paragraph\">\n")?;
@@ -155,29 +162,28 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
         }
         out.write_all(b"    </div>\n")?;
         out.write_all(b"  </div>\n")?;
-        out.write_all(b"</details>\n")?;
+        write_close_tag("details", out)?;
+        out.write_all(b"\n")?;
 
         return Ok(());
       }
 
-      out.write_all(b"<div ")?;
-
       if let Some(id) = input.get_attribute("anchor") {
-        out.write_all(&format!("id=\"{}\" ", id).as_bytes())?;
+        out.write_all(&format!(" id=\"{}\" ", id).as_bytes())?;
       };
 
       let class = match kind {
         BlockType::Listing => "listingblock",
         _ => "unknown-block",
       };
-      out.write_all(&format!("class=\"{}\">\n", class).as_bytes())?;
+      write_open_tag(&format!("div class=\"{}\"", class), out)?;
 
       if let Some(title) = input.get_attribute("title") {
-        out.write_all(&format!("<div class=\"title\">{}</div>\n", title).as_bytes())?;
+        out.write_all(&format!("\n  <div class=\"title\">{}</div>\n", title).as_bytes())?;
       };
 
       if kind == &BlockType::Listing {
-        out.write_all(b"  <pre>")?;
+        out.write_all(b"\n  <pre>")?;
       }
 
       let content = input.get_attribute("content").unwrap_or(input.content);
@@ -186,8 +192,8 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
       if kind == &BlockType::Listing {
         out.write_all(b"</pre>\n")?;
       }
-
-      out.write_all(b"</div>\n")?;
+      write_close_tag("div", out)?;
+      out.write_all(b"\n")?;
     }
     Element::Link => {
       let url = input.get_attribute("url").unwrap_or("");
@@ -237,22 +243,22 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
       let content = input.get_attribute("content").unwrap_or("");
 
       if style == "monospaced" {
-        out.write_all(b"<code>")?;
+        write_open_tag(MONOSPACED_STYLE.tag, out)?;
       } else if style == "strong" {
-        out.write_all(b"<strong>")?;
+        write_open_tag(STRONG_STYLE.tag, out)?;
       } else if style == "em" {
-        out.write_all(b"<em>")?;
+        write_open_tag(EM_STYLE.tag, out)?;
       }
 
       out.write_all(content.as_bytes())?;
 
       if style == "monospaced" {
-        out.write_all(b"</code>")?;
+        write_close_tag(MONOSPACED_STYLE.tag, out)?;
       } else if style == "strong" {
-        out.write_all(b"</strong>")?;
+        rite_close_tag(STRONG_STYLE.tag, out)?;
       } else if style == "em" {
-        out.write_all(b"</em>")?;
-      };
+        write_close_tag(EM_STYLE.tag, out)?;
+      }
     }
     _ => {
       out.write_all(
@@ -266,4 +272,16 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
   }
 
   Ok(())
+}
+
+fn escape_text(input: &str) -> String {
+    input.replace("<", "&lt;").replace(">", "&gt;")
+}
+
+fn write_open_tag<T: io::Write>(tag: &str, out: &mut T) -> io::Result<()> {
+    out.write_all(format!("<{}>", tag).as_bytes())
+}
+
+fn write_close_tag<T: io::Write>(tag: &str, out: &mut T) -> io::Result<()> {
+    out.write_all(format!("</{}>", tag).as_bytes())
 }
