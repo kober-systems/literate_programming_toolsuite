@@ -104,11 +104,6 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
             out.write_all(b"\n")?;
             write_open_tag("li", indent + item_level + offset, out)?;
             out.write_all(b"\n")?;
-          } else if current_level == item_level {
-            write_close_tag("li", indent + item_level, out)?;
-            out.write_all(b"\n")?;
-            write_open_tag("li", indent + item_level, out)?;
-            out.write_all(b"\n")?;
           } else {
             if current_level > item_level {
               let diff = current_level - item_level;
