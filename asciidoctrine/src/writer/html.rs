@@ -86,12 +86,8 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
       out.write_all(&format!(">{}</h{}>\n", title, level).as_bytes())?;
     }
     Element::Paragraph => {
-      out.write_all(&b"  ".repeat(indent))?;
-      out.write_all(b"<p>")?;
-      for element in input.children.iter() {
-        write_html(element, indent, out)?;
-      }
-      out.write_all(b"</p>\n")?;
+      write_tag("p", input, indent, out)?;
+      out.write_all(b"\n")?;
     }
     Element::List => {
       let mut level = 1;
@@ -253,9 +249,15 @@ fn write_tag<T: io::Write>(
   indent: usize,
   out: &mut T,
 ) -> Result<()> {
+  out.write_all(&b"  ".repeat(indent))?;
   out.write_all(format!("<{}>", tag).as_bytes())?;
 
   match &inner.element {
+    Element::Paragraph => {
+      for element in inner.children.iter() {
+        write_html(element, indent, out)?;
+      }
+    }
     Element::Styled => {
       let content = inner.get_attribute("content").unwrap_or("");
       out.write_all(content.as_bytes())?;
