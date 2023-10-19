@@ -34,7 +34,7 @@ fn bullet_list_with_dashes() -> Result<()> {
     <p>This</p>
   </li>
   <li>
-  <p>is</p>
+    <p>is</p>
   </li>
   <li>
     <p>a</p>
@@ -97,7 +97,7 @@ fn bullet_list() -> Result<()> {
     <p>This</p>
   </li>
   <li>
-  <p>is</p>
+    <p>is</p>
   </li>
   <li>
     <p>a</p>
