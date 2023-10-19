@@ -94,28 +94,51 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
       out.write_all(b"\n")?;
     }
     Element::List => {
-      let mut level = 1;
-
-      out.write_all(b"<ul>\n")?;
+      let mut current_level = 0;
       for element in input.children.iter() {
         if let Element::ListItem(item_level) = element.element {
-          if item_level > level {
-            out.write_all(b"<ul>\n")?;
-          } else if item_level < level {
-            out.write_all(b"</ul>\n")?;
+          let item_level = item_level as usize;
+          let offset = if current_level > 0 { item_level - 1 } else { 0 };
+          if current_level < item_level {
+            write_open_tag("ul", indent + current_level + offset, out)?;
+            out.write_all(b"\n")?;
+            write_open_tag("li", indent + item_level + offset, out)?;
+            out.write_all(b"\n")?;
+          } else if current_level == item_level {
+            write_close_tag("li", indent + item_level, out)?;
+            out.write_all(b"\n")?;
+            write_open_tag("li", indent + item_level, out)?;
+            out.write_all(b"\n")?;
+          } else {
+            if current_level > item_level {
+              let diff = current_level - item_level;
+              let offset = (current_level * 2) - 1;
+              for i in 0..diff {
+                write_close_tag("li", indent + offset - (2 * i), out)?;
+                out.write_all(b"\n")?;
+                write_close_tag("ul", indent + offset - (2 * i) - 1, out)?;
+                out.write_all(b"\n")?;
+              }
+            }
+            write_close_tag("li", indent + item_level, out)?;
+            out.write_all(b"\n")?;
+            write_open_tag("li", indent + item_level, out)?;
+            out.write_all(b"\n")?;
           }
-          level = item_level;
-          write_html(element, indent, out)?;
+          write_html(element, indent + item_level + offset, out)?;
+
+          current_level = item_level;
         }
       }
-      out.write_all(b"</ul>\n")?;
+      write_close_tag("li", indent + 1, out)?;
+      out.write_all(b"\n")?;
+      write_close_tag("ul", indent, out)?;
+      out.write_all(b"\n")?;
     }
-    Element::ListItem(_level) => {
-      out.write_all(b"<li>\n")?;
+    Element::ListItem(_) => {
       for element in input.children.iter() {
-        write_html(element, indent, out)?;
+        write_html(element, indent + 1, out)?;
       }
-      out.write_all(b"</li>\n")?;
     }
     Element::TypedBlock { kind } => {
       if kind == &BlockType::Comment {
