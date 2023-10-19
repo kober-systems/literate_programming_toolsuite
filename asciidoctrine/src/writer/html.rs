@@ -249,8 +249,26 @@ fn write_tag<T: io::Write>(
   indent: usize,
   out: &mut T,
 ) -> Result<()> {
+  write_attribute_tag(tag, vec![], inner, indent, out)
+}
+
+fn write_attribute_tag<T: io::Write>(
+  tag: &str,
+  attrs: Vec<(&str, &str)>,
+  inner: &ElementSpan,
+  indent: usize,
+  out: &mut T,
+) -> Result<()> {
   out.write_all(&b"  ".repeat(indent))?;
-  out.write_all(format!("<{}>", tag).as_bytes())?;
+  out.write_all(format!("<{}", tag).as_bytes())?;
+  for (key, value) in attrs.iter() {
+    out.write_all(b" ")?;
+    out.write_all(key.as_bytes())?;
+    out.write_all(b"=\"")?;
+    out.write_all(value.as_bytes())?;
+    out.write_all(b"\"")?;
+  }
+  out.write_all(b">")?;
 
   match &inner.element {
     Element::Paragraph => {
