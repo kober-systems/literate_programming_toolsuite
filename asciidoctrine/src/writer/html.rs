@@ -134,9 +134,9 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
             |&attr| attr.as_str().find("%open").is_some()
           ).is_some()
         {
-          write_open_tag("details open", out)?;
+          write_open_tag("details open", indent, out)?;
         } else {
-          write_open_tag("details", out)?;
+          write_open_tag("details", indent, out)?;
         }
 
         let title = input.get_attribute("title").unwrap_or("Details");
@@ -149,7 +149,7 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
         }
         out.write_all(b"    </div>\n")?;
         out.write_all(b"  </div>\n")?;
-        write_close_tag("details", out)?;
+        write_close_tag("details", indent, out)?;
         out.write_all(b"\n")?;
 
         return Ok(());
@@ -163,7 +163,7 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
         BlockType::Listing => "listingblock",
         _ => "unknown-block",
       };
-      write_open_tag(&format!("div class=\"{}\"", class), out)?;
+      write_open_tag(&format!("div class=\"{}\"", class), indent, out)?;
 
       if let Some(title) = input.get_attribute("title") {
         out.write_all(&format!("\n  <div class=\"title\">{}</div>\n", title).as_bytes())?;
@@ -179,7 +179,7 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
       if kind == &BlockType::Listing {
         out.write_all(b"</pre>\n")?;
       }
-      write_close_tag("div", out)?;
+      write_close_tag("div", indent, out)?;
       out.write_all(b"\n")?;
     }
     Element::Link => {
@@ -300,10 +300,12 @@ fn escape_text(input: &str) -> String {
     input.replace("<", "&lt;").replace(">", "&gt;")
 }
 
-fn write_open_tag<T: io::Write>(tag: &str, out: &mut T) -> io::Result<()> {
-    out.write_all(format!("<{}>", tag).as_bytes())
+fn write_open_tag<T: io::Write>(tag: &str, indent: usize, out: &mut T) -> io::Result<()> {
+  out.write_all(&b"  ".repeat(indent))?;
+  out.write_all(format!("<{}>", tag).as_bytes())
 }
 
-fn write_close_tag<T: io::Write>(tag: &str, out: &mut T) -> io::Result<()> {
-    out.write_all(format!("</{}>", tag).as_bytes())
+fn write_close_tag<T: io::Write>(tag: &str, indent: usize, out: &mut T) -> io::Result<()> {
+  out.write_all(&b"  ".repeat(indent))?;
+  out.write_all(format!("</{}>", tag).as_bytes())
 }
