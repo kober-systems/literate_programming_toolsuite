@@ -255,7 +255,7 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
       if style == "monospaced" {
         write_close_tag(MONOSPACED_STYLE.tag, out)?;
       } else if style == "strong" {
-        rite_close_tag(STRONG_STYLE.tag, out)?;
+        write_close_tag(STRONG_STYLE.tag, out)?;
       } else if style == "em" {
         write_close_tag(EM_STYLE.tag, out)?;
       }
