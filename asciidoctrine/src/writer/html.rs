@@ -4,18 +4,6 @@ use crate::{options, Result};
 use std::io;
 use tera::{Context, Tera};
 
-const HIGHLIGHTED_CODE_TAG: &str = "code";
-const STRONG_TAG: &str = "strong";
-const EM_TAG: &str = "em";
-
-struct ElementStyle {
-  tag: &'static str,
-}
-
-const MONOSPACED_STYLE: ElementStyle = ElementStyle { tag: HIGHLIGHTED_CODE_TAG };
-const STRONG_STYLE: ElementStyle = ElementStyle { tag: STRONG_TAG };
-const EM_STYLE: ElementStyle = ElementStyle { tag: EM_TAG };
-
 pub struct HtmlWriter {
   io: crate::util::Env,
 }
@@ -239,26 +227,11 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
       out.write_all(input.content.as_bytes())?;
     }
     Element::Styled => {
-      let style = input.get_attribute("style").unwrap_or("");
-      let content = input.get_attribute("content").unwrap_or("");
-
-      if style == "monospaced" {
-        write_open_tag(MONOSPACED_STYLE.tag, out)?;
-      } else if style == "strong" {
-        write_open_tag(STRONG_STYLE.tag, out)?;
-      } else if style == "em" {
-        write_open_tag(EM_STYLE.tag, out)?;
-      }
-
-      out.write_all(content.as_bytes())?;
-
-      if style == "monospaced" {
-        write_close_tag(MONOSPACED_STYLE.tag, out)?;
-      } else if style == "strong" {
-        write_close_tag(STRONG_STYLE.tag, out)?;
-      } else if style == "em" {
-        write_close_tag(EM_STYLE.tag, out)?;
-      }
+      let style = match input.get_attribute("style").unwrap_or("") {
+        "monospaced" => "code",
+        style => style,
+      };
+      write_tag(style, input, indent, out)?;
     }
     _ => {
       out.write_all(
@@ -271,6 +244,26 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
     }
   }
 
+  Ok(())
+}
+
+fn write_tag<T: io::Write>(
+  tag: &str,
+  inner: &ElementSpan,
+  indent: usize,
+  out: &mut T,
+) -> Result<()> {
+  out.write_all(format!("<{}>", tag).as_bytes())?;
+
+  match &inner.element {
+    Element::Styled => {
+      let content = inner.get_attribute("content").unwrap_or("");
+      out.write_all(content.as_bytes())?;
+    }
+    el => write_html(inner, indent + 1, out)?,
+  };
+
+  out.write_all(format!("</{}>", tag).as_bytes())?;
   Ok(())
 }
 
