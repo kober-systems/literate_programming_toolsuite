@@ -1,6 +1,6 @@
 pub use crate::ast::*;
 use crate::util::Environment;
-use crate::{options, Result};
+use crate::{options, Result, AsciidoctrineError};
 use std::io;
 use tera::{Context, Tera};
 
@@ -71,19 +71,23 @@ impl<T: io::Write> crate::Writer<T> for HtmlWriter {
 fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> Result<()> {
   match &input.element {
     Element::Title { level } => {
-      let title = input.get_attribute("name").unwrap_or("");
-
-      out.write_all(&format!("<h{}", level).as_bytes())?;
+      let tag = format!("h{}", level);
 
       if level > &1 {
         let id = match input.get_attribute("anchor") {
           Some(id) => id.to_string(),
-          None => "_".to_string() + &title.replace(" ", "_").to_lowercase(),
+          None => {
+            let title = input
+              .get_attribute("name")
+              .ok_or(AsciidoctrineError::MalformedAst)?;
+            "_".to_string() + &title.replace(" ", "_").to_lowercase()
+          }
         };
-        out.write_all(&format!(" id=\"{}\"", id).as_bytes())?;
+        write_attribute_tag(&tag, vec![("id", &id)], input, indent, out)?;
+      } else {
+        write_tag(&tag, input, indent, out)?;
       };
-
-      out.write_all(&format!(">{}</h{}>\n", title, level).as_bytes())?;
+      out.write_all(b"\n")?;
     }
     Element::Paragraph => {
       write_tag("p", input, indent, out)?;
@@ -271,6 +275,12 @@ fn write_attribute_tag<T: io::Write>(
   out.write_all(b">")?;
 
   match &inner.element {
+    Element::Title { .. } => {
+      let title = inner
+        .get_attribute("name")
+        .ok_or(AsciidoctrineError::MalformedAst)?;
+      out.write_all(title.as_bytes())?;
+    }
     Element::Paragraph => {
       for element in inner.children.iter() {
         write_html(element, indent, out)?;
