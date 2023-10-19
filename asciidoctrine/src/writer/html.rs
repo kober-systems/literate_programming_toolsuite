@@ -101,11 +101,10 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
         if let Element::ListItem(item_level) = element.element {
           if item_level > level {
             out.write_all(b"<ul>\n")?;
-            level = item_level;
           } else if item_level < level {
             out.write_all(b"</ul>\n")?;
-            level = item_level;
           }
+          level = item_level;
           write_html(element, indent, out)?;
         }
       }
