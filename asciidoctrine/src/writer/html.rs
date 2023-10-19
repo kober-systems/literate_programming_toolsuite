@@ -280,16 +280,7 @@ fn write_attribute_tag<T: io::Write>(
   indent: usize,
   out: &mut T,
 ) -> Result<()> {
-  out.write_all(&b"  ".repeat(indent))?;
-  out.write_all(format!("<{}", tag).as_bytes())?;
-  for (key, value) in attrs.iter() {
-    out.write_all(b" ")?;
-    out.write_all(key.as_bytes())?;
-    out.write_all(b"=\"")?;
-    out.write_all(value.as_bytes())?;
-    out.write_all(b"\"")?;
-  }
-  out.write_all(b">")?;
+  write_open_attribute_tag(tag, attrs, indent, out)?;
 
   match &inner.element {
     Element::Title { .. } => {
@@ -315,12 +306,30 @@ fn write_attribute_tag<T: io::Write>(
 }
 
 fn escape_text(input: &str) -> String {
-    input.replace("<", "&lt;").replace(">", "&gt;")
+  input.replace("<", "&lt;").replace(">", "&gt;")
 }
 
-fn write_open_tag<T: io::Write>(tag: &str, indent: usize, out: &mut T) -> io::Result<()> {
+fn write_open_tag<T: io::Write>(tag: &str, indent: usize, out: &mut T) -> Result<()> {
+  write_open_attribute_tag(tag, vec![], indent, out)
+}
+
+fn write_open_attribute_tag<T: io::Write>(
+  tag: &str,
+  attrs: Vec<(&str, &str)>,
+  indent: usize,
+  out: &mut T,
+) -> Result<()> {
   out.write_all(&b"  ".repeat(indent))?;
-  out.write_all(format!("<{}>", tag).as_bytes())
+  out.write_all(format!("<{}", tag).as_bytes())?;
+  for (key, value) in attrs.iter() {
+    out.write_all(b" ")?;
+    out.write_all(key.as_bytes())?;
+    out.write_all(b"=\"")?;
+    out.write_all(value.as_bytes())?;
+    out.write_all(b"\"")?;
+  }
+  out.write_all(b">")?;
+  Ok(())
 }
 
 fn write_close_tag<T: io::Write>(tag: &str, indent: usize, out: &mut T) -> io::Result<()> {
