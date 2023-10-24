@@ -2181,11 +2181,6 @@ impl<T: io::Write> crate::Writer<T> for HtmlWriter {
   }
 }
 
-fn escape_text(input: &str) -> String {
-  input.replace("<", "&lt;").replace(">", "&gt;")
-}
-
-// TODO Styles etc
 fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> Result<()> {
   match &input.element {
     <<format_html_element>>
@@ -2193,26 +2188,11 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
       out.write_all(input.content.as_bytes())?;
     }
     Element::Styled => {
-      let style = input.get_attribute("style").unwrap_or("");
-      let content = input.get_attribute("content").unwrap_or("");
-
-      if style == "monospaced" {
-        out.write_all(b"<code>")?;
-      } else if style == "strong" {
-        out.write_all(b"<strong>")?;
-      } else if style == "em" {
-        out.write_all(b"<em>")?;
-      }
-
-      out.write_all(content.as_bytes())?;
-
-      if style == "monospaced" {
-        out.write_all(b"</code>")?;
-      } else if style == "strong" {
-        out.write_all(b"</strong>")?;
-      } else if style == "em" {
-        out.write_all(b"</em>")?;
+      let style = match input.get_attribute("style").unwrap_or("") {
+        "monospaced" => "code",
+        style => style,
       };
+      write_tag(style, input, indent, out)?;
     }
     _ => {
       out.write_all(
@@ -2226,6 +2206,13 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
   }
 
   Ok(())
+}
+
+// Helper Functions
+//----------------------------------------------------
+
+fn escape_text(input: &str) -> String {
+  input.replace("<", "&lt;").replace(">", "&gt;")
 }
 
 fn write_tag<T: io::Write>(
@@ -2293,6 +2280,28 @@ fn write_close_tag<T: io::Write>(tag: &str, indent: usize, out: &mut T) -> io::R
   out.write_all(&b"  ".repeat(indent))?;
   out.write_all(format!("</{}>", tag).as_bytes())
 }
+
+fn write_open_tag_ln<T: io::Write>(tag: &str, indent: usize, out: &mut T) -> Result<()> {
+  write_open_tag(tag, indent, out)?;
+  out.write_all(b"\n")?;
+  Ok(())
+}
+
+fn write_open_attribute_tag_ln<T: io::Write>(
+  tag: &str,
+  attrs: &str,
+  indent: usize,
+  out: &mut T,
+) -> Result<()> {
+  write_open_attribute_tag(tag, attrs, indent, out)?;
+  out.write_all(b"\n")?;
+  Ok(())
+}
+
+fn write_close_tag_ln<T: io::Write>(tag: &str, indent: usize, out: &mut T) -> io::Result<()> {
+  write_close_tag(tag, indent, out)?;
+  out.write_all(b"\n")
+}
 ----
 
 == Überschriften
@@ -2301,19 +2310,24 @@ fn write_close_tag<T: io::Write>(tag: &str, indent: usize, out: &mut T) -> io::R
 [source, rust]
 ----
 Element::Title { level } => {
-  let title = input.get_attribute("name").unwrap_or("");
-
-  out.write_all(&format!("<h{}", level).as_bytes())?;
+  let tag = format!("h{}", level);
 
   if level > &1 {
     let id = match input.get_attribute("anchor") {
       Some(id) => id.to_string(),
-      None => "_".to_string() + &title.replace(" ", "_").to_lowercase(),
+      None => {
+        let title = input
+          .get_attribute("name")
+          .ok_or(AsciidoctrineError::MalformedAst)?;
+        "_".to_string() + &title.replace(" ", "_").to_lowercase()
+      }
     };
-    out.write_all(&format!(" id=\"{}\"", id).as_bytes())?;
+    let attrs = format!("id=\"{}\"", id);
+    write_attribute_tag(&tag, &attrs, input, indent, out)?;
+  } else {
+    write_tag(&tag, input, indent, out)?;
   };
-
-  out.write_all(&format!(">{}</h{}>\n", title, level).as_bytes())?;
+  out.write_all(b"\n")?;
 }
 ----
 
@@ -2323,12 +2337,8 @@ Element::Title { level } => {
 [source, rust]
 ----
 Element::Paragraph => {
-  out.write_all(&b"  ".repeat(indent))?;
-  out.write_all(b"<p>")?;
-  for element in input.children.iter() {
-    write_html(element, indent, out)?;
-  }
-  out.write_all(b"</p>\n")?;
+  write_tag("p", input, indent, out)?;
+  out.write_all(b"\n")?;
 }
 ----
 
@@ -2348,45 +2358,39 @@ Element::List(list_type) => {
     if let Element::ListItem(item_level) = element.element {
       let attrs = match list_type {
         ListType::Bullet => "",
-        ListType::Number => if item_level % 2 == 0 {
-          "class=\"loweralpha\" type=\"a\""
-        } else {
-          "class=\"arabic\""
+        ListType::Number => {
+          if item_level % 2 == 0 {
+            "class=\"loweralpha\" type=\"a\""
+          } else {
+            "class=\"arabic\""
+          }
         }
       };
 
       let item_level = item_level as usize;
       let offset = if current_level > 0 { item_level - 1 } else { 0 };
       if current_level < item_level {
-        write_open_attribute_tag(list_element, attrs, indent + current_level + offset, out)?;
-        out.write_all(b"\n")?;
-        write_open_tag("li", indent + item_level + offset, out)?;
-        out.write_all(b"\n")?;
+        write_open_attribute_tag_ln(list_element, attrs, indent + current_level + offset, out)?;
+        write_open_tag_ln("li", indent + item_level + offset, out)?;
       } else {
         if current_level > item_level {
           let diff = current_level - item_level;
           let offset = (current_level * 2) - 1;
           for i in 0..diff {
-            write_close_tag("li", indent + offset - (2 * i), out)?;
-            out.write_all(b"\n")?;
-            write_close_tag(list_element, indent + offset - (2 * i) - 1, out)?;
-            out.write_all(b"\n")?;
+            write_close_tag_ln("li", indent + offset - (2 * i), out)?;
+            write_close_tag_ln(list_element, indent + offset - (2 * i) - 1, out)?;
           }
         }
-        write_close_tag("li", indent + item_level, out)?;
-        out.write_all(b"\n")?;
-        write_open_tag("li", indent + item_level, out)?;
-        out.write_all(b"\n")?;
+        write_close_tag_ln("li", indent + item_level, out)?;
+        write_open_tag_ln("li", indent + item_level, out)?;
       }
       write_html(element, indent + item_level + offset, out)?;
 
       current_level = item_level;
     }
   }
-  write_close_tag("li", indent + 1, out)?;
-  out.write_all(b"\n")?;
-  write_close_tag(list_element, indent, out)?;
-  out.write_all(b"\n")?;
+  write_close_tag_ln("li", indent + 1, out)?;
+  write_close_tag_ln(list_element, indent, out)?;
 }
 Element::ListItem(_) => {
   for element in input.children.iter() {
@@ -2417,40 +2421,40 @@ Element::TypedBlock { kind } => {
         |&attr| attr.as_str().find("%open").is_some()
       ).is_some()
     {
-      out.write_all(b"<details open>\n")?;
+      write_open_tag("details open", indent, out)?;
     } else {
-      out.write_all(b"<details>\n")?;
+      write_open_tag("details", indent, out)?;
     }
 
     let title = input.get_attribute("title").unwrap_or("Details");
-    out.write_all(&format!("  <summary class=\"title\">{}</summary>\n", title).as_bytes())?;
+    out.write_all(&format!("\n  <summary class=\"title\">{}</summary>\n", title).as_bytes())?;
 
-    out.write_all(b"  <div class=\"content\">\n")?;
-    out.write_all(b"    <div class=\"paragraph\">\n")?;
+    write_open_tag_ln("div class=\"content\"", indent + 1, out)?;
+    write_open_tag_ln("div class=\"paragraph\"", indent + 2, out)?;
     for element in input.children.iter() {
       write_html(element, indent + 3, out)?;
     }
-    out.write_all(b"    </div>\n")?;
-    out.write_all(b"  </div>\n")?;
-    out.write_all(b"</details>\n")?;
+    write_close_tag_ln("div", indent + 2, out)?;
+    write_close_tag_ln("div", indent + 1, out)?;
+    write_close_tag_ln("details", indent, out)?;
 
     return Ok(());
   }
 
-  out.write_all(b"<div ")?;
+  out.write_all(b"<div")?;
 
   if let Some(id) = input.get_attribute("anchor") {
-    out.write_all(&format!("id=\"{}\" ", id).as_bytes())?;
+    out.write_all(&format!(" id=\"{}\" ", id).as_bytes())?;
   };
 
   let class = match kind {
     BlockType::Listing => "listingblock",
     _ => "unknown-block",
   };
-  out.write_all(&format!("class=\"{}\">\n", class).as_bytes())?;
+  out.write_all(&format!(" class=\"{}\">\n", class).as_bytes())?;
 
   if let Some(title) = input.get_attribute("title") {
-    out.write_all(&format!("<div class=\"title\">{}</div>\n", title).as_bytes())?;
+    out.write_all(&format!("\n  <div class=\"title\">{}</div>\n", title).as_bytes())?;
   };
 
   if kind == &BlockType::Listing {
@@ -2463,8 +2467,7 @@ Element::TypedBlock { kind } => {
   if kind == &BlockType::Listing {
     out.write_all(b"</pre>\n")?;
   }
-
-  out.write_all(b"</div>\n")?;
+  write_close_tag_ln("div", indent, out)?;
 }
 ----
 
