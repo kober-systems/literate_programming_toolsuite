@@ -533,7 +533,7 @@ fn parse_bullet_list() -> Result<()> {
     elements: vec![ElementSpan {
       source: None,
       content: input.trim_start(),
-      element: Element::List,
+      element: Element::List(ListType::Bullet),
       start: 1,
       end: 28,
       start_line: 2,
@@ -688,7 +688,7 @@ fn parse_nested_bullet_list() -> Result<()> {
     elements: vec![ElementSpan {
       source: None,
       content: input.trim_start(),
-      element: Element::List,
+      element: Element::List(ListType::Bullet),
       start: 1,
       end: 31,
       start_line: 2,

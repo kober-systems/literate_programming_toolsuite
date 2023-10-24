@@ -85,13 +85,15 @@ list_element = ${
   )+
 }
 list_paragraph = ${ (inline | other_list_inline)+ }
-other_list_inline = @{ (!empty_lines ~ !EOI ~ !inline ~ !(NEWLINE ~ bullet) ~ !(continuation ~ delimited_block) ~ ANY)+ }
+other_list_inline = @{ (!empty_lines ~ !EOI ~ !inline ~ !(NEWLINE ~ (bullet | number_bullet)) ~ !(continuation ~ delimited_block) ~ ANY)+ }
 
 bullet = { ("*"+ | "-"+) }
 bullet_list_element = { bullet ~ list_element ~ (NEWLINE | EOI) }
 bullet_list = { bullet_list_element+ }
 
-numbered_list = { "numbered_list" } // TODO
+number_bullet = { "."+ }
+number_bullet_list_element = { number_bullet ~ list_element ~ (NEWLINE | EOI) }
+numbered_list = { number_bullet_list_element+ }
 
 label_bullet = { (!"::" ~ linechar) ~ "::" }
 labeled_list = { (label_bullet ~ list_element)+ }
