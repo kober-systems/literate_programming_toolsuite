@@ -606,7 +606,7 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> Opti
     }
     Rule::continuation => None,
     Rule::bullet_list => {
-      base.element = Element::List;
+      base.element = Element::List(ListType::Bullet);
 
       for subelement in element.into_inner() {
         if let Some(e) = process_element(subelement, env) {
@@ -617,7 +617,7 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> Opti
       Some(base)
     }
     Rule::numbered_list => {
-      base.element = Element::List;
+      base.element = Element::List(ListType::Number);
 
       for subelement in element.into_inner() {
         if let Some(e) = process_element(subelement, env) {

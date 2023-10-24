@@ -83,7 +83,8 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
             "_".to_string() + &title.replace(" ", "_").to_lowercase()
           }
         };
-        write_attribute_tag(&tag, vec![("id", &id)], input, indent, out)?;
+        let attrs = format!("id=\"{}\"", id);
+        write_attribute_tag(&tag, &attrs, input, indent, out)?;
       } else {
         write_tag(&tag, input, indent, out)?;
       };
@@ -93,14 +94,28 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
       write_tag("p", input, indent, out)?;
       out.write_all(b"\n")?;
     }
-    Element::List => {
+    Element::List(list_type) => {
+      let list_element = match list_type {
+        ListType::Bullet => "ul",
+        ListType::Number => "ol",
+      };
+
       let mut current_level = 0;
       for element in input.children.iter() {
         if let Element::ListItem(item_level) = element.element {
+          let attrs = match list_type {
+            ListType::Bullet => "",
+            ListType::Number => if item_level % 2 == 0 {
+              "class=\"loweralpha\" type=\"a\""
+            } else {
+              "class=\"arabic\""
+            }
+          };
+    
           let item_level = item_level as usize;
           let offset = if current_level > 0 { item_level - 1 } else { 0 };
           if current_level < item_level {
-            write_open_tag("ul", indent + current_level + offset, out)?;
+            write_open_attribute_tag(list_element, attrs, indent + current_level + offset, out)?;
             out.write_all(b"\n")?;
             write_open_tag("li", indent + item_level + offset, out)?;
             out.write_all(b"\n")?;
@@ -111,7 +126,7 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
               for i in 0..diff {
                 write_close_tag("li", indent + offset - (2 * i), out)?;
                 out.write_all(b"\n")?;
-                write_close_tag("ul", indent + offset - (2 * i) - 1, out)?;
+                write_close_tag(list_element, indent + offset - (2 * i) - 1, out)?;
                 out.write_all(b"\n")?;
               }
             }
@@ -127,7 +142,7 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
       }
       write_close_tag("li", indent + 1, out)?;
       out.write_all(b"\n")?;
-      write_close_tag("ul", indent, out)?;
+      write_close_tag(list_element, indent, out)?;
       out.write_all(b"\n")?;
     }
     Element::ListItem(_) => {
@@ -270,12 +285,12 @@ fn write_tag<T: io::Write>(
   indent: usize,
   out: &mut T,
 ) -> Result<()> {
-  write_attribute_tag(tag, vec![], inner, indent, out)
+  write_attribute_tag(tag, "", inner, indent, out)
 }
 
 fn write_attribute_tag<T: io::Write>(
   tag: &str,
-  attrs: Vec<(&str, &str)>,
+  attrs: &str,
   inner: &ElementSpan,
   indent: usize,
   out: &mut T,
@@ -310,23 +325,20 @@ fn escape_text(input: &str) -> String {
 }
 
 fn write_open_tag<T: io::Write>(tag: &str, indent: usize, out: &mut T) -> Result<()> {
-  write_open_attribute_tag(tag, vec![], indent, out)
+  write_open_attribute_tag(tag, "", indent, out)
 }
 
 fn write_open_attribute_tag<T: io::Write>(
   tag: &str,
-  attrs: Vec<(&str, &str)>,
+  attrs: &str,
   indent: usize,
   out: &mut T,
 ) -> Result<()> {
   out.write_all(&b"  ".repeat(indent))?;
   out.write_all(format!("<{}", tag).as_bytes())?;
-  for (key, value) in attrs.iter() {
+  if attrs != "" {
     out.write_all(b" ")?;
-    out.write_all(key.as_bytes())?;
-    out.write_all(b"=\"")?;
-    out.write_all(value.as_bytes())?;
-    out.write_all(b"\"")?;
+    out.write_all(attrs.as_bytes())?;
   }
   out.write_all(b">")?;
   Ok(())

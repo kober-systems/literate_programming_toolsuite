@@ -82,7 +82,7 @@ pub enum Element<'a> {
     level: u32,
   },
   Table,
-  List,
+  List(ListType),
   Image,
   Anchor,
   /// Holds all blocks with special content and the type
@@ -119,6 +119,12 @@ pub enum Element<'a> {
   TableCell,
   /// A wrong formatted text or block
   Error(String),
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+pub enum ListType {
+  Bullet,
+  Number,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
