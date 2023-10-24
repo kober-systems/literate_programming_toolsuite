@@ -1263,7 +1263,7 @@ list_element = ${
   )+
 }
 list_paragraph = ${ (inline | other_list_inline)+ }
-other_list_inline = @{ (!empty_lines ~ !EOI ~ !inline ~ !(NEWLINE ~ bullet) ~ !(continuation ~ delimited_block) ~ ANY)+ }
+other_list_inline = @{ (!empty_lines ~ !EOI ~ !inline ~ !(NEWLINE ~ (bullet | number_bullet)) ~ !(continuation ~ delimited_block) ~ ANY)+ }
 ----
 
 [%collapsible]
@@ -1418,7 +1418,7 @@ bullet_list = { bullet_list_element+ }
 [source, rust]
 ----
 Rule::bullet_list => {
-  base.element = Element::List;
+  base.element = Element::List(ListType::Bullet);
 
   for subelement in element.into_inner() {
     if let Some(e) = process_element(subelement, env) {
@@ -1460,11 +1460,16 @@ Manchmal möchte man die genaue Reihenfolge explizit vorgeben. In
 diesem Fall verwendet man eine nummerierte Liste. Wir können die
 Nummeriungspunkte mit `.` darstellen.
 
+[%collapsible]
+====
 [[blocks]]
 [source, pest]
 ----
-numbered_list = { "numbered_list" } // TODO
+number_bullet = { "."+ }
+number_bullet_list_element = { number_bullet ~ list_element ~ (NEWLINE | EOI) }
+numbered_list = { number_bullet_list_element+ }
 ----
+====
 
 [cols="a,a"]
 |====
@@ -1518,6 +1523,50 @@ numbered_list = { "numbered_list" } // TODO
 ====
 
 |====
+
+[%collapsible]
+====
+
+[[asciidoc_element_rules]]
+[source, rust]
+----
+Rule::numbered_list => {
+  base.element = Element::List(ListType::Number);
+
+  for subelement in element.into_inner() {
+    if let Some(e) = process_element(subelement, env) {
+      base.children.push(e);
+    }
+  }
+
+  Some(base)
+}
+Rule::number_bullet_list_element => {
+  for subelement in element.into_inner() {
+    match subelement.as_rule() {
+      Rule::number_bullet => {
+        base.element = Element::ListItem(subelement.as_str().trim().len() as u32);
+      }
+      Rule::list_element => {
+        for subelement in subelement.into_inner() {
+          if let Some(e) = process_element(subelement, env) {
+            base.children.push(e);
+          }
+        }
+      }
+      _ => {
+        let mut e = set_span(&subelement);
+        e.element = Element::Error("Not implemented".to_string());
+        base.children.push(e);
+      }
+    }
+  }
+
+  Some(base)
+}
+----
+
+====
 
 === Abhacklisten
 TODO
@@ -2064,7 +2113,7 @@ include::src/output/html5.adoc[]
 ----
 pub use crate::ast::*;
 use crate::util::Environment;
-use crate::{options, Result};
+use crate::{options, Result, AsciidoctrineError};
 use std::io;
 use tera::{Context, Tera};
 
@@ -2178,6 +2227,72 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
 
   Ok(())
 }
+
+fn write_tag<T: io::Write>(
+  tag: &str,
+  inner: &ElementSpan,
+  indent: usize,
+  out: &mut T,
+) -> Result<()> {
+  write_attribute_tag(tag, "", inner, indent, out)
+}
+
+fn write_attribute_tag<T: io::Write>(
+  tag: &str,
+  attrs: &str,
+  inner: &ElementSpan,
+  indent: usize,
+  out: &mut T,
+) -> Result<()> {
+  write_open_attribute_tag(tag, attrs, indent, out)?;
+
+  match &inner.element {
+    Element::Title { .. } => {
+      let title = inner
+        .get_attribute("name")
+        .ok_or(AsciidoctrineError::MalformedAst)?;
+      out.write_all(title.as_bytes())?;
+    }
+    Element::Paragraph => {
+      for element in inner.children.iter() {
+        write_html(element, indent, out)?;
+      }
+    }
+    Element::Styled => {
+      let content = inner.get_attribute("content").unwrap_or("");
+      out.write_all(content.as_bytes())?;
+    }
+    el => write_html(inner, indent + 1, out)?,
+  };
+
+  out.write_all(format!("</{}>", tag).as_bytes())?;
+  Ok(())
+}
+
+fn write_open_tag<T: io::Write>(tag: &str, indent: usize, out: &mut T) -> Result<()> {
+  write_open_attribute_tag(tag, "", indent, out)
+}
+
+fn write_open_attribute_tag<T: io::Write>(
+  tag: &str,
+  attrs: &str,
+  indent: usize,
+  out: &mut T,
+) -> Result<()> {
+  out.write_all(&b"  ".repeat(indent))?;
+  out.write_all(format!("<{}", tag).as_bytes())?;
+  if attrs != "" {
+    out.write_all(b" ")?;
+    out.write_all(attrs.as_bytes())?;
+  }
+  out.write_all(b">")?;
+  Ok(())
+}
+
+fn write_close_tag<T: io::Write>(tag: &str, indent: usize, out: &mut T) -> io::Result<()> {
+  out.write_all(&b"  ".repeat(indent))?;
+  out.write_all(format!("</{}>", tag).as_bytes())
+}
 ----
 
 == Überschriften
@@ -2222,30 +2337,61 @@ Element::Paragraph => {
 [[format_html_element]]
 [source, rust]
 ----
-Element::List => {
-  let mut level = 1;
+Element::List(list_type) => {
+  let list_element = match list_type {
+    ListType::Bullet => "ul",
+    ListType::Number => "ol",
+  };
 
-  out.write_all(b"<ul>\n")?;
+  let mut current_level = 0;
   for element in input.children.iter() {
     if let Element::ListItem(item_level) = element.element {
-      if item_level > level {
-        out.write_all(b"<ul>\n")?;
-        level = item_level;
-      } else if item_level < level {
-        out.write_all(b"</ul>\n")?;
-        level = item_level;
+      let attrs = match list_type {
+        ListType::Bullet => "",
+        ListType::Number => if item_level % 2 == 0 {
+          "class=\"loweralpha\" type=\"a\""
+        } else {
+          "class=\"arabic\""
+        }
+      };
+
+      let item_level = item_level as usize;
+      let offset = if current_level > 0 { item_level - 1 } else { 0 };
+      if current_level < item_level {
+        write_open_attribute_tag(list_element, attrs, indent + current_level + offset, out)?;
+        out.write_all(b"\n")?;
+        write_open_tag("li", indent + item_level + offset, out)?;
+        out.write_all(b"\n")?;
+      } else {
+        if current_level > item_level {
+          let diff = current_level - item_level;
+          let offset = (current_level * 2) - 1;
+          for i in 0..diff {
+            write_close_tag("li", indent + offset - (2 * i), out)?;
+            out.write_all(b"\n")?;
+            write_close_tag(list_element, indent + offset - (2 * i) - 1, out)?;
+            out.write_all(b"\n")?;
+          }
+        }
+        write_close_tag("li", indent + item_level, out)?;
+        out.write_all(b"\n")?;
+        write_open_tag("li", indent + item_level, out)?;
+        out.write_all(b"\n")?;
       }
-      write_html(element, indent, out)?;
+      write_html(element, indent + item_level + offset, out)?;
+
+      current_level = item_level;
     }
   }
-  out.write_all(b"</ul>\n")?;
+  write_close_tag("li", indent + 1, out)?;
+  out.write_all(b"\n")?;
+  write_close_tag(list_element, indent, out)?;
+  out.write_all(b"\n")?;
 }
-Element::ListItem(_level) => {
-  out.write_all(b"<li>\n")?;
+Element::ListItem(_) => {
   for element in input.children.iter() {
-    write_html(element, indent, out)?;
+    write_html(element, indent + 1, out)?;
   }
-  out.write_all(b"</li>\n")?;
 }
 ----
 
@@ -2654,7 +2800,7 @@ pub enum Element<'a> {
     level: u32,
   },
   Table,
-  List,
+  List(ListType),
   Image,
   Anchor,
   /// Holds all blocks with special content and the type
@@ -2691,6 +2837,12 @@ pub enum Element<'a> {
   TableCell,
   /// A wrong formatted text or block
   Error(String),
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+pub enum ListType {
+  Bullet,
+  Number,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
