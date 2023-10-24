@@ -1771,6 +1771,60 @@ fn process_image<'a>(
 == Tabellen
 TODO
 
+[cols="a,a"]
+|====
+
+[[unittest_simple_table_input]]
+[source, asciidoc, lisa-raw]
+[output="simple_table_html_output", name="simple_table"]
+....
+!===
+! Col1 ! Col2
+! Cel1 ! Cel2
+! Cel3 ! Cel4
+!===
+....
+
+|
+
+!=====
+! Col1 ! Col2
+! Cel1 ! Cel2
+! Cel3 ! Cel4
+!=====
+
+[%collapsible]
+.Html Output
+====
+
+[[simple_table_html_output]]
+[source, html]
+----
+<table class="tableblock frame-all grid-all stretch">
+  <colgroup>
+    <col style="width: 50%;">
+    <col style="width: 50%;">
+  </colgroup>
+  <tbody>
+    <tr>
+      <td><p>Col1</p></td>
+      <td><p>Col2</p></td>
+    </tr>
+    <tr>
+      <td><p>Cel1</p></td>
+      <td><p>Cel2</p></td>
+    </tr>
+    <tr>
+      <td><p>Cel3</p></td>
+      <td><p>Cel4</p></td>
+    </tr>
+  </tbody>
+</table>
+----
+====
+
+|====
+
 == Kommentare
 Manchmal möchte man nur einen Kommentar für den Author eines Textes
 (also meistens für sich selbst) festhalten, ohne dass dieser am Ende im
