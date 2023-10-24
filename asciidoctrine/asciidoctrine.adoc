@@ -1352,7 +1352,7 @@ bullet_list = { bullet_list_element+ }
     <p>This</p>
   </li>
   <li>
-  <p>is</p>
+    <p>is</p>
   </li>
   <li>
     <p>a</p>
