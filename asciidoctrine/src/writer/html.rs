@@ -105,45 +105,39 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
         if let Element::ListItem(item_level) = element.element {
           let attrs = match list_type {
             ListType::Bullet => "",
-            ListType::Number => if item_level % 2 == 0 {
-              "class=\"loweralpha\" type=\"a\""
-            } else {
-              "class=\"arabic\""
+            ListType::Number => {
+              if item_level % 2 == 0 {
+                "class=\"loweralpha\" type=\"a\""
+              } else {
+                "class=\"arabic\""
+              }
             }
           };
-    
+
           let item_level = item_level as usize;
           let offset = if current_level > 0 { item_level - 1 } else { 0 };
           if current_level < item_level {
-            write_open_attribute_tag(list_element, attrs, indent + current_level + offset, out)?;
-            out.write_all(b"\n")?;
-            write_open_tag("li", indent + item_level + offset, out)?;
-            out.write_all(b"\n")?;
+            write_open_attribute_tag_ln(list_element, attrs, indent + current_level + offset, out)?;
+            write_open_tag_ln("li", indent + item_level + offset, out)?;
           } else {
             if current_level > item_level {
               let diff = current_level - item_level;
               let offset = (current_level * 2) - 1;
               for i in 0..diff {
-                write_close_tag("li", indent + offset - (2 * i), out)?;
-                out.write_all(b"\n")?;
-                write_close_tag(list_element, indent + offset - (2 * i) - 1, out)?;
-                out.write_all(b"\n")?;
+                write_close_tag_ln("li", indent + offset - (2 * i), out)?;
+                write_close_tag_ln(list_element, indent + offset - (2 * i) - 1, out)?;
               }
             }
-            write_close_tag("li", indent + item_level, out)?;
-            out.write_all(b"\n")?;
-            write_open_tag("li", indent + item_level, out)?;
-            out.write_all(b"\n")?;
+            write_close_tag_ln("li", indent + item_level, out)?;
+            write_open_tag_ln("li", indent + item_level, out)?;
           }
           write_html(element, indent + item_level + offset, out)?;
 
           current_level = item_level;
         }
       }
-      write_close_tag("li", indent + 1, out)?;
-      out.write_all(b"\n")?;
-      write_close_tag(list_element, indent, out)?;
-      out.write_all(b"\n")?;
+      write_close_tag_ln("li", indent + 1, out)?;
+      write_close_tag_ln(list_element, indent, out)?;
     }
     Element::ListItem(_) => {
       for element in input.children.iter() {
@@ -182,8 +176,7 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
         }
         out.write_all(b"    </div>\n")?;
         out.write_all(b"  </div>\n")?;
-        write_close_tag("details", indent, out)?;
-        out.write_all(b"\n")?;
+        write_close_tag_ln("details", indent, out)?;
 
         return Ok(());
       }
@@ -212,8 +205,7 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
       if kind == &BlockType::Listing {
         out.write_all(b"</pre>\n")?;
       }
-      write_close_tag("div", indent, out)?;
-      out.write_all(b"\n")?;
+      write_close_tag_ln("div", indent, out)?;
     }
     Element::Link => {
       let url = input.get_attribute("url").unwrap_or("");
@@ -313,10 +305,10 @@ fn write_attribute_tag<T: io::Write>(
       let content = inner.get_attribute("content").unwrap_or("");
       out.write_all(content.as_bytes())?;
     }
-    el => write_html(inner, indent + 1, out)?,
+    _ => return Err(AsciidoctrineError::MalformedAst),
   };
 
-  out.write_all(format!("</{}>", tag).as_bytes())?;
+  write_close_tag(tag, 0, out)?;
   Ok(())
 }
 
@@ -347,4 +339,26 @@ fn write_open_attribute_tag<T: io::Write>(
 fn write_close_tag<T: io::Write>(tag: &str, indent: usize, out: &mut T) -> io::Result<()> {
   out.write_all(&b"  ".repeat(indent))?;
   out.write_all(format!("</{}>", tag).as_bytes())
+}
+
+fn write_open_tag_ln<T: io::Write>(tag: &str, indent: usize, out: &mut T) -> Result<()> {
+  write_open_tag(tag, indent, out)?;
+  out.write_all(b"\n")?;
+  Ok(())
+}
+
+fn write_open_attribute_tag_ln<T: io::Write>(
+  tag: &str,
+  attrs: &str,
+  indent: usize,
+  out: &mut T,
+) -> Result<()> {
+  write_open_attribute_tag(tag, attrs, indent, out)?;
+  out.write_all(b"\n")?;
+  Ok(())
+}
+
+fn write_close_tag_ln<T: io::Write>(tag: &str, indent: usize, out: &mut T) -> io::Result<()> {
+  write_close_tag(tag, indent, out)?;
+  out.write_all(b"\n")
 }
