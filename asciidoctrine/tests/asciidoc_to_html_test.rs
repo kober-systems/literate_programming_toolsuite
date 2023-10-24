@@ -395,6 +395,54 @@ fn numbered_list() -> Result<()> {
 }
 
 #[test]
+fn simple_table() -> Result<()> {
+  let content = r#"
+|===
+| Col1 | Col2
+| Cel1 | Cel2
+| Cel3 | Cel4
+|===
+"#;
+  let reader = AsciidocReader::new();
+  let mut opts = options::Opts::parse_from(vec!["--template", "-"].into_iter());
+  opts.template = Some("-".into());
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
+
+  let mut buf = BufWriter::new(Vec::new());
+  let mut writer = HtmlWriter::new();
+  writer.write(ast, &opts, &mut buf)?;
+
+  let output = String::from_utf8(buf.into_inner()?)?;
+  assert_eq!(
+    output,
+    r#"<table class="tableblock frame-all grid-all stretch">
+  <colgroup>
+    <col style="width: 50%;">
+    <col style="width: 50%;">
+  </colgroup>
+  <tbody>
+    <tr>
+      <td><p>Col1</p></td>
+      <td><p>Col2</p></td>
+    </tr>
+    <tr>
+      <td><p>Cel1</p></td>
+      <td><p>Cel2</p></td>
+    </tr>
+    <tr>
+      <td><p>Cel3</p></td>
+      <td><p>Cel4</p></td>
+    </tr>
+  </tbody>
+</table>
+"#
+  );
+
+  Ok(())
+}
+
+#[test]
 fn sourcecode_blocks() -> Result<()> {
   let content = r#"
 [source, bash]
