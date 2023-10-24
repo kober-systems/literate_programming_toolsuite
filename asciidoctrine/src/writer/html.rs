@@ -169,17 +169,19 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
         let title = input.get_attribute("title").unwrap_or("Details");
         out.write_all(&format!("\n  <summary class=\"title\">{}</summary>\n", title).as_bytes())?;
 
-        out.write_all(b"  <div class=\"content\">\n")?;
-        out.write_all(b"    <div class=\"paragraph\">\n")?;
+        write_open_tag_ln("div class=\"content\"", indent + 1, out)?;
+        write_open_tag_ln("div class=\"paragraph\"", indent + 2, out)?;
         for element in input.children.iter() {
           write_html(element, indent + 3, out)?;
         }
-        out.write_all(b"    </div>\n")?;
-        out.write_all(b"  </div>\n")?;
+        write_close_tag_ln("div", indent + 2, out)?;
+        write_close_tag_ln("div", indent + 1, out)?;
         write_close_tag_ln("details", indent, out)?;
 
         return Ok(());
       }
+
+      out.write_all(b"<div")?;
 
       if let Some(id) = input.get_attribute("anchor") {
         out.write_all(&format!(" id=\"{}\" ", id).as_bytes())?;
@@ -189,14 +191,14 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
         BlockType::Listing => "listingblock",
         _ => "unknown-block",
       };
-      write_open_tag(&format!("div class=\"{}\"", class), indent, out)?;
+      out.write_all(&format!(" class=\"{}\">\n", class).as_bytes())?;
 
       if let Some(title) = input.get_attribute("title") {
         out.write_all(&format!("\n  <div class=\"title\">{}</div>\n", title).as_bytes())?;
       };
 
       if kind == &BlockType::Listing {
-        out.write_all(b"\n  <pre>")?;
+        out.write_all(b"  <pre>")?;
       }
 
       let content = input.get_attribute("content").unwrap_or(input.content);
@@ -271,6 +273,13 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
   Ok(())
 }
 
+// Helper Functions
+//----------------------------------------------------
+
+fn escape_text(input: &str) -> String {
+  input.replace("<", "&lt;").replace(">", "&gt;")
+}
+
 fn write_tag<T: io::Write>(
   tag: &str,
   inner: &ElementSpan,
@@ -305,15 +314,11 @@ fn write_attribute_tag<T: io::Write>(
       let content = inner.get_attribute("content").unwrap_or("");
       out.write_all(content.as_bytes())?;
     }
-    _ => return Err(AsciidoctrineError::MalformedAst),
+    el => write_html(inner, indent + 1, out)?,
   };
 
-  write_close_tag(tag, 0, out)?;
+  out.write_all(format!("</{}>", tag).as_bytes())?;
   Ok(())
-}
-
-fn escape_text(input: &str) -> String {
-  input.replace("<", "&lt;").replace(">", "&gt;")
 }
 
 fn write_open_tag<T: io::Write>(tag: &str, indent: usize, out: &mut T) -> Result<()> {

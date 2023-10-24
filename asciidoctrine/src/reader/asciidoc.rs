@@ -616,17 +616,6 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> Opti
 
       Some(base)
     }
-    Rule::numbered_list => {
-      base.element = Element::List(ListType::Number);
-
-      for subelement in element.into_inner() {
-        if let Some(e) = process_element(subelement, env) {
-          base.children.push(e);
-        }
-      }
-
-      Some(base)
-    }
     Rule::bullet_list_element => {
       for subelement in element.into_inner() {
         match subelement.as_rule() {
@@ -645,6 +634,17 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> Opti
             e.element = Element::Error("Not implemented".to_string());
             base.children.push(e);
           }
+        }
+      }
+
+      Some(base)
+    }
+    Rule::numbered_list => {
+      base.element = Element::List(ListType::Number);
+
+      for subelement in element.into_inner() {
+        if let Some(e) = process_element(subelement, env) {
+          base.children.push(e);
         }
       }
 
