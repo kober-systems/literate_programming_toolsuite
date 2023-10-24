@@ -616,10 +616,44 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> Opti
 
       Some(base)
     }
+    Rule::numbered_list => {
+      base.element = Element::List;
+
+      for subelement in element.into_inner() {
+        if let Some(e) = process_element(subelement, env) {
+          base.children.push(e);
+        }
+      }
+
+      Some(base)
+    }
     Rule::bullet_list_element => {
       for subelement in element.into_inner() {
         match subelement.as_rule() {
           Rule::bullet => {
+            base.element = Element::ListItem(subelement.as_str().trim().len() as u32);
+          }
+          Rule::list_element => {
+            for subelement in subelement.into_inner() {
+              if let Some(e) = process_element(subelement, env) {
+                base.children.push(e);
+              }
+            }
+          }
+          _ => {
+            let mut e = set_span(&subelement);
+            e.element = Element::Error("Not implemented".to_string());
+            base.children.push(e);
+          }
+        }
+      }
+
+      Some(base)
+    }
+    Rule::number_bullet_list_element => {
+      for subelement in element.into_inner() {
+        match subelement.as_rule() {
+          Rule::number_bullet => {
             base.element = Element::ListItem(subelement.as_str().trim().len() as u32);
           }
           Rule::list_element => {
