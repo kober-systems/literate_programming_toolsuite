@@ -742,7 +742,7 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> Opti
     Rule::table_cell => Some(process_table_cell(element, base, env)),
     Rule::EOI => None,
     _ => {
-      base.element = Element::Error("Not implemented".to_string()); // TODO
+      base.element = Element::Error(format!("Not implemented:{:?}", element));
       Some(base)
     }
   };
