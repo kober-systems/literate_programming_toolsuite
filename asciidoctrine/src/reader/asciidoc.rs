@@ -192,6 +192,57 @@ fn process_delimited_inner<'a>(
   base
 }
 
+fn process_inner_table<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+  env: &mut Env,
+) -> ElementSpan<'a> {
+  for element in element.into_inner() {
+    match element.as_rule() {
+      Rule::delimited_inner => {
+        let ast = AsciidocParser::parse(Rule::table_inner, element.as_str()).unwrap();
+
+        for element in ast {
+          for subelement in element.into_inner() {
+            if let Some(e) = process_element(subelement, env) {
+              base.children.push(e);
+            }  
+          }
+        }
+        base.attributes.push(Attribute {
+          key: "content".to_string(),
+          value: AttributeValue::Ref(element.as_str()),
+        });
+      }
+      _ => (),
+    };
+  }
+  base
+}
+
+fn process_table_row<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+  env: &mut Env,
+) -> ElementSpan<'a> {
+  base.element = Element::TableRow;
+  for cell_element in element.into_inner() {
+      let cell = process_table_cell(cell_element, base.clone(), env);
+      base.children.push(cell);
+  }
+  base
+}
+
+fn process_table_cell<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+  env: &mut Env,
+) -> ElementSpan<'a> {
+  base.element = Element::TableCell;
+  base.content = element.into_inner().find(|sub| sub.as_rule() == Rule::table_cell_content).unwrap().as_str().trim();
+  base
+}
+
 fn process_title<'a>(
   element: Pair<'a, asciidoc::Rule>,
   mut base: ElementSpan<'a>,
@@ -542,6 +593,10 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> Opti
             };
             base = process_delimited_inner(subelement, base, env);
           }
+          Rule::delimited_table => {
+            base.element = Element::Table;
+            base = process_inner_table(subelement, base, env);
+          }
           // We just take the attributes at the beginning
           // of the element.
           _ => {
@@ -683,6 +738,8 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> Opti
       Some(base)
     }
     Rule::inline => Some(process_inline(element, base)),
+    Rule::table_row => Some(process_table_row(element, base, env)),
+    Rule::table_cell => Some(process_table_cell(element, base, env)),
     Rule::EOI => None,
     _ => {
       base.element = Element::Error("Not implemented".to_string()); // TODO
