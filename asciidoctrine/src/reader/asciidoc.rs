@@ -31,7 +31,6 @@ impl crate::Reader for AsciidocReader {
     let mut elements = Vec::new();
 
     for element in ast {
-      //println!("{:#?}", element); // TODO entfernen
       if let Some(element) = process_element(element, env) {
         elements.push(element);
       }
@@ -39,8 +38,8 @@ impl crate::Reader for AsciidocReader {
 
     Ok(AST {
       content: input,
-      elements: elements,
-      attributes: attributes,
+      elements,
+      attributes,
     })
   }
 }
@@ -206,7 +205,7 @@ fn process_inner_table<'a>(
           for subelement in element.into_inner() {
             if let Some(e) = process_element(subelement, env) {
               base.children.push(e);
-            }  
+            }
           }
         }
         base.attributes.push(Attribute {
@@ -236,7 +235,7 @@ fn process_table_row<'a>(
 fn process_table_cell<'a>(
   element: Pair<'a, asciidoc::Rule>,
   mut base: ElementSpan<'a>,
-  env: &mut Env,
+  _env: &mut Env,
 ) -> ElementSpan<'a> {
   base.element = Element::TableCell;
   base.content = element.into_inner().find(|sub| sub.as_rule() == Rule::table_cell_content).unwrap().as_str().trim();
@@ -546,10 +545,10 @@ fn set_span<'a>(element: &Pair<'a, asciidoc::Rule>) -> ElementSpan<'a> {
     positional_attributes: Vec::new(),
     start: element.as_span().start(),
     end: element.as_span().end(),
-    start_line: start_line,
-    start_col: start_col,
-    end_line: end_line,
-    end_col: end_col,
+    start_line,
+    start_col,
+    end_line,
+    end_col,
   }
 }
 
