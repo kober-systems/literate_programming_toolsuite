@@ -544,55 +544,7 @@ fn process_element<'a>(
   let mut base = set_span(&element);
 
   let element = match element.as_rule() {
-    Rule::delimited_block => {
-      for subelement in element.into_inner() {
-        match subelement.as_rule() {
-          Rule::anchor => {
-            base = process_anchor(subelement, base);
-          }
-          Rule::attribute_list => {
-            base = process_attribute_list(subelement, base);
-          }
-          Rule::blocktitle => {
-            base = process_blocktitle(subelement, base);
-          }
-          Rule::delimited_comment => {
-            base.element = Element::TypedBlock {
-              kind: BlockType::Comment,
-            };
-            base = process_delimited_inner(subelement, base, env);
-          }
-          Rule::delimited_source => {
-            base.element = Element::TypedBlock {
-              kind: BlockType::Listing,
-            };
-            base = process_delimited_inner(subelement, base, env);
-          }
-          Rule::delimited_literal => {
-            base.element = Element::TypedBlock {
-              kind: BlockType::Listing,
-            };
-            base = process_delimited_inner(subelement, base, env);
-          }
-          Rule::delimited_example => {
-            base.element = Element::TypedBlock {
-              kind: BlockType::Example,
-            };
-            base = process_delimited_inner(subelement, base, env);
-          }
-          Rule::delimited_table => {
-            base.element = Element::Table;
-            base = process_inner_table(subelement, base, env);
-          }
-          // We just take the attributes at the beginning
-          // of the element.
-          _ => {
-            break;
-          } // TODO improve matching
-        }
-      }
-      Some(base)
-    }
+    Rule::delimited_block => Some(process_delimited_block(element, env)),
     Rule::header => {
       for subelement in element.into_inner() {
         match subelement.as_rule() {
@@ -642,10 +594,7 @@ fn process_element<'a>(
       Some(base)
     }
     Rule::list_paragraph => Some(process_paragraph(element, base)),
-    Rule::other_list_inline => {
-      base.element = Element::Text;
-      Some(base)
-    }
+    Rule::other_list_inline => Some(from_element(&element, Element::Text)),
     Rule::continuation => None,
     Rule::bullet_list => {
       base.element = Element::List(ListType::Bullet);
@@ -733,6 +682,64 @@ fn process_element<'a>(
 
   element
 }
+
+fn process_delimited_block<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  env: &mut Env,
+) -> ElementSpan<'a> {
+  let mut base = set_span(&element);
+
+  for subelement in element.into_inner() {
+    match subelement.as_rule() {
+      Rule::anchor => {
+        base = process_anchor(subelement, base);
+      }
+      Rule::attribute_list => {
+        base = process_attribute_list(subelement, base);
+      }
+      Rule::blocktitle => {
+        base = process_blocktitle(subelement, base);
+      }
+      Rule::delimited_comment => {
+        base.element = Element::TypedBlock {
+          kind: BlockType::Comment,
+        };
+        base = process_delimited_inner(subelement, base, env);
+      }
+      Rule::delimited_source => {
+        base.element = Element::TypedBlock {
+          kind: BlockType::Listing,
+        };
+        base = process_delimited_inner(subelement, base, env);
+      }
+      Rule::delimited_literal => {
+        base.element = Element::TypedBlock {
+          kind: BlockType::Listing,
+        };
+        base = process_delimited_inner(subelement, base, env);
+      }
+      Rule::delimited_example => {
+        base.element = Element::TypedBlock {
+          kind: BlockType::Example,
+        };
+        base = process_delimited_inner(subelement, base, env);
+      }
+      Rule::delimited_table => {
+        base.element = Element::Table;
+        base = process_inner_table(subelement, base, env);
+      }
+      // We just take the attributes at the beginning
+      // of the element.
+      _ => {
+        break;
+      } // TODO improve matching
+    }
+  }
+
+  base
+}
+
+// Helper functions
 
 fn set_span<'a>(element: &Pair<'a, asciidoc::Rule>) -> ElementSpan<'a> {
   from_element(
