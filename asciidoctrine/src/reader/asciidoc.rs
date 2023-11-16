@@ -226,8 +226,8 @@ fn process_table_row<'a>(
 ) -> ElementSpan<'a> {
   base.element = Element::TableRow;
   for cell_element in element.into_inner() {
-      let cell = process_table_cell(cell_element, base.clone(), env);
-      base.children.push(cell);
+    let cell = process_table_cell(cell_element, base.clone(), env);
+    base.children.push(cell);
   }
   base
 }
@@ -238,7 +238,12 @@ fn process_table_cell<'a>(
   _env: &mut Env,
 ) -> ElementSpan<'a> {
   base.element = Element::TableCell;
-  base.content = element.into_inner().find(|sub| sub.as_rule() == Rule::table_cell_content).unwrap().as_str().trim();
+  base.content = element
+    .into_inner()
+    .find(|sub| sub.as_rule() == Rule::table_cell_content)
+    .unwrap()
+    .as_str()
+    .trim();
   base
 }
 
@@ -740,10 +745,7 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> Opti
     Rule::table_row => Some(process_table_row(element, base, env)),
     Rule::table_cell => Some(process_table_cell(element, base, env)),
     Rule::EOI => None,
-    _ => {
-      base.element = Element::Error(format!("Not implemented:{:?}", element));
-      Some(base)
-    }
+    _ => Some(base),
   };
 
   element
