@@ -259,6 +259,42 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
       };
       write_tag(style, input, indent, out)?;
     }
+    Element::Table => {
+      write_open_attribute_tag_ln("table","class=\"tableblock frame-all grid-all stretch\"", indent, out)?;
+      write_open_tag_ln("colgroup", indent+1, out)?;
+      write_open_attribute_tag_ln("col","style=\"width: 50%;\"", indent+2, out)?;
+      write_open_attribute_tag_ln("col","style=\"width: 50%;\"", indent+2, out)?;
+      write_close_tag_ln("colgroup", indent+1, out)?;
+      write_open_tag_ln("tbody", indent+1, out)?;
+      for table_row in input.children.iter() {
+          match &table_row.element {
+              Element::TableRow => {
+                write_open_tag_ln("tr", indent+2, out)?;
+                for table_cell in table_row.children.iter() {
+                    match &table_cell.element {
+                        Element::TableCell => {
+                          write_tag("td", table_cell, indent+3, out)?;
+                        }
+                        _ => (),
+                    }
+                    out.write_all(b"\n")?;
+                }
+                write_close_tag_ln("tr", indent+2, out)?;
+              }
+              _ => {
+                out.write_all(
+                  &format!(
+                    "<NOT-YET-SUPPORTED:{:?}>{}</NOT-YET-SUPPORTED:{:?}>\n",
+                    table_row.element, table_row.content, table_row.element,
+                  )
+                  .as_bytes(),
+                )?;                
+              },
+          }
+      }
+      write_close_tag_ln("tbody", indent+1, out)?;
+      write_close_tag_ln("table", indent, out)?;
+    }
     _ => {
       out.write_all(
         &format!(
@@ -313,6 +349,11 @@ fn write_attribute_tag<T: io::Write>(
     Element::Styled => {
       let content = inner.get_attribute("content").unwrap_or("");
       out.write_all(content.as_bytes())?;
+    }
+    Element::TableCell => {
+      write_open_tag("p", 0, out)?;
+      out.write_all(inner.content.as_bytes())?;
+      write_close_tag("p", 0, out)?;
     }
     el => write_html(inner, indent + 1, out)?,
   };
