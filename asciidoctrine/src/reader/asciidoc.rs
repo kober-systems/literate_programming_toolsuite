@@ -537,27 +537,10 @@ fn concat_elements<'a>(
   }
 }
 
-fn set_span<'a>(element: &Pair<'a, asciidoc::Rule>) -> ElementSpan<'a> {
-  let (start_line, start_col) = element.as_span().start_pos().line_col();
-  let (end_line, end_col) = element.as_span().end_pos().line_col();
-
-  ElementSpan {
-    element: Element::Error("Root".to_string()),
-    source: None, // TODO
-    content: element.as_str(),
-    children: Vec::new(),
-    attributes: Vec::new(),
-    positional_attributes: Vec::new(),
-    start: element.as_span().start(),
-    end: element.as_span().end(),
-    start_line,
-    start_col,
-    end_line,
-    end_col,
-  }
-}
-
-fn process_element<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> Option<ElementSpan<'a>> {
+fn process_element<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  env: &mut Env,
+) -> Option<ElementSpan<'a>> {
   let mut base = set_span(&element);
 
   let element = match element.as_rule() {
@@ -749,4 +732,31 @@ fn process_element<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> Opti
   };
 
   element
+}
+
+fn set_span<'a>(element: &Pair<'a, asciidoc::Rule>) -> ElementSpan<'a> {
+  from_element(
+    element,
+    Element::Error(format!("Not implemented:{:?}", element)),
+  )
+}
+
+fn from_element<'a>(rule: &Pair<'a, asciidoc::Rule>, element: Element<'a>) -> ElementSpan<'a> {
+  let (start_line, start_col) = rule.as_span().start_pos().line_col();
+  let (end_line, end_col) = rule.as_span().end_pos().line_col();
+
+  ElementSpan {
+    element,
+    source: None, // TODO
+    content: rule.as_str(),
+    children: Vec::new(),
+    attributes: Vec::new(),
+    positional_attributes: Vec::new(),
+    start: rule.as_span().start(),
+    end: rule.as_span().end(),
+    start_line,
+    start_col,
+    end_line,
+    end_col,
+  }
 }
