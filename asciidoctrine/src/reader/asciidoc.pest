@@ -60,22 +60,6 @@ header = {
   ~ &NEWLINE{2,}
 }
 
-table_inner = { 
-    (table_row ~ NEWLINE*)+
-}
-
-table_row = {
-    (!NEWLINE ~ table_cell )+
-}
-
-table_cell = {
- "|" ~ table_cell_content
-}
-
-table_cell_content = {
-( !"|" ~ !NEWLINE ~ ANY )*
-}
-
 revision_info = { identifier } // TODO
 
 author_info = { word+ ~ email? ~ &NEWLINE }
@@ -117,6 +101,28 @@ labeled_list = { (label_bullet ~ list_element)+ }
 image_block = { anchor* ~ image }
 image = { "image::" ~ (url | path) ~ inline_attribute_list }
 
+delimited_table = {
+  PUSH("|" ~ "="{3,}) ~ NEWLINE ~
+  delimited_inner ~
+  NEWLINE ~ POP ~ &(NEWLINE | EOI)
+}
+
+table_inner = {
+  (table_row ~ NEWLINE*)+
+}
+
+table_row = {
+  (!NEWLINE ~ table_cell)+
+}
+
+table_cell = {
+  "|" ~ table_cell_content
+}
+
+table_cell_content = {
+  (!"|" ~ !NEWLINE ~ ANY)*
+}
+
 attribute_entry = { ":" ~ identifier ~ ":" ~ identifier? ~ &NEWLINE }
 attribute_entry_block = { attribute_entry ~ NEWLINE }
 
@@ -142,12 +148,6 @@ delimited_example = {
   PUSH("="{4,}) ~ NEWLINE ~
   delimited_inner ~
   NEWLINE ~ POP ~ &(NEWLINE | EOI)
-}
-
-delimited_table = { 
-    PUSH("|" ~ "="{3,}) ~ NEWLINE ~ 
-    delimited_inner ~ 
-    NEWLINE ~ POP ~ &(NEWLINE | EOI)
 }
 
 delimited_verse = { "verse" } // TODO

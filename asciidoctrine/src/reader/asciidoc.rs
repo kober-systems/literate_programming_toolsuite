@@ -48,6 +48,150 @@ impl crate::Reader for AsciidocReader {
 #[grammar = "reader/asciidoc.pest"]
 pub struct AsciidocParser;
 
+fn process_element<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  env: &mut Env,
+) -> Option<ElementSpan<'a>> {
+  let mut base = set_span(&element);
+
+  let element = match element.as_rule() {
+    Rule::delimited_block => Some(process_delimited_block(element, env)),
+    Rule::header => {
+      for subelement in element.into_inner() {
+        match subelement.as_rule() {
+          Rule::title => {
+            if let Some(e) = process_title(subelement, base.clone()) {
+              base = e;
+            }
+          }
+          // We just take the attributes at the beginning
+          // of the element.
+          _ => {
+            break;
+          } // TODO improve matching
+        }
+      }
+      // TODO
+      Some(base)
+    }
+    Rule::title => process_title(element, base),
+    Rule::title_block => {
+      for subelement in element.into_inner() {
+        match subelement.as_rule() {
+          Rule::title => {
+            if let Some(e) = process_title(subelement, base.clone()) {
+              base = e;
+            }
+          }
+          Rule::anchor => {
+            base = process_anchor(subelement, base);
+          }
+          // We just take the attributes at the beginning
+          // of the element.
+          _ => {
+            break;
+          } // TODO improve matching
+        }
+      }
+      Some(base)
+    }
+    Rule::paragraph => Some(process_paragraph(element)),
+    Rule::list => {
+      for subelement in element.into_inner() {
+        if let Some(e) = process_element(subelement, env) {
+          base = e;
+        }
+      }
+      Some(base)
+    }
+    Rule::list_paragraph => Some(process_paragraph(element)),
+    Rule::other_list_inline => Some(from_element(&element, Element::Text)),
+    Rule::continuation => None,
+    Rule::bullet_list => {
+      base.element = Element::List(ListType::Bullet);
+
+      for subelement in element.into_inner() {
+        if let Some(e) = process_element(subelement, env) {
+          base.children.push(e);
+        }
+      }
+
+      Some(base)
+    }
+    Rule::bullet_list_element => {
+      for subelement in element.into_inner() {
+        match subelement.as_rule() {
+          Rule::bullet => {
+            base.element = Element::ListItem(subelement.as_str().trim().len() as u32);
+          }
+          Rule::list_element => {
+            for subelement in subelement.into_inner() {
+              if let Some(e) = process_element(subelement, env) {
+                base.children.push(e);
+              }
+            }
+          }
+          _ => {
+            let mut e = set_span(&subelement);
+            e.element = Element::Error("Not implemented".to_string());
+            base.children.push(e);
+          }
+        }
+      }
+
+      Some(base)
+    }
+    Rule::numbered_list => {
+      base.element = Element::List(ListType::Number);
+
+      for subelement in element.into_inner() {
+        if let Some(e) = process_element(subelement, env) {
+          base.children.push(e);
+        }
+      }
+
+      Some(base)
+    }
+    Rule::number_bullet_list_element => {
+      for subelement in element.into_inner() {
+        match subelement.as_rule() {
+          Rule::number_bullet => {
+            base.element = Element::ListItem(subelement.as_str().trim().len() as u32);
+          }
+          Rule::list_element => {
+            for subelement in subelement.into_inner() {
+              if let Some(e) = process_element(subelement, env) {
+                base.children.push(e);
+              }
+            }
+          }
+          _ => {
+            base.children.push(set_span(&subelement));
+          }
+        }
+      }
+
+      Some(base)
+    }
+    Rule::image_block => Some(process_image(element, base, env)),
+    Rule::block => {
+      for subelement in element.into_inner() {
+        if let Some(e) = process_element(subelement, env) {
+          base = e;
+        }
+      }
+      Some(base)
+    }
+    Rule::inline => Some(process_inline(element, base)),
+    Rule::table_row => Some(process_table_row(element, base, env)),
+    Rule::table_cell => Some(process_table_cell(element, base, env)),
+    Rule::EOI => None,
+    _ => Some(base),
+  };
+
+  element
+}
+
 fn process_anchor<'a>(
   element: Pair<'a, asciidoc::Rule>,
   mut base: ElementSpan<'a>,
@@ -160,6 +304,62 @@ fn process_blocktitle<'a>(
       _ => (),
     };
   }
+  base
+}
+
+fn process_delimited_block<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  env: &mut Env,
+) -> ElementSpan<'a> {
+  let mut base = set_span(&element);
+
+  for subelement in element.into_inner() {
+    match subelement.as_rule() {
+      Rule::anchor => {
+        base = process_anchor(subelement, base);
+      }
+      Rule::attribute_list => {
+        base = process_attribute_list(subelement, base);
+      }
+      Rule::blocktitle => {
+        base = process_blocktitle(subelement, base);
+      }
+      Rule::delimited_comment => {
+        base.element = Element::TypedBlock {
+          kind: BlockType::Comment,
+        };
+        base = process_delimited_inner(subelement, base, env);
+      }
+      Rule::delimited_source => {
+        base.element = Element::TypedBlock {
+          kind: BlockType::Listing,
+        };
+        base = process_delimited_inner(subelement, base, env);
+      }
+      Rule::delimited_literal => {
+        base.element = Element::TypedBlock {
+          kind: BlockType::Listing,
+        };
+        base = process_delimited_inner(subelement, base, env);
+      }
+      Rule::delimited_example => {
+        base.element = Element::TypedBlock {
+          kind: BlockType::Example,
+        };
+        base = process_delimited_inner(subelement, base, env);
+      }
+      Rule::delimited_table => {
+        base.element = Element::Table;
+        base = process_inner_table(subelement, base, env);
+      }
+      // We just take the attributes at the beginning
+      // of the element.
+      _ => {
+        break;
+      } // TODO improve matching
+    }
+  }
+
   base
 }
 
@@ -306,30 +506,15 @@ fn process_title<'a>(
   Some(base)
 }
 
-fn process_paragraph<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-) -> ElementSpan<'a> {
-  base.element = Element::Paragraph;
+fn process_paragraph<'a>(element: Pair<'a, asciidoc::Rule>) -> ElementSpan<'a> {
+  let mut base = from_element(&element, Element::Paragraph);
 
   for subelement in element.into_inner() {
-    let mut sub = set_span(&subelement);
-    match subelement.as_rule() {
-      Rule::other_inline => {
-        sub.element = Element::Text;
-        // TODO Newlines entfernen? Als Attribut?
-      }
-      Rule::other_list_inline => {
-        sub.element = Element::Text;
-      }
-      Rule::inline => {
-        sub = process_inline(subelement, sub);
-      }
-      _ => {
-        sub.element = Element::Error("Not implemented!".to_string());
-      }
-    }
-    base.children.push(sub);
+    base.children.push(match subelement.as_rule() {
+      Rule::other_inline | Rule::other_list_inline => from_element(&subelement, Element::Text),
+      Rule::inline => process_inline(subelement.clone(), set_span(&subelement)),
+      _ => set_span(&subelement),
+    });
   }
 
   base
@@ -517,6 +702,8 @@ fn process_image<'a>(
   base
 }
 
+// Helper functions
+
 fn concat_elements<'a>(
   element: Pair<'a, asciidoc::Rule>,
   filter: asciidoc::Rule,
@@ -534,208 +721,6 @@ fn concat_elements<'a>(
     None
   }
 }
-
-fn process_element<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  env: &mut Env,
-) -> Option<ElementSpan<'a>> {
-  let mut base = set_span(&element);
-
-  let element = match element.as_rule() {
-    Rule::delimited_block => Some(process_delimited_block(element, env)),
-    Rule::header => {
-      for subelement in element.into_inner() {
-        match subelement.as_rule() {
-          Rule::title => {
-            if let Some(e) = process_title(subelement, base.clone()) {
-              base = e;
-            }
-          }
-          // We just take the attributes at the beginning
-          // of the element.
-          _ => {
-            break;
-          } // TODO improve matching
-        }
-      }
-      // TODO
-      Some(base)
-    }
-    Rule::title => process_title(element, base),
-    Rule::title_block => {
-      for subelement in element.into_inner() {
-        match subelement.as_rule() {
-          Rule::title => {
-            if let Some(e) = process_title(subelement, base.clone()) {
-              base = e;
-            }
-          }
-          Rule::anchor => {
-            base = process_anchor(subelement, base);
-          }
-          // We just take the attributes at the beginning
-          // of the element.
-          _ => {
-            break;
-          } // TODO improve matching
-        }
-      }
-      Some(base)
-    }
-    Rule::paragraph => Some(process_paragraph(element, base)),
-    Rule::list => {
-      for subelement in element.into_inner() {
-        if let Some(e) = process_element(subelement, env) {
-          base = e;
-        }
-      }
-      Some(base)
-    }
-    Rule::list_paragraph => Some(process_paragraph(element, base)),
-    Rule::other_list_inline => Some(from_element(&element, Element::Text)),
-    Rule::continuation => None,
-    Rule::bullet_list => {
-      base.element = Element::List(ListType::Bullet);
-
-      for subelement in element.into_inner() {
-        if let Some(e) = process_element(subelement, env) {
-          base.children.push(e);
-        }
-      }
-
-      Some(base)
-    }
-    Rule::bullet_list_element => {
-      for subelement in element.into_inner() {
-        match subelement.as_rule() {
-          Rule::bullet => {
-            base.element = Element::ListItem(subelement.as_str().trim().len() as u32);
-          }
-          Rule::list_element => {
-            for subelement in subelement.into_inner() {
-              if let Some(e) = process_element(subelement, env) {
-                base.children.push(e);
-              }
-            }
-          }
-          _ => {
-            let mut e = set_span(&subelement);
-            e.element = Element::Error("Not implemented".to_string());
-            base.children.push(e);
-          }
-        }
-      }
-
-      Some(base)
-    }
-    Rule::numbered_list => {
-      base.element = Element::List(ListType::Number);
-
-      for subelement in element.into_inner() {
-        if let Some(e) = process_element(subelement, env) {
-          base.children.push(e);
-        }
-      }
-
-      Some(base)
-    }
-    Rule::number_bullet_list_element => {
-      for subelement in element.into_inner() {
-        match subelement.as_rule() {
-          Rule::number_bullet => {
-            base.element = Element::ListItem(subelement.as_str().trim().len() as u32);
-          }
-          Rule::list_element => {
-            for subelement in subelement.into_inner() {
-              if let Some(e) = process_element(subelement, env) {
-                base.children.push(e);
-              }
-            }
-          }
-          _ => {
-            base.children.push(set_span(&subelement));
-          }
-        }
-      }
-
-      Some(base)
-    }
-    Rule::image_block => Some(process_image(element, base, env)),
-    Rule::block => {
-      for subelement in element.into_inner() {
-        if let Some(e) = process_element(subelement, env) {
-          base = e;
-        }
-      }
-      Some(base)
-    }
-    Rule::inline => Some(process_inline(element, base)),
-    Rule::table_row => Some(process_table_row(element, base, env)),
-    Rule::table_cell => Some(process_table_cell(element, base, env)),
-    Rule::EOI => None,
-    _ => Some(base),
-  };
-
-  element
-}
-
-fn process_delimited_block<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  env: &mut Env,
-) -> ElementSpan<'a> {
-  let mut base = set_span(&element);
-
-  for subelement in element.into_inner() {
-    match subelement.as_rule() {
-      Rule::anchor => {
-        base = process_anchor(subelement, base);
-      }
-      Rule::attribute_list => {
-        base = process_attribute_list(subelement, base);
-      }
-      Rule::blocktitle => {
-        base = process_blocktitle(subelement, base);
-      }
-      Rule::delimited_comment => {
-        base.element = Element::TypedBlock {
-          kind: BlockType::Comment,
-        };
-        base = process_delimited_inner(subelement, base, env);
-      }
-      Rule::delimited_source => {
-        base.element = Element::TypedBlock {
-          kind: BlockType::Listing,
-        };
-        base = process_delimited_inner(subelement, base, env);
-      }
-      Rule::delimited_literal => {
-        base.element = Element::TypedBlock {
-          kind: BlockType::Listing,
-        };
-        base = process_delimited_inner(subelement, base, env);
-      }
-      Rule::delimited_example => {
-        base.element = Element::TypedBlock {
-          kind: BlockType::Example,
-        };
-        base = process_delimited_inner(subelement, base, env);
-      }
-      Rule::delimited_table => {
-        base.element = Element::Table;
-        base = process_inner_table(subelement, base, env);
-      }
-      // We just take the attributes at the beginning
-      // of the element.
-      _ => {
-        break;
-      } // TODO improve matching
-    }
-  }
-
-  base
-}
-
-// Helper functions
 
 fn set_span<'a>(element: &Pair<'a, asciidoc::Rule>) -> ElementSpan<'a> {
   from_element(
