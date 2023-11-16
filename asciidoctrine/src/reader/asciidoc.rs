@@ -300,9 +300,7 @@ fn process_title<'a>(
         }
       }
     }
-    _ => {
-      base.element = Element::Error("Not implemented".to_string());
-    } // TODO
+    _ => (),
   };
 
   Some(base)
@@ -655,9 +653,7 @@ fn process_element<'a>(
             }
           }
           _ => {
-            let mut e = set_span(&subelement);
-            e.element = Element::Error("Not implemented".to_string());
-            base.children.push(e);
+            base.children.push(set_span(&subelement));
           }
         }
       }
