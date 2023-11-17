@@ -1785,6 +1785,9 @@ table_cell_content = {
 }
 ----
 
+[cols="a,a",separator="!"]
+!===
+
 [[unittest_simple_table_input]]
 [source, asciidoc, lisa-raw]
 [output="simple_table_html_output", name="simple_table"]
@@ -1796,13 +1799,14 @@ table_cell_content = {
 |===
 ....
 
-|
+!
 
-!=====
-! Col1 ! Col2
-! Cel1 ! Cel2
-! Cel3 ! Cel4
-!=====
+[separator="|"]
+|===
+| Col1 | Col2
+| Cel1 | Cel2
+| Cel3 | Cel4
+|===
 
 [%collapsible]
 .Html Output
@@ -1834,7 +1838,8 @@ table_cell_content = {
 ----
 ====
 
-|====
+!===
+
 [%collapsible]
 ====
 
