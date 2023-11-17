@@ -282,7 +282,6 @@ impl crate::Reader for AsciidocReader {
     let mut elements = Vec::new();
 
     for element in ast {
-      //println!("{:#?}", element); // TODO entfernen
       if let Some(element) = process_element(element, env) {
         elements.push(element);
       }
@@ -290,8 +289,8 @@ impl crate::Reader for AsciidocReader {
 
     Ok(AST {
       content: input,
-      elements: elements,
-      attributes: attributes,
+      elements,
+      attributes,
     })
   }
 }
@@ -300,7 +299,33 @@ impl crate::Reader for AsciidocReader {
 #[grammar = "reader/asciidoc.pest"]
 pub struct AsciidocParser;
 
+fn process_element<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  env: &mut Env,
+) -> Option<ElementSpan<'a>> {
+  let mut base = set_span(&element);
+
+  let element = match element.as_rule() {
+    <<asciidoc_element_rules>>
+    Rule::block => {
+      for subelement in element.into_inner() {
+        if let Some(e) = process_element(subelement, env) {
+          base = e;
+        }
+      }
+      Some(base)
+    }
+    Rule::inline => Some(process_inline(element, base)),
+    Rule::EOI => None,
+    _ => Some(base),
+  };
+
+  element
+}
+
 <<asciidoc_parser_functions|join="\n\n">>
+
+// Helper functions
 
 fn concat_elements<'a>(
   element: Pair<'a, asciidoc::Rule>,
@@ -321,47 +346,30 @@ fn concat_elements<'a>(
 }
 
 fn set_span<'a>(element: &Pair<'a, asciidoc::Rule>) -> ElementSpan<'a> {
-  let (start_line, start_col) = element.as_span().start_pos().line_col();
-  let (end_line, end_col) = element.as_span().end_pos().line_col();
+  from_element(
+    element,
+    Element::Error(format!("Not implemented:{:?}", element)),
+  )
+}
+
+fn from_element<'a>(rule: &Pair<'a, asciidoc::Rule>, element: Element<'a>) -> ElementSpan<'a> {
+  let (start_line, start_col) = rule.as_span().start_pos().line_col();
+  let (end_line, end_col) = rule.as_span().end_pos().line_col();
 
   ElementSpan {
-    element: Element::Error("Root".to_string()),
+    element,
     source: None, // TODO
-    content: element.as_str(),
+    content: rule.as_str(),
     children: Vec::new(),
     attributes: Vec::new(),
     positional_attributes: Vec::new(),
-    start: element.as_span().start(),
-    end: element.as_span().end(),
-    start_line: start_line,
-    start_col: start_col,
-    end_line: end_line,
-    end_col: end_col,
+    start: rule.as_span().start(),
+    end: rule.as_span().end(),
+    start_line,
+    start_col,
+    end_line,
+    end_col,
   }
-}
-
-fn process_element<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> Option<ElementSpan<'a>> {
-  let mut base = set_span(&element);
-
-  let element = match element.as_rule() {
-    <<asciidoc_element_rules>>
-    Rule::block => {
-      for subelement in element.into_inner() {
-        if let Some(e) = process_element(subelement, env) {
-          base = e;
-        }
-      }
-      Some(base)
-    }
-    Rule::inline => Some(process_inline(element, base)),
-    Rule::EOI => None,
-    _ => {
-      base.element = Element::Error("Not implemented".to_string()); // TODO
-      Some(base)
-    }
-  };
-
-  element
 }
 ----
 ====
@@ -662,7 +670,7 @@ delimited_block = {
     //delimited_sidebar |
     delimited_source |
     //delimited_stem |
-    //delimited_table |
+    delimited_table |
     delimited_verse
   )
 }
@@ -673,7 +681,18 @@ delimited_inner = @{ (!(NEWLINE ~ PEEK) ~ ANY)* }
 [[asciidoc_element_rules]]
 [source, rust]
 ----
-Rule::delimited_block => {
+Rule::delimited_block => Some(process_delimited_block(element, env)),
+----
+
+[[asciidoc_parser_functions]]
+[source, rust]
+----
+fn process_delimited_block<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  env: &mut Env,
+) -> ElementSpan<'a> {
+  let mut base = set_span(&element);
+
   for subelement in element.into_inner() {
     match subelement.as_rule() {
       Rule::anchor => {
@@ -693,13 +712,10 @@ Rule::delimited_block => {
       } // TODO improve matching
     }
   }
-  Some(base)
-}
-----
 
-[[asciidoc_parser_functions]]
-[source, rust]
-----
+  base
+}
+
 fn process_delimited_inner<'a>(
   element: Pair<'a, asciidoc::Rule>,
   mut base: ElementSpan<'a>,
@@ -889,9 +905,7 @@ fn process_title<'a>(
         }
       }
     }
-    _ => {
-      base.element = Element::Error("Not implemented".to_string());
-    } // TODO
+    _ => (),
   };
 
   Some(base)
@@ -1008,36 +1022,21 @@ paragraph = ${ (inline | other_inline)+ }
 [[asciidoc_element_rules]]
 [source, rust]
 ----
-Rule::paragraph => Some(process_paragraph(element, base)),
+Rule::paragraph => Some(process_paragraph(element)),
 ----
 
 [[asciidoc_parser_functions]]
 [source, rust]
 ----
-fn process_paragraph<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-) -> ElementSpan<'a> {
-  base.element = Element::Paragraph;
+fn process_paragraph<'a>(element: Pair<'a, asciidoc::Rule>) -> ElementSpan<'a> {
+  let mut base = from_element(&element, Element::Paragraph);
 
   for subelement in element.into_inner() {
-    let mut sub = set_span(&subelement);
-    match subelement.as_rule() {
-      Rule::other_inline => {
-        sub.element = Element::Text;
-        // TODO Newlines entfernen? Als Attribut?
-      }
-      Rule::other_list_inline => {
-        sub.element = Element::Text;
-      }
-      Rule::inline => {
-        sub = process_inline(subelement, sub);
-      }
-      _ => {
-        sub.element = Element::Error("Not implemented!".to_string());
-      }
-    }
-    base.children.push(sub);
+    base.children.push(match subelement.as_rule() {
+      Rule::other_inline | Rule::other_list_inline => from_element(&subelement, Element::Text),
+      Rule::inline => process_inline(subelement.clone(), set_span(&subelement)),
+      _ => set_span(&subelement),
+    });
   }
 
   base
@@ -1229,9 +1228,7 @@ fn process_inline<'a>(
           });
         };
       }
-      _ => {
-        base.element = Element::Error("Not implemented".to_string());
-      }
+      _ => (),
     };
   }
   base
@@ -1280,11 +1277,8 @@ Rule::list => {
   }
   Some(base)
 }
-Rule::list_paragraph => Some(process_paragraph(element, base)),
-Rule::other_list_inline => {
-  base.element = Element::Text;
-  Some(base)
-}
+Rule::list_paragraph => Some(process_paragraph(element)),
+Rule::other_list_inline => Some(from_element(&element, Element::Text)),
 Rule::continuation => None,
 ----
 
@@ -1442,9 +1436,7 @@ Rule::bullet_list_element => {
         }
       }
       _ => {
-        let mut e = set_span(&subelement);
-        e.element = Element::Error("Not implemented".to_string());
-        base.children.push(e);
+        base.children.push(set_span(&subelement));
       }
     }
   }
@@ -1555,9 +1547,7 @@ Rule::number_bullet_list_element => {
         }
       }
       _ => {
-        let mut e = set_span(&subelement);
-        e.element = Element::Error("Not implemented".to_string());
-        base.children.push(e);
+        base.children.push(set_span(&subelement));
       }
     }
   }
@@ -1623,9 +1613,7 @@ fn process_link<'a>(
         base = process_inline_attribute_list(element, base);
       }
       _ => {
-        let mut sub = set_span(&element);
-        sub.element = Element::Error("Not implemented".to_string());
-        base.children.push(sub);
+        base.children.push(set_span(&element));
       }
     };
   }
@@ -1771,18 +1759,41 @@ fn process_image<'a>(
 == Tabellen
 TODO
 
-[cols="a,a"]
-|====
+[[blocks]]
+[source, pest]
+----
+delimited_table = {
+  PUSH("|" ~ "="{3,}) ~ NEWLINE ~
+  delimited_inner ~
+  NEWLINE ~ POP ~ &(NEWLINE | EOI)
+}
+
+table_inner = {
+  (table_row ~ NEWLINE*)+
+}
+
+table_row = {
+  (!NEWLINE ~ table_cell)+
+}
+
+table_cell = {
+  "|" ~ table_cell_content
+}
+
+table_cell_content = {
+  (!"|" ~ !NEWLINE ~ ANY)*
+}
+----
 
 [[unittest_simple_table_input]]
 [source, asciidoc, lisa-raw]
 [output="simple_table_html_output", name="simple_table"]
 ....
-!===
-! Col1 ! Col2
-! Cel1 ! Cel2
-! Cel3 ! Cel4
-!===
+|===
+| Col1 | Col2
+| Cel1 | Cel2
+| Cel3 | Cel4
+|===
 ....
 
 |
@@ -1824,6 +1835,86 @@ TODO
 ====
 
 |====
+[%collapsible]
+====
+
+[[delimited_block_rules]]
+[source, rust]
+----
+Rule::delimited_table => {
+  base.element = Element::Table;
+  base = process_inner_table(subelement, base, env);
+}
+----
+
+[[asciidoc_element_rules]]
+[source, rust]
+----
+Rule::table_row => Some(process_table_row(element, base, env)),
+Rule::table_cell => Some(process_table_cell(element, base, env)),
+----
+
+[[asciidoc_parser_functions]]
+[source, rust]
+----
+fn process_inner_table<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+  env: &mut Env,
+) -> ElementSpan<'a> {
+  for element in element.into_inner() {
+    match element.as_rule() {
+      Rule::delimited_inner => {
+        let ast = AsciidocParser::parse(Rule::table_inner, element.as_str()).unwrap();
+
+        for element in ast {
+          for subelement in element.into_inner() {
+            if let Some(e) = process_element(subelement, env) {
+              base.children.push(e);
+            }
+          }
+        }
+        base.attributes.push(Attribute {
+          key: "content".to_string(),
+          value: AttributeValue::Ref(element.as_str()),
+        });
+      }
+      _ => (),
+    };
+  }
+  base
+}
+
+fn process_table_row<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+  env: &mut Env,
+) -> ElementSpan<'a> {
+  base.element = Element::TableRow;
+  for cell_element in element.into_inner() {
+    let cell = process_table_cell(cell_element, base.clone(), env);
+    base.children.push(cell);
+  }
+  base
+}
+
+fn process_table_cell<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+  _env: &mut Env,
+) -> ElementSpan<'a> {
+  base.element = Element::TableCell;
+  base.content = element
+    .into_inner()
+    .find(|sub| sub.as_rule() == Rule::table_cell_content)
+    .unwrap()
+    .as_str()
+    .trim();
+  base
+}
+----
+
+====
 
 == Kommentare
 Manchmal möchte man nur einen Kommentar für den Author eines Textes
@@ -2303,6 +2394,7 @@ fn write_attribute_tag<T: io::Write>(
       let content = inner.get_attribute("content").unwrap_or("");
       out.write_all(content.as_bytes())?;
     }
+    <<format_html_enclosed_element>>
     el => write_html(inner, indent + 1, out)?,
   };
 
@@ -2594,6 +2686,57 @@ Element::Image => {
 
 == Tabellen
 TODO
+
+[[format_html_element]]
+[source, rust]
+----
+Element::Table => {
+  write_open_attribute_tag_ln("table", "class=\"tableblock frame-all grid-all stretch\"", indent, out)?;
+  write_open_tag_ln("colgroup", indent+1, out)?;
+  write_open_attribute_tag_ln("col", "style=\"width: 50%;\"", indent+2, out)?;
+  write_open_attribute_tag_ln("col", "style=\"width: 50%;\"", indent+2, out)?;
+  write_close_tag_ln("colgroup", indent+1, out)?;
+  write_open_tag_ln("tbody", indent+1, out)?;
+  for table_row in input.children.iter() {
+    match &table_row.element {
+        Element::TableRow => {
+          write_open_tag_ln("tr", indent+2, out)?;
+          for table_cell in table_row.children.iter() {
+              match &table_cell.element {
+                  Element::TableCell => {
+                    write_tag("td", table_cell, indent+3, out)?;
+                  }
+                  _ => (),
+              }
+              out.write_all(b"\n")?;
+          }
+          write_close_tag_ln("tr", indent+2, out)?;
+        }
+        _ => {
+          out.write_all(
+            &format!(
+              "<NOT-YET-SUPPORTED:{:?}>{}</NOT-YET-SUPPORTED:{:?}>\n",
+              table_row.element, table_row.content, table_row.element,
+            )
+            .as_bytes(),
+          )?;
+        },
+    }
+  }
+  write_close_tag_ln("tbody", indent+1, out)?;
+  write_close_tag_ln("table", indent, out)?;
+}
+----
+
+[[format_html_enclosed_element]]
+[source, rust]
+----
+Element::TableCell => {
+  write_open_tag("p", 0, out)?;
+  out.write_all(inner.content.as_bytes())?;
+  write_close_tag("p", 0, out)?;
+}
+----
 
 == Inhaltsverzeichnis
 TODO
