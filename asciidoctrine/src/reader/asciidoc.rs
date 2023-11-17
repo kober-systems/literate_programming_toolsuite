@@ -132,9 +132,7 @@ fn process_element<'a>(
             }
           }
           _ => {
-            let mut e = set_span(&subelement);
-            e.element = Element::Error("Not implemented".to_string());
-            base.children.push(e);
+            base.children.push(set_span(&subelement));
           }
         }
       }
@@ -526,9 +524,7 @@ fn process_inline<'a>(
           });
         };
       }
-      _ => {
-        base.element = Element::Error("Not implemented".to_string());
-      }
+      _ => (),
     };
   }
   base
@@ -556,9 +552,7 @@ fn process_link<'a>(
         base = process_inline_attribute_list(element, base);
       }
       _ => {
-        let mut sub = set_span(&element);
-        sub.element = Element::Error("Not implemented".to_string());
-        base.children.push(sub);
+        base.children.push(set_span(&element));
       }
     };
   }
