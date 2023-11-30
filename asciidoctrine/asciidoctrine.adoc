@@ -3298,7 +3298,7 @@ Der generelle Aufbau eines Tests ist:
 fn {test_name}() -> Result<()> {
   let content = r#"{asciidoc_content}"#;
   let reader = AsciidocReader::new();
-  let mut opts = options::Opts::parse_from(vec!["--template", "-"].into_iter());
+  let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
   let ast = reader.parse(content, &opts, &mut env)?;
 
