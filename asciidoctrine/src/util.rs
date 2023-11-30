@@ -70,14 +70,17 @@ impl Environment for Io {
   }
 }
 
+pub struct EvalData {
+  success: bool,
+  out: String,
+  err: String,
+  add_files: Vec<(String, String)>,
+  remove_files: Vec<String>,
+}
+
 pub struct Cache {
   files: HashMap<String, String>,
-  evaluations: HashMap<(String, String),(
-    bool,
-    String,
-    String,
-    Vec<(String, String)>,
-    Vec<String>)>,
+  evaluations: HashMap<(String, String), EvalData>,
 }
 
 impl Cache {
@@ -95,12 +98,10 @@ impl Cache {
 
 impl Environment for Cache {
   fn read_to_string(&mut self, path: &str) -> crate::Result<String> {
-    Ok(
-      self
-        .files
-        .remove(path)
-        .ok_or(io::Error::new(ErrorKind::NotFound, "file not found in cache"))?
-    )
+    Ok(self.files.remove(path).ok_or(io::Error::new(
+      ErrorKind::NotFound,
+      "file not found in cache",
+    ))?)
   }
 
   fn write(&mut self, path: &str, content: &str) -> crate::Result<()> {
@@ -110,19 +111,26 @@ impl Environment for Cache {
   }
 
   fn eval(&mut self, interpreter: &str, content: &str) -> crate::Result<(bool, String, String)> {
-    match self.evaluations.remove(
-      &(interpreter.to_string(), content.to_string()))
+    match self
+      .evaluations
+      .remove(&(interpreter.to_string(), content.to_string()))
     {
-      Some((success, out, err, add, remove)) => {
-        for path in remove.iter() {
+      Some(EvalData {
+        success,
+        out,
+        err,
+        add_files,
+        remove_files,
+      }) => {
+        for path in remove_files.iter() {
           self.files.remove(path);
         }
-        for (path, content) in add.into_iter() {
+        for (path, content) in add_files.into_iter() {
           self.files.insert(path, content);
         }
         Ok((success, out, err))
       }
-      None => Err(crate::AsciidoctrineError::Childprocess)
+      None => Err(crate::AsciidoctrineError::Childprocess),
     }
   }
 }
