@@ -15,6 +15,7 @@ serde_json = "1.0"
 tera = "1"
 docx-rs = "0.4"
 log = "0.4.8"
+simple_logger = "4"
 
 [dev-dependencies]
 pretty_assertions = "1"
