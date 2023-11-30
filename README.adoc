@@ -182,7 +182,7 @@ Whenever the rust files change we want to rebuild and test the program.
 [source, sh, save]
 .auto_build_loop.sh
 ----
-watchexec -c -e rs -- <<build_and_test>>
+watchexec -w . -c -e rs,toml --no-vcs-ignore -- "<<build_and_test>>"
 ----
 
 === Ask for checkin into the VCS

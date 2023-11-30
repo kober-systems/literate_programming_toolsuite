@@ -1,1 +1,1 @@
-watchexec -c -e rs -- cargo test
+watchexec -w . -c -e rs,toml --no-vcs-ignore -- "cargo test"
