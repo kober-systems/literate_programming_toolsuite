@@ -17,8 +17,7 @@ fn bullet_list_with_dashes() -> Result<()> {
 - Next normal point
 "#;
   let reader = AsciidocReader::new();
-  let mut opts = options::Opts::parse_from(vec!["--template", "-"].into_iter());
-  opts.template = Some("-".into());
+  let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
   let ast = reader.parse(content, &opts, &mut env)?;
 
@@ -80,8 +79,7 @@ fn bullet_list() -> Result<()> {
 * Next normal point
 "#;
   let reader = AsciidocReader::new();
-  let mut opts = options::Opts::parse_from(vec!["--template", "-"].into_iter());
-  opts.template = Some("-".into());
+  let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
   let ast = reader.parse(content, &opts, &mut env)?;
 
@@ -139,8 +137,7 @@ Additional Information, that will only be shown on demand.
 ====
 "#;
   let reader = AsciidocReader::new();
-  let mut opts = options::Opts::parse_from(vec!["--template", "-"].into_iter());
-  opts.template = Some("-".into());
+  let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
   let ast = reader.parse(content, &opts, &mut env)?;
 
@@ -174,8 +171,7 @@ This Information is visible by default.
 ====
 "#;
   let reader = AsciidocReader::new();
-  let mut opts = options::Opts::parse_from(vec!["--template", "-"].into_iter());
-  opts.template = Some("-".into());
+  let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
   let ast = reader.parse(content, &opts, &mut env)?;
 
@@ -212,8 +208,7 @@ fn atx_headers() -> Result<()> {
 ==== This is a subsubsubheader
 "#;
   let reader = AsciidocReader::new();
-  let mut opts = options::Opts::parse_from(vec!["--template", "-"].into_iter());
-  opts.template = Some("-".into());
+  let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
   let ast = reader.parse(content, &opts, &mut env)?;
 
@@ -250,8 +245,7 @@ This is a subsubsubheader
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 "#;
   let reader = AsciidocReader::new();
-  let mut opts = options::Opts::parse_from(vec!["--template", "-"].into_iter());
-  opts.template = Some("-".into());
+  let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
   let ast = reader.parse(content, &opts, &mut env)?;
 
@@ -278,8 +272,7 @@ fn inline_bold() -> Result<()> {
 Some text is *bold*.
 "#;
   let reader = AsciidocReader::new();
-  let mut opts = options::Opts::parse_from(vec!["--template", "-"].into_iter());
-  opts.template = Some("-".into());
+  let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
   let ast = reader.parse(content, &opts, &mut env)?;
 
@@ -303,8 +296,7 @@ fn inline_italic() -> Result<()> {
 Some text is _italic_.
 "#;
   let reader = AsciidocReader::new();
-  let mut opts = options::Opts::parse_from(vec!["--template", "-"].into_iter());
-  opts.template = Some("-".into());
+  let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
   let ast = reader.parse(content, &opts, &mut env)?;
 
@@ -328,8 +320,7 @@ fn inline_monospaced() -> Result<()> {
 Some text is `monospaced`.
 "#;
   let reader = AsciidocReader::new();
-  let mut opts = options::Opts::parse_from(vec!["--template", "-"].into_iter());
-  opts.template = Some("-".into());
+  let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
   let ast = reader.parse(content, &opts, &mut env)?;
 
@@ -357,8 +348,7 @@ fn numbered_list() -> Result<()> {
 . numbered list
 "#;
   let reader = AsciidocReader::new();
-  let mut opts = options::Opts::parse_from(vec!["--template", "-"].into_iter());
-  opts.template = Some("-".into());
+  let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
   let ast = reader.parse(content, &opts, &mut env)?;
 
@@ -404,8 +394,7 @@ fn simple_table() -> Result<()> {
 |===
 "#;
   let reader = AsciidocReader::new();
-  let mut opts = options::Opts::parse_from(vec!["--template", "-"].into_iter());
-  opts.template = Some("-".into());
+  let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
   let ast = reader.parse(content, &opts, &mut env)?;
 
@@ -467,8 +456,7 @@ We can even have multiple paragraphs
 |===
 "#;
   let reader = AsciidocReader::new();
-  let mut opts = options::Opts::parse_from(vec!["--template", "-"].into_iter());
-  opts.template = Some("-".into());
+  let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
   let ast = reader.parse(content, &opts, &mut env)?;
 
@@ -535,8 +523,7 @@ echo "hello world!"
 ....
 "#;
   let reader = AsciidocReader::new();
-  let mut opts = options::Opts::parse_from(vec!["--template", "-"].into_iter());
-  opts.template = Some("-".into());
+  let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
   let ast = reader.parse(content, &opts, &mut env)?;
 
@@ -558,4 +545,3 @@ echo "hello world!"
 
   Ok(())
 }
-
