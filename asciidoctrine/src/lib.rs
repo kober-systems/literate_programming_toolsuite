@@ -9,6 +9,7 @@ extern crate log;
 
 mod ast;
 pub use ast::*;
+pub mod cli_template;
 pub mod options;
 pub mod util;
 pub mod reader;
