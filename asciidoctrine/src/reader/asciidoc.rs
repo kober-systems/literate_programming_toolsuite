@@ -172,7 +172,6 @@ fn process_element<'a>(
       Some(base)
     }
     Rule::image_block => Some(process_image(element, base, env)),
-    Rule::table_cell => Some(process_table_cell(element, base, env)),
     Rule::block => {
       for subelement in element.into_inner() {
         if let Some(e) = process_element(subelement, env) {
@@ -717,9 +716,7 @@ fn process_table_content<'a>(
 
   for element in ast {
     for (subelement, fmt) in element.into_inner().zip(col_format.iter().cycle()) {
-      if let Some(e) = process_element(subelement, env) {
-        cells.push(e);
-      }
+      cells.push(process_table_cell(subelement))
     }
   }
 
@@ -745,11 +742,9 @@ fn process_table_content<'a>(
   rows
 }
 
-fn process_table_cell<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-  _env: &mut Env,
-) -> ElementSpan<'a> {
+fn process_table_cell<'a>(element: Pair<'a, asciidoc::Rule>) -> ElementSpan<'a> {
+  let mut base = set_span(&element);
+
   base.element = Element::TableCell;
   base.content = element
     .into_inner()
