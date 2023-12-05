@@ -172,7 +172,6 @@ fn process_element<'a>(
       Some(base)
     }
     Rule::image_block => Some(process_image(element, base, env)),
-    Rule::table_row => Some(process_table_row(element, base, env)),
     Rule::table_cell => Some(process_table_cell(element, base, env)),
     Rule::block => {
       for subelement in element.into_inner() {
@@ -640,32 +639,110 @@ fn process_image<'a>(
   base
 }
 
+#[derive(Debug, PartialEq)]
+enum ColKind {
+  Default,
+  Asciidoc,
+}
+
+#[derive(Debug, PartialEq)]
+struct ColumnFormat {
+  length: usize,
+  kind: ColKind,
+}
+
+fn parse_column_format(input: &str) -> ColumnFormat {
+  ColumnFormat {
+    length: 1,
+    kind: match input {
+      "a" => ColKind::Asciidoc,
+      _ => ColKind::Default,
+    },
+  }
+}
+
+fn parse_columns_format(input: &str) -> Vec<ColumnFormat> {
+  input
+    .split(',')
+    .map(|input| parse_column_format(input.trim()))
+    .collect()
+}
+
+fn parse_columns_format_from_content(input: &str) -> Vec<ColumnFormat> {
+  input
+    .lines()
+    .next()
+    .unwrap_or("")
+    .matches('|')
+    .map(|_| ColumnFormat {
+      length: 1,
+      kind: ColKind::Default,
+    })
+    .collect()
+}
+
 fn process_inner_table<'a>(
   element: Pair<'a, asciidoc::Rule>,
   mut base: ElementSpan<'a>,
   env: &mut Env,
 ) -> ElementSpan<'a> {
-  for element in element.into_inner() {
-    match element.as_rule() {
-      Rule::delimited_inner => {
-        let ast = AsciidocParser::parse(Rule::table_inner, element.as_str()).unwrap();
+  let content = element
+    .into_inner()
+    .find(|sub| sub.as_rule() == Rule::delimited_inner)
+    .unwrap()
+    .as_str();
 
-        for element in ast {
-          for subelement in element.into_inner() {
-            if let Some(e) = process_element(subelement, env) {
-              base.children.push(e);
-            }
-          }
-        }
-        base.attributes.push(Attribute {
-          key: "content".to_string(),
-          value: AttributeValue::Ref(element.as_str()),
-        });
-      }
-      _ => (),
-    };
-  }
+  let col_format = match base.get_attribute("cols") {
+    Some(fmt) => parse_columns_format(fmt),
+    None => parse_columns_format_from_content(content),
+  };
+
+  base.attributes.push(Attribute {
+    key: "content".to_string(),
+    value: AttributeValue::Ref(content),
+  });
+  base.children = process_table_content(content, col_format, env);
+
   base
+}
+
+fn process_table_content<'a>(
+  input: &'a str,
+  col_format: Vec<ColumnFormat>,
+  env: &mut Env,
+) -> Vec<ElementSpan<'a>> {
+  let ast = AsciidocParser::parse(Rule::table_inner, input).unwrap();
+
+  let mut cells = vec![];
+
+  for element in ast {
+    for (subelement, fmt) in element.into_inner().zip(col_format.iter().cycle()) {
+      if let Some(e) = process_element(subelement, env) {
+        cells.push(e);
+      }
+    }
+  }
+
+  let mut rows = vec![];
+  let len = col_format.len();
+  for chunk in cells.chunks(len) {
+    rows.push(ElementSpan {
+      element: Element::TableRow,
+      source: None,
+      content: "",
+      start: 0,
+      end: 0,
+      start_line: 0,
+      start_col: 0,
+      end_line: 0,
+      end_col: 0,
+      children: chunk.to_vec(),
+      positional_attributes: vec![],
+      attributes: vec![],
+    })
+  }
+
+  rows
 }
 
 fn process_table_row<'a>(
@@ -741,4 +818,30 @@ fn from_element<'a>(rule: &Pair<'a, asciidoc::Rule>, element: Element<'a>) -> El
     end_line,
     end_col,
   }
+}
+
+#[cfg(test)]
+mod test {
+  use pretty_assertions::assert_eq;
+
+  use super::*;
+
+  #[test]
+  fn test_table() {
+    let out = parse_columns_format(r#"1,a"#);
+    assert_eq!(
+      out,
+      vec![
+        ColumnFormat {
+          length: 1,
+          kind: ColKind::Default
+        },
+        ColumnFormat {
+          length: 1,
+          kind: ColKind::Asciidoc
+        },
+      ]
+    );
+  }
+
 }

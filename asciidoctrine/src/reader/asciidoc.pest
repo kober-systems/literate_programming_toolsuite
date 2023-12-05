@@ -108,11 +108,7 @@ delimited_table = {
 }
 
 table_inner = {
-  (table_row ~ NEWLINE*)+
-}
-
-table_row = {
-  (!NEWLINE ~ table_cell)+
+  (table_cell ~ NEWLINE*)+
 }
 
 table_cell = {
@@ -120,11 +116,8 @@ table_cell = {
 }
 
 table_cell_content = {
-  (!"|" ~ !NEWLINE ~ ANY)*
+  (!"|" ~ ANY)*
 }
-
-attribute_entry = { ":" ~ identifier ~ ":" ~ identifier? ~ &NEWLINE }
-attribute_entry_block = { attribute_entry ~ NEWLINE }
 
 delimited_comment = {
   PUSH("/"{4,}) ~ NEWLINE ~
