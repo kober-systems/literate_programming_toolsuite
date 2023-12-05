@@ -745,19 +745,6 @@ fn process_table_content<'a>(
   rows
 }
 
-fn process_table_row<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-  env: &mut Env,
-) -> ElementSpan<'a> {
-  base.element = Element::TableRow;
-  for cell_element in element.into_inner() {
-    let cell = process_table_cell(cell_element, base.clone(), env);
-    base.children.push(cell);
-  }
-  base
-}
-
 fn process_table_cell<'a>(
   element: Pair<'a, asciidoc::Rule>,
   mut base: ElementSpan<'a>,
