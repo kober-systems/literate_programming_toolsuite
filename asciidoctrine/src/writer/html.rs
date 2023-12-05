@@ -352,7 +352,13 @@ fn write_attribute_tag<T: io::Write>(
     }
     Element::TableCell => {
       write_open_tag("p", 0, out)?;
-      out.write_all(inner.content.as_bytes())?;
+      if inner.children.len() > 0 {
+        for child in inner.children.iter() {
+          write_html(child, indent + 1, out)?;
+        }
+      } else {
+        out.write_all(inner.content.as_bytes())?;
+      }
       write_close_tag("p", 0, out)?;
     }
     el => write_html(inner, indent + 1, out)?,
