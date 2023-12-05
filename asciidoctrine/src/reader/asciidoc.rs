@@ -716,7 +716,7 @@ fn process_table_content<'a>(
 
   for element in ast {
     for (subelement, fmt) in element.into_inner().zip(col_format.iter().cycle()) {
-      cells.push(process_table_cell(subelement))
+      cells.push(process_table_cell(subelement, fmt, env))
     }
   }
 
@@ -742,16 +742,38 @@ fn process_table_content<'a>(
   rows
 }
 
-fn process_table_cell<'a>(element: Pair<'a, asciidoc::Rule>) -> ElementSpan<'a> {
+fn process_table_cell<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  fmt: &ColumnFormat,
+  env: &mut Env,
+) -> ElementSpan<'a> {
   let mut base = set_span(&element);
 
-  base.element = Element::TableCell;
-  base.content = element
+  let content = element
     .into_inner()
     .find(|sub| sub.as_rule() == Rule::table_cell_content)
     .unwrap()
     .as_str()
     .trim();
+
+  base.element = Element::TableCell;
+  base.content = content;
+  base.children = match fmt.kind {
+    ColKind::Asciidoc => {
+      let ast = AsciidocParser::parse(Rule::asciidoc, content).unwrap();
+
+      let mut elements = Vec::new();
+
+      for element in ast {
+        if let Some(element) = process_element(element, env) {
+          elements.push(element);
+        }
+      }
+      elements
+    }
+    ColKind::Default => vec![],
+  };
+
   base
 }
 
