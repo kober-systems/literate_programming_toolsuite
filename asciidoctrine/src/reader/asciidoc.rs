@@ -100,17 +100,11 @@ fn process_element<'a>(
     Rule::list_paragraph => Some(process_paragraph(element)),
     Rule::other_list_inline => Some(from_element(&element, Element::Text)),
     Rule::continuation => None,
-    Rule::bullet_list => {
-      base.element = Element::List(ListType::Bullet);
-
-      for subelement in element.into_inner() {
-        if let Some(e) = process_element(subelement, env) {
-          base.children.push(e);
-        }
-      }
-
-      Some(base)
-    }
+    Rule::bullet_list => Some(process_children(
+      element.clone(),
+      set_span(&element).element(Element::List(ListType::Bullet)),
+      env,
+    )),
     Rule::bullet_list_element => {
       for subelement in element.into_inner() {
         match subelement.as_rule() {
@@ -794,6 +788,21 @@ fn concat_elements<'a>(
   } else {
     None
   }
+}
+
+fn process_children<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  base: ElementSpan<'a>,
+  env: &mut Env,
+) -> ElementSpan<'a> {
+  let mut base = base;
+
+  base.children = element
+    .into_inner()
+    .filter_map(|sub| process_element(sub, env))
+    .collect();
+
+  base
 }
 
 fn extract_inner_rule<'a>(
