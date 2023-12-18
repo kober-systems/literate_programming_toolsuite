@@ -135,9 +135,10 @@ fn process_anchor<'a>(
 
 fn process_inline_anchor<'a>(
   element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
+  base: ElementSpan<'a>,
 ) -> ElementSpan<'a> {
-  for element in element.into_inner() {
+  element.into_inner().fold(base, |base, element| {
+    let mut base = base;
     match element.as_rule() {
       Rule::identifier => {
         base.attributes.push(Attribute {
@@ -148,8 +149,9 @@ fn process_inline_anchor<'a>(
       // TODO Fehler abfangen und anzeigen
       _ => (),
     }
-  }
-  base
+
+    base
+  })
 }
 
 fn process_inline_attribute_list<'a>(
