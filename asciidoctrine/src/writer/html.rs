@@ -209,24 +209,6 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
       }
       write_close_tag_ln("div", indent, out)?;
     }
-    Element::Link => {
-      let url = input.get_attribute("url").unwrap_or("");
-      let content = match input.positional_attributes.get(0) {
-        Some(value) => match value {
-          AttributeValue::Ref(value) => value.to_string(),
-          AttributeValue::String(value) => value.clone(),
-        },
-        None => "".to_string(),
-      };
-
-      out.write_all(&format!("<a href=\"{}\">{}</a>", url, content).as_bytes())?;
-    }
-    Element::XRef => {
-      let id = input.get_attribute("id").unwrap_or("");
-      let content = input.get_attribute("content").unwrap_or(id.clone());
-
-      out.write_all(&format!("<a href=\"#{}\">{}</a>", id, content).as_bytes())?;
-    }
     Element::Image => {
       if let Some(path) = input.get_attribute("path") {
         match input.get_attribute("opts") {
@@ -285,6 +267,22 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
       write_close_tag_ln("tbody", indent+1, out)?;
       write_close_tag_ln("table", indent, out)?;
     }
+    _ => {
+      out.write_all(
+        &format!(
+          "<NOT-YET-SUPPORTED:{:?}>{}</NOT-YET-SUPPORTED:{:?}>\n",
+          input.element, input.content, input.element,
+        )
+        .as_bytes(),
+      )?;
+    }
+  }
+
+  Ok(())
+}
+
+fn inline<T: io::Write>(input: &ElementSpan, out: &mut T) -> Result<()> {
+  match &input.element {
     Element::Text => {
       out.write_all(input.content.as_bytes())?;
     }
@@ -293,7 +291,25 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
         "monospaced" => "code",
         style => style,
       };
-      write_tag(style, input, indent, out)?;
+      write_tag(style, input, 0, out)?;
+    }
+    Element::Link => {
+      let url = input.get_attribute("url").unwrap_or("");
+      let content = match input.positional_attributes.get(0) {
+        Some(value) => match value {
+          AttributeValue::Ref(value) => value.to_string(),
+          AttributeValue::String(value) => value.clone(),
+        },
+        None => "".to_string(),
+      };
+
+      out.write_all(&format!("<a href=\"{}\">{}</a>", url, content).as_bytes())?;
+    }
+    Element::XRef => {
+      let id = input.get_attribute("id").unwrap_or("");
+      let content = input.get_attribute("content").unwrap_or(id.clone());
+
+      out.write_all(&format!("<a href=\"#{}\">{}</a>", id, content).as_bytes())?;
     }
     _ => {
       out.write_all(
@@ -343,7 +359,7 @@ fn write_attribute_tag<T: io::Write>(
     }
     Element::Paragraph => {
       for element in inner.children.iter() {
-        write_html(element, indent, out)?;
+        inline(element, out)?;
       }
     }
     Element::Styled => {
