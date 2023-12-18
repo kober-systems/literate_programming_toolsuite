@@ -110,24 +110,23 @@ fn process_element<'a>(
       set_span(&element).element(Element::List(ListType::Number)),
       env,
     )),
-    Rule::bullet_list_element | Rule::number_bullet_list_element => {
-      for subelement in element.into_inner() {
-        match subelement.as_rule() {
+    Rule::bullet_list_element | Rule::number_bullet_list_element => Some(
+      element
+        .clone()
+        .into_inner()
+        .fold(set_span(&element), |base, sub| match sub.as_rule() {
           Rule::bullet | Rule::number_bullet => {
-            base.element = Element::ListItem(subelement.as_str().trim().len() as u32);
+            base.element(Element::ListItem(sub.as_str().trim().len() as u32))
           }
-          Rule::list_element => {
-            base = process_children(subelement, base, env);
-          }
-          Rule::EOI => {}
+          Rule::list_element => process_children(sub, base, env),
+          Rule::EOI => base,
           _ => {
-            base.children.push(set_span(&subelement));
+            let mut base = base;
+            base.children.push(set_span(&sub));
+            base
           }
-        }
-      }
-
-      Some(base)
-    }
+        }),
+    ),
     Rule::image_block => Some(process_image(element, env)),
     Rule::inline => Some(process_inline(element, base)),
     Rule::EOI => None,
