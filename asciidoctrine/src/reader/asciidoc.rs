@@ -309,61 +309,38 @@ fn process_delimited_inner<'a>(
 
 fn process_title<'a>(
   element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
+  base: ElementSpan<'a>,
 ) -> Option<ElementSpan<'a>> {
-  match element.as_rule() {
+  Some(match element.as_rule() {
     Rule::title => {
-      for subelement in element.into_inner() {
+      element.into_inner().fold(base, |base, subelement| {
         match subelement.as_rule() {
-          Rule::atx_title_style => {
-            base.element = Element::Title {
-              level: subelement.as_str().trim().len() as u32,
-            };
-          }
-          Rule::setext_title_style => {
-            let ch = subelement.as_str().chars().next().unwrap(); // TODO Check None?
-            let level;
-
-            match ch {
-              '=' => {
-                level = 1;
-              }
-              '-' => {
-                level = 2;
-              }
-              '~' => {
-                level = 3;
-              }
-              '^' => {
-                level = 4;
-              }
+          Rule::atx_title_style => base.element(Element::Title {
+            level: subelement.as_str().trim().len() as u32,
+          }),
+          Rule::setext_title_style => base.clone().element(Element::Title {
+            level: match subelement.as_str().chars().next().unwrap() {
+              '=' => 1,
+              '-' => 2,
+              '~' => 3,
+              '^' => 4,
               _ => {
-                base.element = Element::Error("Unsupported title formatting".to_string());
-                break;
+                return base.element(Element::Error("Unsupported title formatting".to_string()));
               }
-            }
-            base.element = Element::Title {
-              level: level as u32,
-            };
-          }
-          Rule::line => {
-            base.attributes.push(Attribute {
-              key: "name".to_string(),
-              value: AttributeValue::Ref(subelement.as_str()),
-            });
-          }
+            },
+          }),
+          Rule::line => base.add_attribute(Attribute {
+            key: "name".to_string(),
+            value: AttributeValue::Ref(subelement.as_str()),
+          }),
           // We just take the attributes at the beginning
           // of the element.
-          _ => {
-            break; // TODO Error
-          } // TODO improve matching
+          _ => base.element(Element::Error("Unsupported title formatting".to_string())),
         }
-      }
+      })
     }
-    _ => (),
-  };
-
-  Some(base)
+    _ => base,
+  })
 }
 
 fn parse_paragraph<'a>(content: &'a str) -> Vec<ElementSpan<'a>> {
