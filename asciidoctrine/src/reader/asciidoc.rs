@@ -684,7 +684,7 @@ fn process_table_cell<'a>(
   fmt: &ColumnFormat,
   env: &mut Env,
 ) -> ElementSpan<'a> {
-  let mut base = set_span(&element);
+  let mut base = set_span(&element).element(Element::TableCell);
 
   let content = element
     .into_inner()
@@ -693,7 +693,6 @@ fn process_table_cell<'a>(
     .as_str()
     .trim();
 
-  base.element = Element::TableCell;
   base.content = content;
   base.children = match fmt.kind {
     ColKind::Asciidoc => {
