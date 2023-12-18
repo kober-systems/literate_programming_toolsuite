@@ -95,6 +95,13 @@ impl<'a> ElementSpan<'a> {
     base.attributes.push(a);
     base
   }
+
+  pub fn add_positional_attribute(self, a: AttributeValue<'a>) -> Self {
+    let mut base = self;
+
+    base.positional_attributes.push(a);
+    base
+  }
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
