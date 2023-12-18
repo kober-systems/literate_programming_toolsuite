@@ -479,52 +479,40 @@ fn process_xref<'a>(element: Pair<'a, asciidoc::Rule>, base: ElementSpan<'a>) ->
 }
 
 fn process_image<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> ElementSpan<'a> {
-  let mut base = set_span(&element).element(Element::Image);
-  for element in element.into_inner().flatten() {
-    match element.as_rule() {
-      Rule::url => {
-        base.attributes.push(Attribute {
-          key: "path".to_string(),
-          value: AttributeValue::Ref(element.as_str()),
-        });
-      }
-      Rule::path => {
-        base.attributes.push(Attribute {
-          key: "path".to_string(),
-          value: AttributeValue::Ref(element.as_str()),
-        });
-      }
-      Rule::inline_attribute_list => {
-        base = process_inline_attribute_list(element, base);
-      }
-      _ => (),
-    };
-  }
+  let base = element.clone().into_inner().flatten().fold(
+    set_span(&element).element(Element::Image),
+    |base, element| match element.as_rule() {
+      Rule::url => base.add_attribute(Attribute {
+        key: "path".to_string(),
+        value: AttributeValue::Ref(element.as_str()),
+      }),
+      Rule::path => base.add_attribute(Attribute {
+        key: "path".to_string(),
+        value: AttributeValue::Ref(element.as_str()),
+      }),
+      Rule::inline_attribute_list => process_inline_attribute_list(element, base),
+      _ => base,
+    },
+  );
 
-  // TODO Prüfen ob eine inline Anweisung vorhanden ist und
-  // falls ja, die Datei einlesen
-  if let Some(value) = base.get_attribute("opts") {
-    if value == "inline" {
-      // TODO Die Datei einlesen
-      if let Some(path) = base.get_attribute("path") {
-        match env.read_to_string(path) {
-          Ok(content) => {
-            base.attributes.push(Attribute {
-              key: "content".to_string(),
-              value: AttributeValue::String(content),
-            });
-          }
-          Err(e) => {
-            error!("couldn't read content of image file {} ({})", path, e);
-          }
-        }
-      } else {
-        error!("There was no path of inline image defined");
-      }
-    }
+  match base.get_attribute("opts") {
+    Some("inline") => match base.get_attribute("path") {
+      Some(path) => match env.read_to_string(path) {
+        Ok(content) => base.add_attribute(Attribute {
+          key: "content".to_string(),
+          value: AttributeValue::String(content),
+        }),
+        Err(e) => base.clone().element(Element::Error(format!(
+          "couldn't read content of image file {} ({})",
+          path, e
+        ))),
+      },
+      None => base.element(Element::Error(
+        "There was no path of inline image defined".to_string(),
+      )),
+    },
+    Some(_) | None => base,
   }
-
-  base
 }
 
 #[derive(Debug, PartialEq)]
