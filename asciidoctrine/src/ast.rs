@@ -88,6 +88,13 @@ impl<'a> ElementSpan<'a> {
     base.element = e;
     base
   }
+
+  pub fn add_attribute(self, a: Attribute<'a>) -> Self {
+    let mut base = self;
+
+    base.attributes.push(a);
+    base
+  }
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
