@@ -118,19 +118,13 @@ fn process_element<'a>(
   element
 }
 
-fn process_anchor<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-) -> ElementSpan<'a> {
-  for element in element.into_inner() {
-    match element.as_rule() {
-      Rule::inline_anchor => {
-        base = process_inline_anchor(element, base);
-      }
-      _ => (),
-    };
-  }
-  base
+fn process_anchor<'a>(element: Pair<'a, asciidoc::Rule>, base: ElementSpan<'a>) -> ElementSpan<'a> {
+  element
+    .into_inner()
+    .fold(base, |base, element| match element.as_rule() {
+      Rule::inline_anchor => process_inline_anchor(element, base),
+      _ => base,
+    })
 }
 
 fn process_inline_anchor<'a>(
@@ -138,19 +132,14 @@ fn process_inline_anchor<'a>(
   base: ElementSpan<'a>,
 ) -> ElementSpan<'a> {
   element.into_inner().fold(base, |base, element| {
-    let mut base = base;
     match element.as_rule() {
-      Rule::identifier => {
-        base.attributes.push(Attribute {
-          key: "anchor".to_string(),
-          value: AttributeValue::Ref(element.as_str()),
-        });
-      }
+      Rule::identifier => base.add_attribute(Attribute {
+        key: "anchor".to_string(),
+        value: AttributeValue::Ref(element.as_str()),
+      }),
       // TODO Fehler abfangen und anzeigen
-      _ => (),
+      _ => base,
     }
-
-    base
   })
 }
 
