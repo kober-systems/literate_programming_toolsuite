@@ -105,52 +105,21 @@ fn process_element<'a>(
       set_span(&element).element(Element::List(ListType::Bullet)),
       env,
     )),
-    Rule::bullet_list_element => {
+    Rule::numbered_list => Some(process_children(
+      element.clone(),
+      set_span(&element).element(Element::List(ListType::Number)),
+      env,
+    )),
+    Rule::bullet_list_element | Rule::number_bullet_list_element => {
       for subelement in element.into_inner() {
         match subelement.as_rule() {
-          Rule::bullet => {
+          Rule::bullet | Rule::number_bullet => {
             base.element = Element::ListItem(subelement.as_str().trim().len() as u32);
           }
           Rule::list_element => {
-            for subelement in subelement.into_inner() {
-              if let Some(e) = process_element(subelement, env) {
-                base.children.push(e);
-              }
-            }
+            base = process_children(subelement, base, env);
           }
           Rule::EOI => {}
-          _ => {
-            base.children.push(set_span(&subelement));
-          }
-        }
-      }
-
-      Some(base)
-    }
-    Rule::numbered_list => {
-      base.element = Element::List(ListType::Number);
-
-      for subelement in element.into_inner() {
-        if let Some(e) = process_element(subelement, env) {
-          base.children.push(e);
-        }
-      }
-
-      Some(base)
-    }
-    Rule::number_bullet_list_element => {
-      for subelement in element.into_inner() {
-        match subelement.as_rule() {
-          Rule::number_bullet => {
-            base.element = Element::ListItem(subelement.as_str().trim().len() as u32);
-          }
-          Rule::list_element => {
-            for subelement in subelement.into_inner() {
-              if let Some(e) = process_element(subelement, env) {
-                base.children.push(e);
-              }
-            }
-          }
           _ => {
             base.children.push(set_span(&subelement));
           }
