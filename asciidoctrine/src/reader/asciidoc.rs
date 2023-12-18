@@ -449,38 +449,33 @@ fn process_link<'a>(element: Pair<'a, asciidoc::Rule>, base: ElementSpan<'a>) ->
           })
         }
         Rule::inline_attribute_list => process_inline_attribute_list(element, base),
-        _ => {
-          let mut base = base;
-          base.children.push(set_span(&element));
-          base
-        }
+        _ => base.add_child(set_span(&element)),
       }
     })
 }
 
 fn process_xref<'a>(element: Pair<'a, asciidoc::Rule>, base: ElementSpan<'a>) -> ElementSpan<'a> {
-  let mut base = base.element(Element::XRef);
-  for element in element.clone().into_inner() {
-    match element.as_rule() {
-      Rule::identifier => {
-        base.attributes.push(Attribute {
+  let base = element
+    .clone()
+    .into_inner()
+    .fold(base.element(Element::XRef), |base, element| {
+      match element.as_rule() {
+        Rule::identifier => base.add_attribute(Attribute {
           key: "id".to_string(),
           value: AttributeValue::Ref(element.as_str()),
-        });
+        }),
+        Rule::word => base,
+        _ => base,
       }
-      Rule::word => {}
-      _ => (),
-    };
-  }
+    });
 
-  if let Some(content) = concat_elements(element, Rule::word, " ") {
-    base.attributes.push(Attribute {
+  match concat_elements(element, Rule::word, " ") {
+    Some(content) => base.add_attribute(Attribute {
       key: "content".to_string(),
       value: AttributeValue::String(content),
-    });
-  };
-
-  base
+    }),
+    None => base,
+  }
 }
 
 fn process_image<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> ElementSpan<'a> {
