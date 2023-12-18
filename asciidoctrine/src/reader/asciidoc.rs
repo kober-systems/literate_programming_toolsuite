@@ -131,6 +131,7 @@ fn process_element<'a>(
               }
             }
           }
+          Rule::EOI => {}
           _ => {
             base.children.push(set_span(&subelement));
           }
