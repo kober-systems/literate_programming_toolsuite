@@ -171,17 +171,15 @@ blocktitle = { "." ~ !"." ~ line ~ NEWLINE }
 // inline elements
 
 inline = {
-  !empty_lines ~ !EOI ~
-  ( comment |
-    link |
-    strong |
-    emphasized |
-    monospaced |
-    quoted |
-    footnote |
-    footnoteref |
-    xref
-  )
+  comment |
+  link |
+  strong |
+  emphasized |
+  monospaced |
+  quoted |
+  footnote |
+  footnoteref |
+  xref
 }
 other_inline = @{ (!empty_lines ~ !EOI ~ !inline ~ ANY)+ }
 
