@@ -55,7 +55,7 @@ pub struct ElementSpan<'a> {
   pub attributes: Vec<Attribute<'a>>,
 }
 
-impl ElementSpan<'_> {
+impl<'a> ElementSpan<'a> {
   pub fn get_attribute(&self, name: &str) -> Option<&str> {
     for attribute in self.attributes.iter() {
       if &attribute.key == name {
@@ -79,6 +79,13 @@ impl ElementSpan<'_> {
     base.start_col += other.start_col - 1;
     base.end_col += other.start_col - 1;
 
+    base
+  }
+
+  pub fn element(self, e: Element<'a>) -> Self {
+    let mut base = self;
+
+    base.element = e;
     base
   }
 }
