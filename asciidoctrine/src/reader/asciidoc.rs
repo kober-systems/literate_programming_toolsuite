@@ -56,26 +56,17 @@ fn process_element<'a>(
 
   let element = match element.as_rule() {
     Rule::delimited_block => Some(process_delimited_block(element, env)),
-    Rule::title => process_title(element, base),
+    Rule::title => Some(process_title(element, base)),
     Rule::header | Rule::title_block => {
-      for subelement in element.into_inner() {
+      Some(element.into_inner().fold(base, |base, subelement| {
         match subelement.as_rule() {
-          Rule::title => {
-            if let Some(e) = process_title(subelement, base.clone()) {
-              base = e;
-            }
-          }
-          Rule::anchor => {
-            base = process_anchor(subelement, base);
-          }
+          Rule::title => process_title(subelement, base.clone()),
+          Rule::anchor => process_anchor(subelement, base),
           // We just take the attributes at the beginning
           // of the element.
-          _ => {
-            break;
-          } // TODO improve matching
+          _ => base,
         }
-      }
-      Some(base)
+      }))
     }
     Rule::paragraph => Some(process_paragraph(element)),
     Rule::block | Rule::list => extract_inner_rule(element, env),
@@ -307,11 +298,8 @@ fn process_delimited_inner<'a>(
   })
 }
 
-fn process_title<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  base: ElementSpan<'a>,
-) -> Option<ElementSpan<'a>> {
-  Some(match element.as_rule() {
+fn process_title<'a>(element: Pair<'a, asciidoc::Rule>, base: ElementSpan<'a>) -> ElementSpan<'a> {
+  match element.as_rule() {
     Rule::title => {
       element.into_inner().fold(base, |base, subelement| {
         match subelement.as_rule() {
@@ -340,7 +328,7 @@ fn process_title<'a>(
       })
     }
     _ => base,
-  })
+  }
 }
 
 fn parse_paragraph<'a>(content: &'a str) -> Vec<ElementSpan<'a>> {
