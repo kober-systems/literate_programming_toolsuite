@@ -450,12 +450,20 @@ fn process_title<'a>(
 fn process_paragraph<'a>(element: Pair<'a, asciidoc::Rule>) -> ElementSpan<'a> {
   let mut base = from_element(&element, Element::Paragraph);
 
-  for subelement in element.into_inner() {
-    base.children.push(match subelement.as_rule() {
-      Rule::other_inline | Rule::other_list_inline => from_element(&subelement, Element::Text),
-      Rule::inline => process_inline(subelement.clone(), set_span(&subelement)),
-      _ => set_span(&subelement),
-    });
+  let ast = AsciidocParser::parse(Rule::inline_parser, element.as_str()).unwrap();
+
+  for element in ast {
+    for subelement in element.into_inner() {
+      if subelement.as_rule() != Rule::EOI {
+        let mut child = match subelement.as_rule() {
+          Rule::other_inline | Rule::other_list_inline => from_element(&subelement, Element::Text),
+          Rule::inline => process_inline(subelement.clone(), set_span(&subelement)),
+          _ => set_span(&subelement),
+        };
+        child.add_offset(&base);
+        base.children.push(child);
+      }
+    }
   }
 
   base

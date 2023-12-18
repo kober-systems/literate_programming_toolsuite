@@ -74,7 +74,7 @@ title = {
 setext_title_style = { ("="{4,} | "-"{4,} | "~"{4,} | "^"{4,} ) ~ &NEWLINE }
 atx_title_style = { "="+ }
 
-paragraph = ${ (inline | other_inline)+ }
+paragraph = ${ (!empty_lines ~ !EOI ~ ANY)+ }
 
 list = { bullet_list | numbered_list | labeled_list }
 
@@ -181,7 +181,8 @@ inline = {
   footnoteref |
   xref
 }
-other_inline = @{ (!empty_lines ~ !EOI ~ !inline ~ ANY)+ }
+other_inline = @{ (!inline ~ ANY)+ }
+inline_parser = ${ (inline | other_inline)* ~ EOI }
 
 strong = ${ "*" ~ (!"*" ~ linechar)+ ~ "*" }
 
