@@ -102,6 +102,13 @@ impl<'a> ElementSpan<'a> {
     base.positional_attributes.push(a);
     base
   }
+
+  pub fn add_child(self, e: ElementSpan<'a>) -> Self {
+    let mut base = self;
+
+    base.children.push(e);
+    base
+  }
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
