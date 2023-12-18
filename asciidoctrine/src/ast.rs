@@ -69,13 +69,17 @@ impl ElementSpan<'_> {
     None
   }
 
-  pub fn add_offset(&mut self, other: &ElementSpan<'_>) {
-    self.start += other.start;
-    self.end += other.start;
-    self.start_line += other.start_line - 1;
-    self.end_line += other.start_line - 1;
-    self.start_col += other.start_col - 1;
-    self.end_col += other.start_col - 1;
+  pub fn add_offset(self, other: &ElementSpan<'_>) -> Self {
+    let mut base = self;
+
+    base.start += other.start;
+    base.end += other.start;
+    base.start_line += other.start_line - 1;
+    base.end_line += other.start_line - 1;
+    base.start_col += other.start_col - 1;
+    base.end_col += other.start_col - 1;
+
+    base
   }
 }
 

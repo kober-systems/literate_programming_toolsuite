@@ -472,10 +472,7 @@ fn process_paragraph<'a>(element: Pair<'a, asciidoc::Rule>) -> ElementSpan<'a> {
 
   base.children = parse_paragraph(element.as_str())
     .into_iter()
-    .map(|mut child| {
-      child.add_offset(&base);
-      child
-    })
+    .map(|child| child.add_offset(&base))
     .collect();
 
   base
