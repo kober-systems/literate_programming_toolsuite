@@ -433,29 +433,29 @@ fn process_inline<'a>(element: Pair<'a, asciidoc::Rule>, base: ElementSpan<'a>) 
 }
 
 fn process_link<'a>(element: Pair<'a, asciidoc::Rule>, base: ElementSpan<'a>) -> ElementSpan<'a> {
-  let mut base = base.element(Element::Link);
-  for element in element.into_inner() {
-    match element.as_rule() {
-      Rule::url => {
-        base.attributes.push(Attribute {
-          key: "url".to_string(),
-          value: AttributeValue::Ref(element.as_str()),
-        });
-        let element = element.into_inner().next().unwrap(); // TODO Fehler möglich?
-        base.attributes.push(Attribute {
-          key: "protocol".to_string(),
-          value: AttributeValue::Ref(element.as_str()),
-        });
+  element
+    .into_inner()
+    .fold(base.element(Element::Link), |base, element| {
+      match element.as_rule() {
+        Rule::url => {
+          let base = base.add_attribute(Attribute {
+            key: "url".to_string(),
+            value: AttributeValue::Ref(element.as_str()),
+          });
+          let element = element.into_inner().next().unwrap(); // TODO Fehler möglich?
+          base.add_attribute(Attribute {
+            key: "protocol".to_string(),
+            value: AttributeValue::Ref(element.as_str()),
+          })
+        }
+        Rule::inline_attribute_list => process_inline_attribute_list(element, base),
+        _ => {
+          let mut base = base;
+          base.children.push(set_span(&element));
+          base
+        }
       }
-      Rule::inline_attribute_list => {
-        base = process_inline_attribute_list(element, base);
-      }
-      _ => {
-        base.children.push(set_span(&element));
-      }
-    };
-  }
-  base
+    })
 }
 
 fn process_xref<'a>(element: Pair<'a, asciidoc::Rule>, base: ElementSpan<'a>) -> ElementSpan<'a> {
