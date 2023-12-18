@@ -145,25 +145,21 @@ fn process_inline_anchor<'a>(
 
 fn process_inline_attribute_list<'a>(
   element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
+  base: ElementSpan<'a>,
 ) -> ElementSpan<'a> {
-  for subelement in element.into_inner() {
-    match subelement.as_rule() {
+  element.into_inner().fold(base, |base, sub| {
+    match sub.as_rule() {
       Rule::attribute => {
-        for subelement in subelement.into_inner() {
-          match subelement.as_rule() {
+        sub.into_inner().fold(base, |base, sub| {
+          match sub.as_rule() {
             Rule::attribute_value => {
-              // TODO Wir müssen unterschiedlich damit umgehen, ob ein oder mehrere
-              // identifier existieren
-              base
-                .positional_attributes
-                .push(AttributeValue::Ref(subelement.as_str()));
+              base.add_positional_attribute(AttributeValue::Ref(sub.as_str()))
             }
             Rule::named_attribute => {
               let mut key = None;
               let mut value = None;
 
-              for subelement in subelement.into_inner() {
+              for subelement in sub.into_inner() {
                 match subelement.as_rule() {
                   Rule::identifier => key = Some(subelement.as_str()),
                   Rule::attribute_value => {
@@ -174,21 +170,20 @@ fn process_inline_attribute_list<'a>(
                 }
               }
 
-              base.attributes.push(Attribute {
+              base.add_attribute(Attribute {
                 key: key.unwrap().to_string(),
                 value: AttributeValue::String(value.unwrap()),
-              });
+              })
             }
             // TODO Fehler abfangen und anzeigen
-            _ => (),
+            _ => base,
           }
-        }
+        })
       }
       // TODO Fehler abfangen und anzeigen
-      _ => (),
+      _ => base,
     }
-  }
-  base
+  })
 }
 
 fn process_attribute_list<'a>(
