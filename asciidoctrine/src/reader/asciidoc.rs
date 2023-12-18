@@ -397,72 +397,39 @@ fn process_paragraph<'a>(element: Pair<'a, asciidoc::Rule>) -> ElementSpan<'a> {
   base
 }
 
-fn process_inline<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-) -> ElementSpan<'a> {
-  for element in element.into_inner() {
-    match element.as_rule() {
-      Rule::link => {
-        base = process_link(element, base);
-      }
-      Rule::xref => {
-        base = process_xref(element, base);
-      }
-      Rule::monospaced => {
-        base.element = Element::Styled;
-        base.attributes.push(Attribute {
+fn process_inline<'a>(element: Pair<'a, asciidoc::Rule>, base: ElementSpan<'a>) -> ElementSpan<'a> {
+  element
+    .into_inner()
+    .fold(base, |base, element| match element.as_rule() {
+      Rule::link => process_link(element, base),
+      Rule::xref => process_xref(element, base),
+      Rule::monospaced | Rule::strong | Rule::emphasized => {
+        let base = base.element(Element::Styled).add_attribute(Attribute {
           key: "style".to_string(),
-          value: AttributeValue::Ref("monospaced"),
+          value: AttributeValue::Ref(match element.as_rule() {
+            Rule::monospaced => "monospaced",
+            Rule::strong => "strong",
+            Rule::emphasized => "em",
+            _ => "not_supported",
+          }),
         });
 
-        if let Some(content) = concat_elements(element.clone(), Rule::linechar, "") {
-          base.attributes.push(Attribute {
+        let base = match concat_elements(element.clone(), Rule::linechar, "") {
+          Some(content) => base.add_attribute(Attribute {
             key: "content".to_string(),
             value: AttributeValue::String(content),
-          });
+          }),
+          None => base,
         };
-        for subelement in element.into_inner() {
-          match subelement.as_rule() {
-            Rule::inline_anchor => {
-              base = process_inline_anchor(subelement, base);
-            }
-            _ => (),
-          }
-        }
+        element
+          .into_inner()
+          .fold(base, |base, subelement| match subelement.as_rule() {
+            Rule::inline_anchor => process_inline_anchor(subelement, base),
+            _ => base,
+          })
       }
-      Rule::strong => {
-        base.element = Element::Styled;
-        base.attributes.push(Attribute {
-          key: "style".to_string(),
-          value: AttributeValue::Ref("strong"),
-        });
-
-        if let Some(content) = concat_elements(element, Rule::linechar, "") {
-          base.attributes.push(Attribute {
-            key: "content".to_string(),
-            value: AttributeValue::String(content),
-          });
-        };
-      }
-      Rule::emphasized => {
-        base.element = Element::Styled;
-        base.attributes.push(Attribute {
-          key: "style".to_string(),
-          value: AttributeValue::Ref("em"),
-        });
-
-        if let Some(content) = concat_elements(element, Rule::linechar, "") {
-          base.attributes.push(Attribute {
-            key: "content".to_string(),
-            value: AttributeValue::String(content),
-          });
-        };
-      }
-      _ => (),
-    };
-  }
-  base
+      _ => base,
+    })
 }
 
 fn process_link<'a>(element: Pair<'a, asciidoc::Rule>, base: ElementSpan<'a>) -> ElementSpan<'a> {
