@@ -277,13 +277,18 @@ fn process_delimited_block<'a>(
 
 fn process_delimited_inner<'a>(
   element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
+  base: ElementSpan<'a>,
   env: &mut Env,
 ) -> ElementSpan<'a> {
-  for element in element.into_inner() {
+  element.into_inner().fold(base, |base, element| {
+    let mut base = base;
+
     match element.as_rule() {
       Rule::delimited_inner => {
-        if let Element::TypedBlock { kind: BlockType::Example } = base.element {
+        if let Element::TypedBlock {
+          kind: BlockType::Example,
+        } = base.element
+        {
           let ast = AsciidocParser::parse(Rule::asciidoc, element.as_str()).unwrap();
 
           for element in ast {
@@ -292,15 +297,14 @@ fn process_delimited_inner<'a>(
             }
           }
         }
-        base.attributes.push(Attribute {
-          key: "content".to_string(), // TODO
+        base.add_attribute(Attribute {
+          key: "content".to_string(),
           value: AttributeValue::Ref(element.as_str()),
-        });
+        })
       }
-      _ => (),
-    };
-  }
-  base
+      _ => base,
+    }
+  })
 }
 
 fn process_title<'a>(
