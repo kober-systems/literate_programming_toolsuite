@@ -96,14 +96,7 @@ fn process_element<'a>(
       Some(base)
     }
     Rule::paragraph => Some(process_paragraph(element)),
-    Rule::list => {
-      for subelement in element.into_inner() {
-        if let Some(e) = process_element(subelement, env) {
-          base = e;
-        }
-      }
-      Some(base)
-    }
+    Rule::block | Rule::list => extract_inner_rule(element, env),
     Rule::list_paragraph => Some(process_paragraph(element)),
     Rule::other_list_inline => Some(from_element(&element, Element::Text)),
     Rule::continuation => None,
@@ -173,14 +166,6 @@ fn process_element<'a>(
       Some(base)
     }
     Rule::image_block => Some(process_image(element, env)),
-    Rule::block => {
-      for subelement in element.into_inner() {
-        if let Some(e) = process_element(subelement, env) {
-          base = e;
-        }
-      }
-      Some(base)
-    }
     Rule::inline => Some(process_inline(element, base)),
     Rule::EOI => None,
     _ => Some(base),
@@ -808,6 +793,19 @@ fn concat_elements<'a>(
     Some(elements.join(join))
   } else {
     None
+  }
+}
+
+fn extract_inner_rule<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  env: &mut Env,
+) -> Option<ElementSpan<'a>> {
+  let base = set_span(&element);
+  match element.into_inner().next() {
+    Some(element) => process_element(element, env),
+    None => Some(base.element(Element::Error(
+      "must have a subfield in the parser but nothing is found".to_string(),
+    ))),
   }
 }
 
