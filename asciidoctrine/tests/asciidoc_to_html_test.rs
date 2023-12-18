@@ -474,13 +474,13 @@ We can even have multiple paragraphs
   </colgroup>
   <tbody>
     <tr>
-      <td>
-        <p>Here inline <strong>markup</strong> <em>text</em> is rendered specially</p>
-        <p>But paragraphs</p>
-        <p>* or
-        <strong> Lists
-        </strong> are not handled as such</p>
-      </td>
+      <td><p>Here inline <strong>markup</strong> <em>text</em> is rendered specially
+
+But paragraphs
+
+* or
+** Lists
+** are not handled as such</p></td>
       <td>
         <p>In this cell <strong>markup</strong> <em>text</em> is handeled specially</p>
         <p>We can even have multiple paragraphs</p>
@@ -491,15 +491,15 @@ We can even have multiple paragraphs
               <li>
                 <p>with</p>
               </li>
-            <li>
-              <p>multiple</p>
-            </li>
-          </ul>
-        </li>
-        <li>
-          <p>entries</p>
-        </li>
-      </ul>
+              <li>
+                <p>multiple</p>
+              </li>
+            </ul>
+          </li>
+          <li>
+            <p>entries</p>
+          </li>
+        </ul>
       </td>
     </tr>
   </tbody>
