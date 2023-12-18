@@ -172,7 +172,7 @@ fn process_element<'a>(
 
       Some(base)
     }
-    Rule::image_block => Some(process_image(element, base, env)),
+    Rule::image_block => Some(process_image(element, env)),
     Rule::block => {
       for subelement in element.into_inner() {
         if let Some(e) = process_element(subelement, env) {
@@ -546,11 +546,8 @@ fn process_inline<'a>(
   base
 }
 
-fn process_link<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-) -> ElementSpan<'a> {
-  base.element = Element::Link;
+fn process_link<'a>(element: Pair<'a, asciidoc::Rule>, base: ElementSpan<'a>) -> ElementSpan<'a> {
+  let mut base = base.element(Element::Link);
   for element in element.into_inner() {
     match element.as_rule() {
       Rule::url => {
@@ -575,11 +572,8 @@ fn process_link<'a>(
   base
 }
 
-fn process_xref<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-) -> ElementSpan<'a> {
-  base.element = Element::XRef;
+fn process_xref<'a>(element: Pair<'a, asciidoc::Rule>, base: ElementSpan<'a>) -> ElementSpan<'a> {
+  let mut base = base.element(Element::XRef);
   for element in element.clone().into_inner() {
     match element.as_rule() {
       Rule::identifier => {
@@ -603,12 +597,8 @@ fn process_xref<'a>(
   base
 }
 
-fn process_image<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-  env: &mut Env,
-) -> ElementSpan<'a> {
-  base.element = Element::Image;
+fn process_image<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> ElementSpan<'a> {
+  let mut base = set_span(&element).element(Element::Image);
   for element in element.into_inner().flatten() {
     match element.as_rule() {
       Rule::url => {
