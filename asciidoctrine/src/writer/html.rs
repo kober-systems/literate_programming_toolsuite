@@ -124,8 +124,9 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
               let diff = current_level - item_level;
               let offset = (current_level * 2) - 1;
               for i in 0..diff {
-                write_close_tag_ln("li", indent + offset - (2 * i), out)?;
-                write_close_tag_ln(list_element, indent + offset - (2 * i) - 1, out)?;
+                let indent = indent + offset - (2 * i);
+                write_close_tag_ln("li", indent, out)?;
+                write_close_tag_ln(list_element, indent - 1, out)?;
               }
             }
             let item_level = if item_level > 1 {
