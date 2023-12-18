@@ -56,26 +56,8 @@ fn process_element<'a>(
 
   let element = match element.as_rule() {
     Rule::delimited_block => Some(process_delimited_block(element, env)),
-    Rule::header => {
-      for subelement in element.into_inner() {
-        match subelement.as_rule() {
-          Rule::title => {
-            if let Some(e) = process_title(subelement, base.clone()) {
-              base = e;
-            }
-          }
-          // We just take the attributes at the beginning
-          // of the element.
-          _ => {
-            break;
-          } // TODO improve matching
-        }
-      }
-      // TODO
-      Some(base)
-    }
     Rule::title => process_title(element, base),
-    Rule::title_block => {
+    Rule::header | Rule::title_block => {
       for subelement in element.into_inner() {
         match subelement.as_rule() {
           Rule::title => {
