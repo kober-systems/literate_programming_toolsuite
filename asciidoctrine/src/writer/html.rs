@@ -238,39 +238,44 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
       }
     }
     Element::Table => {
-      write_open_attribute_tag_ln("table", "class=\"tableblock frame-all grid-all stretch\"", indent, out)?;
-      write_open_tag_ln("colgroup", indent+1, out)?;
-      write_open_attribute_tag_ln("col", "style=\"width: 50%;\"", indent+2, out)?;
-      write_open_attribute_tag_ln("col", "style=\"width: 50%;\"", indent+2, out)?;
-      write_close_tag_ln("colgroup", indent+1, out)?;
-      write_open_tag_ln("tbody", indent+1, out)?;
+      write_open_attribute_tag_ln(
+        "table",
+        "class=\"tableblock frame-all grid-all stretch\"",
+        indent,
+        out,
+      )?;
+      write_open_tag_ln("colgroup", indent + 1, out)?;
+      write_open_attribute_tag_ln("col", "style=\"width: 50%;\"", indent + 2, out)?;
+      write_open_attribute_tag_ln("col", "style=\"width: 50%;\"", indent + 2, out)?;
+      write_close_tag_ln("colgroup", indent + 1, out)?;
+      write_open_tag_ln("tbody", indent + 1, out)?;
       for table_row in input.children.iter() {
         match &table_row.element {
-            Element::TableRow => {
-              write_open_tag_ln("tr", indent+2, out)?;
-              for table_cell in table_row.children.iter() {
-                  match &table_cell.element {
-                      Element::TableCell => {
-                        write_tag("td", table_cell, indent+3, out)?;
-                      }
-                      _ => (),
-                  }
-                  out.write_all(b"\n")?;
+          Element::TableRow => {
+            write_open_tag_ln("tr", indent + 2, out)?;
+            for table_cell in table_row.children.iter() {
+              match &table_cell.element {
+                Element::TableCell => {
+                  write_tag("td", table_cell, indent + 3, out)?;
+                }
+                _ => (),
               }
-              write_close_tag_ln("tr", indent+2, out)?;
+              out.write_all(b"\n")?;
             }
-            _ => {
-              out.write_all(
-                &format!(
-                  "<NOT-YET-SUPPORTED:{:?}>{}</NOT-YET-SUPPORTED:{:?}>\n",
-                  table_row.element, table_row.content, table_row.element,
-                )
-                .as_bytes(),
-              )?;
-            },
+            write_close_tag_ln("tr", indent + 2, out)?;
+          }
+          _ => {
+            out.write_all(
+              &format!(
+                "<NOT-YET-SUPPORTED:{:?}>{}</NOT-YET-SUPPORTED:{:?}>\n",
+                table_row.element, table_row.content, table_row.element,
+              )
+              .as_bytes(),
+            )?;
+          }
         }
       }
-      write_close_tag_ln("tbody", indent+1, out)?;
+      write_close_tag_ln("tbody", indent + 1, out)?;
       write_close_tag_ln("table", indent, out)?;
     }
     _ => {
@@ -331,6 +336,32 @@ fn inline<T: io::Write>(input: &ElementSpan, out: &mut T) -> Result<()> {
   Ok(())
 }
 
+fn table_paragraph<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> Result<()> {
+  match &input.element {
+    Element::Paragraph => {
+      write_open_tag("p", indent, out)?;
+      for child in input.children.iter() {
+        inline(child, out)?;
+      }
+      write_close_tag("p", 0, out)?;
+    }
+    Element::List(_) => {
+      write_html(input, indent, out)?;
+    }
+    _ => {
+      out.write_all(
+        &format!(
+          "<NOT-YET-SUPPORTED:{:?}>{}</NOT-YET-SUPPORTED:{:?}>\n",
+          input.element, input.content, input.element,
+        )
+        .as_bytes(),
+      )?;
+    }
+  }
+
+  Ok(())
+}
+
 // Helper Functions
 //----------------------------------------------------
 
@@ -373,15 +404,20 @@ fn write_attribute_tag<T: io::Write>(
       out.write_all(content.as_bytes())?;
     }
     Element::TableCell => {
-      write_open_tag("p", 0, out)?;
-      if inner.children.len() > 0 {
-        for child in inner.children.iter() {
-          write_html(child, indent + 1, out)?;
-        }
+      let indent = if inner.children.len() == 1 {
+        0
       } else {
-        out.write_all(inner.content.as_bytes())?;
+        indent + 1
+      };
+      for child in inner.children.iter() {
+        if indent != 0 {
+          out.write_all(b"\n")?;
+        }
+        table_paragraph(child, indent, out)?;
       }
-      write_close_tag("p", 0, out)?;
+      if indent != 0 {
+        out.write_all(&b"  ".repeat(indent - 1))?;
+      }
     }
     el => write_html(inner, indent + 1, out)?,
   };
