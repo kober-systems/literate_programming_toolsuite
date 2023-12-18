@@ -128,6 +128,11 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
                 write_close_tag_ln(list_element, indent + offset - (2 * i) - 1, out)?;
               }
             }
+            let item_level = if item_level > 1 {
+              item_level + 1
+            } else {
+              item_level
+            };
             write_close_tag_ln("li", indent + item_level, out)?;
             write_open_tag_ln("li", indent + item_level, out)?;
           }
