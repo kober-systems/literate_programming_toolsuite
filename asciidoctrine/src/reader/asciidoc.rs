@@ -447,24 +447,36 @@ fn process_title<'a>(
   Some(base)
 }
 
-fn process_paragraph<'a>(element: Pair<'a, asciidoc::Rule>) -> ElementSpan<'a> {
-  let mut base = from_element(&element, Element::Paragraph);
+fn parse_paragraph<'a>(content: &'a str) -> Vec<ElementSpan<'a>> {
+  let mut out = vec![];
 
-  let ast = AsciidocParser::parse(Rule::inline_parser, element.as_str()).unwrap();
+  let ast = AsciidocParser::parse(Rule::inline_parser, content).unwrap();
 
   for element in ast {
     for subelement in element.into_inner() {
       if subelement.as_rule() != Rule::EOI {
-        let mut child = match subelement.as_rule() {
+        out.push(match subelement.as_rule() {
           Rule::other_inline | Rule::other_list_inline => from_element(&subelement, Element::Text),
           Rule::inline => process_inline(subelement.clone(), set_span(&subelement)),
           _ => set_span(&subelement),
-        };
-        child.add_offset(&base);
-        base.children.push(child);
+        });
       }
     }
   }
+
+  out
+}
+
+fn process_paragraph<'a>(element: Pair<'a, asciidoc::Rule>) -> ElementSpan<'a> {
+  let mut base = from_element(&element, Element::Paragraph);
+
+  base.children = parse_paragraph(element.as_str())
+    .into_iter()
+    .map(|mut child| {
+      child.add_offset(&base);
+      child
+    })
+    .collect();
 
   base
 }
@@ -771,7 +783,7 @@ fn process_table_cell<'a>(
     ColKind::Asciidoc => {
       let ast = AsciidocParser::parse(Rule::asciidoc, content).unwrap();
 
-      let mut elements = Vec::new();
+      let mut elements = vec![];
 
       for element in ast {
         if let Some(element) = process_element(element, env) {
@@ -780,7 +792,13 @@ fn process_table_cell<'a>(
       }
       elements
     }
-    ColKind::Default => vec![],
+    ColKind::Default => {
+      let mut base = base.clone();
+      base.element = Element::Paragraph;
+      base.children = parse_paragraph(content);
+
+      vec![base]
+    }
   };
 
   base
