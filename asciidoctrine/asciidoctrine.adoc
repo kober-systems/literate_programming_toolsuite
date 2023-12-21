@@ -916,7 +916,7 @@ fn process_title<'a>(
 
 [cols="a,a"]
 |====
-
+|
 [[unittest_header_setext_input]]
 [source, asciidoc, lisa-raw]
 [output="setext_header_html_output", name="setext_headers"]
@@ -1051,7 +1051,7 @@ Formatierungen werden unterstützt:
 
 [cols="a,a"]
 |====
-
+|
 *Fett*
 
 [[unittest_inline_bold_input]]
@@ -1308,6 +1308,7 @@ bullet_list = { bullet_list_element+ }
 
 [cols="a,a"]
 |====
+|
 
 [[unittest_bullet_list_input]]
 [source, asciidoc, lisa-raw]
@@ -1465,6 +1466,7 @@ numbered_list = { number_bullet_list_element+ }
 
 [cols="a,a"]
 |====
+|
 
 [[unittest_numbered_list_input]]
 [source, asciidoc, lisa-raw]
@@ -2001,6 +2003,7 @@ Rule::delimited_literal => {
 
 [cols="a,a"]
 |====
+|
 
 [[unittest_sourcecode_block_input]]
 [source, asciidoc, lisa-raw]
@@ -2104,7 +2107,7 @@ ohne dass der normale Leser überfordert wird.
 
 [cols="a,a"]
 |====
-
+|
 [[unittest_collapsible_input]]
 [source, asciidoc, lisa-raw]
 [output="collapsible_html_output", name="collapsible_blocks"]
