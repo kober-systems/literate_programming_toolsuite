@@ -52,7 +52,7 @@ fn process_element<'a>(
   element: Pair<'a, asciidoc::Rule>,
   env: &mut Env,
 ) -> Option<ElementSpan<'a>> {
-  let mut base = set_span(&element);
+  let base = set_span(&element);
 
   let element = match element.as_rule() {
     Rule::delimited_block => Some(process_delimited_block(element, env)),
