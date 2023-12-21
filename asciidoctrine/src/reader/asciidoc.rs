@@ -552,7 +552,25 @@ fn process_table_content<'a>(
   col_format: Vec<ColumnFormat>,
   env: &mut Env,
 ) -> Vec<ElementSpan<'a>> {
-  let ast = AsciidocParser::parse(Rule::table_inner, input).unwrap();
+  let ast = match AsciidocParser::parse(Rule::table_inner, input) {
+    Ok(ast) => ast,
+    Err(e) => {
+      return vec![ElementSpan {
+        element: Element::Error(format!("couldnet parse cell: {}", e)),
+        source: None,
+        content: input,
+        start: 0,
+        end: 0,
+        start_line: 0,
+        start_col: 0,
+        end_line: 0,
+        end_col: 0,
+        children: vec![],
+        positional_attributes: vec![],
+        attributes: vec![],
+      }];
+    }
+  };
 
   let mut cells = vec![];
 
@@ -722,5 +740,4 @@ mod test {
       ]
     );
   }
-
 }
