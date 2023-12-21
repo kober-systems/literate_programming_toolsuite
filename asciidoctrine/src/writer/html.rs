@@ -156,16 +156,18 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
         // TODO provide option to print comments
         return Ok(());
       }
-      if kind == &BlockType::Example &&
-          input.positional_attributes.iter()
-            .find(
-              |&attr| attr.as_str().find("%collapsible").is_some()
-            ).is_some()
+      if kind == &BlockType::Example
+        && input
+          .positional_attributes
+          .iter()
+          .find(|&attr| attr.as_str().find("%collapsible").is_some())
+          .is_some()
       {
-        if input.positional_attributes.iter()
-          .find(
-            |&attr| attr.as_str().find("%open").is_some()
-          ).is_some()
+        if input
+          .positional_attributes
+          .iter()
+          .find(|&attr| attr.as_str().find("%open").is_some())
+          .is_some()
         {
           write_open_tag("details open", indent, out)?;
         } else {
