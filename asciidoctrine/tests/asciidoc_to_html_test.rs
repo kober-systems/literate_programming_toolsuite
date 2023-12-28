@@ -197,6 +197,85 @@ This Information is visible by default.
 }
 
 #[test]
+fn formated_table() -> Result<()> {
+  let content = r#"
+[cols="1,a"]
+|===
+|
+Here inline *markup* _text_ is rendered specially
+
+But paragraphs
+
+* or
+** Lists
+** are not handled as such
+|
+In this cell *markup* _text_ is handeled specially
+
+We can even have multiple paragraphs
+
+* List
+** with
+** multiple
+* entries
+|===
+"#;
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
+
+  let mut buf = BufWriter::new(Vec::new());
+  let mut writer = HtmlWriter::new();
+  writer.write(ast, &opts, &mut buf)?;
+
+  let output = String::from_utf8(buf.into_inner()?)?;
+  assert_eq!(
+    output,
+    r#"<table class="tableblock frame-all grid-all stretch">
+  <colgroup>
+    <col style="width: 50%;">
+    <col style="width: 50%;">
+  </colgroup>
+  <tbody>
+    <tr>
+      <td><p>Here inline <strong>markup</strong> <em>text</em> is rendered specially
+
+But paragraphs
+
+* or
+** Lists
+** are not handled as such</p></td>
+      <td>
+        <p>In this cell <strong>markup</strong> <em>text</em> is handeled specially</p>
+        <p>We can even have multiple paragraphs</p>
+        <ul>
+          <li>
+            <p>List</p>
+            <ul>
+              <li>
+                <p>with</p>
+              </li>
+              <li>
+                <p>multiple</p>
+              </li>
+            </ul>
+          </li>
+          <li>
+            <p>entries</p>
+          </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+"#
+  );
+
+  Ok(())
+}
+
+#[test]
 fn atx_headers() -> Result<()> {
   let content = r#"
 = This is a header
@@ -432,85 +511,6 @@ fn simple_table() -> Result<()> {
 }
 
 #[test]
-fn formated_table() -> Result<()> {
-  let content = r#"
-[cols="1,a"]
-|===
-|
-Here inline *markup* _text_ is rendered specially
-
-But paragraphs
-
-* or
-** Lists
-** are not handled as such
-|
-In this cell *markup* _text_ is handeled specially
-
-We can even have multiple paragraphs
-
-* List
-** with
-** multiple
-* entries
-|===
-"#;
-  let reader = AsciidocReader::new();
-  let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
-  let mut env = util::Env::Cache(util::Cache::new());
-  let ast = reader.parse(content, &opts, &mut env)?;
-
-  let mut buf = BufWriter::new(Vec::new());
-  let mut writer = HtmlWriter::new();
-  writer.write(ast, &opts, &mut buf)?;
-
-  let output = String::from_utf8(buf.into_inner()?)?;
-  assert_eq!(
-    output,
-    r#"<table class="tableblock frame-all grid-all stretch">
-  <colgroup>
-    <col style="width: 50%;">
-    <col style="width: 50%;">
-  </colgroup>
-  <tbody>
-    <tr>
-      <td><p>Here inline <strong>markup</strong> <em>text</em> is rendered specially
-
-But paragraphs
-
-* or
-** Lists
-** are not handled as such</p></td>
-      <td>
-        <p>In this cell <strong>markup</strong> <em>text</em> is handeled specially</p>
-        <p>We can even have multiple paragraphs</p>
-        <ul>
-          <li>
-            <p>List</p>
-            <ul>
-              <li>
-                <p>with</p>
-              </li>
-              <li>
-                <p>multiple</p>
-              </li>
-            </ul>
-          </li>
-          <li>
-            <p>entries</p>
-          </li>
-        </ul>
-      </td>
-    </tr>
-  </tbody>
-</table>
-"#
-  );
-
-  Ok(())
-}
-
-#[test]
 fn sourcecode_blocks() -> Result<()> {
   let content = r#"
 [source, bash]
@@ -545,3 +545,4 @@ echo "hello world!"
 
   Ok(())
 }
+
