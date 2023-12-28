@@ -203,56 +203,32 @@ fn process_delimited_block<'a>(
   element: Pair<'a, asciidoc::Rule>,
   env: &mut Env,
 ) -> ElementSpan<'a> {
-  let mut base = set_span(&element);
+  let base = set_span(&element);
 
-  for subelement in element.into_inner() {
-    match subelement.as_rule() {
-      Rule::anchor => {
-        base = process_anchor(subelement, base);
-      }
-      Rule::attribute_list => {
-        base = process_attribute_list(subelement, base);
-      }
-      Rule::blocktitle => {
-        base = process_blocktitle(subelement, base);
-      }
-      Rule::delimited_table => {
-        base.element = Element::Table;
-        base = process_inner_table(subelement, base, env);
-      }
-      Rule::delimited_comment => {
-        base.element = Element::TypedBlock {
-          kind: BlockType::Comment,
-        };
-        base = process_delimited_inner(subelement, base, env);
-      }
-      Rule::delimited_source => {
-        base.element = Element::TypedBlock {
-          kind: BlockType::Listing,
-        };
-        base = process_delimited_inner(subelement, base, env);
-      }
-      Rule::delimited_literal => {
-        base.element = Element::TypedBlock {
-          kind: BlockType::Listing,
-        };
-        base = process_delimited_inner(subelement, base, env);
-      }
-      Rule::delimited_example => {
-        base.element = Element::TypedBlock {
-          kind: BlockType::Example,
-        };
-        base = process_delimited_inner(subelement, base, env);
-      }
-      // We just take the attributes at the beginning
-      // of the element.
-      _ => {
-        break;
-      } // TODO improve matching
-    }
-  }
-
-  base
+  element
+    .into_inner()
+    .fold(base, |base, sub| match sub.as_rule() {
+      Rule::anchor => process_anchor(sub, base),
+      Rule::attribute_list => process_attribute_list(sub, base),
+      Rule::blocktitle => process_blocktitle(sub, base),
+      Rule::delimited_table => process_inner_table(sub, base.element(Element::Table), env),
+      Rule::delimited_comment
+      | Rule::delimited_source
+      | Rule::delimited_literal
+      | Rule::delimited_example => process_delimited_inner(
+        sub.clone(),
+        base.element(Element::TypedBlock {
+          kind: match sub.as_rule() {
+            Rule::delimited_comment => BlockType::Comment,
+            Rule::delimited_source | Rule::delimited_literal => BlockType::Listing,
+            Rule::delimited_example => BlockType::Example,
+            _ => unreachable!(),
+          },
+        }),
+        env,
+      ),
+      _ => base.add_child(set_span(&sub)),
+    })
 }
 
 fn process_delimited_inner<'a>(
