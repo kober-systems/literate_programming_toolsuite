@@ -1842,6 +1842,108 @@ table_cell_content = {
 
 !===
 
+[cols="a,a",separator="!"]
+!===
+
+[[unittest_formated_table_input]]
+[source, asciidoc, lisa-raw]
+[output="formated_table_html_output", name="formated_table"]
+....
+[cols="1,a"]
+|===
+|
+Here inline *markup* _text_ is rendered specially
+
+But paragraphs
+
+* or
+** Lists
+** are not handled as such
+|
+In this cell *markup* _text_ is handeled specially
+
+We can even have multiple paragraphs
+
+* List
+** with
+** multiple
+* entries
+|===
+....
+
+!
+
+[separator="|"]
+[cols="1,a"]
+|===
+|
+Here inline *markup* _text_ is rendered specially
+
+But paragraphs
+
+* or
+** Lists
+** are not handled as such
+|
+In this cell *markup* _text_ is handeled specially
+
+We can even have multiple paragraphs
+
+* List
+** with
+** multiple
+* entries
+|===
+
+[%collapsible]
+.Html Output
+====
+
+[[formated_table_html_output]]
+[source, html]
+----
+<table class="tableblock frame-all grid-all stretch">
+  <colgroup>
+    <col style="width: 50%;">
+    <col style="width: 50%;">
+  </colgroup>
+  <tbody>
+    <tr>
+      <td><p>Here inline <strong>markup</strong> <em>text</em> is rendered specially
+
+But paragraphs
+
+* or
+** Lists
+** are not handled as such</p></td>
+      <td>
+        <p>In this cell <strong>markup</strong> <em>text</em> is handeled specially</p>
+        <p>We can even have multiple paragraphs</p>
+        <ul>
+          <li>
+            <p>List</p>
+            <ul>
+              <li>
+                <p>with</p>
+              </li>
+              <li>
+                <p>multiple</p>
+              </li>
+            </ul>
+          </li>
+          <li>
+            <p>entries</p>
+          </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+----
+====
+
+!===
+
 [%collapsible]
 ====
 
