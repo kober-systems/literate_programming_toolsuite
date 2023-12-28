@@ -1049,9 +1049,9 @@ fn process_paragraph<'a>(element: Pair<'a, asciidoc::Rule>) -> ElementSpan<'a> {
 Innerhalb von Blöcken will man oft Texte vormattieren. Folgende
 Formatierungen werden unterstützt:
 
-[cols="a,a"]
-|====
-|
+[cols="a,a",separator="¦"]
+!===
+¦
 *Fett*
 
 [[unittest_inline_bold_input]]
@@ -1070,7 +1070,7 @@ strong = ${ "*" ~ (!"*" ~ linechar)+ ~ "*" }
 ----
 ====
 
-|
+¦
 
 Some text is *bold*.
 
@@ -1086,7 +1086,7 @@ Some text is *bold*.
 
 ====
 
-|
+¦
 
 _Kursiv_
 
@@ -1107,7 +1107,7 @@ emphasized = ${ "_" ~ (!"_" ~ linechar)+ ~ "_" }
 ----
 ====
 
-|
+¦
 
 Some text is _italic_.
 
@@ -1123,7 +1123,7 @@ Some text is _italic_.
 
 ====
 
-|
+¦
 `Monospaced`
 
 [[unittest_inline_monospaced_input]]
@@ -1140,10 +1140,9 @@ Some text is `monospaced`.
 ----
 monospaced = ${ inline_anchor* ~ (("+" ~ (!"+" ~ linechar)+ ~ "+") | ("`" ~ (!"`" ~ linechar)+ ~ "`")) }
 ----
-
 ====
 
-|
+¦
 
 Some text is `monospaced`.
 
@@ -1159,7 +1158,7 @@ Some text is `monospaced`.
 
 ====
 
-|====
+!===
 
 [%collapsible]
 ====
