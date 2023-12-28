@@ -89,6 +89,10 @@ impl<'a> ElementSpan<'a> {
     base
   }
 
+  pub fn error(self, msg: &str) -> Self {
+    self.element(Element::Error(msg.to_string()))
+  }
+
   pub fn add_attribute(self, a: Attribute<'a>) -> Self {
     let mut base = self;
 

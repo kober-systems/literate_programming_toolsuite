@@ -278,7 +278,7 @@ fn process_title<'a>(element: Pair<'a, asciidoc::Rule>, base: ElementSpan<'a>) -
               '~' => 3,
               '^' => 4,
               _ => {
-                return base.element(Element::Error("Unsupported title formatting".to_string()));
+                return base.error("Unsupported title formatting");
               }
             },
           }),
@@ -288,7 +288,7 @@ fn process_title<'a>(element: Pair<'a, asciidoc::Rule>, base: ElementSpan<'a>) -
           }),
           // We just take the attributes at the beginning
           // of the element.
-          _ => base.element(Element::Error("Unsupported title formatting".to_string())),
+          _ => base.error("Unsupported title formatting"),
         }
       })
     }
@@ -432,14 +432,12 @@ fn process_image<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> Elemen
           key: "content".to_string(),
           value: AttributeValue::String(content),
         }),
-        Err(e) => base.clone().element(Element::Error(format!(
+        Err(e) => base.clone().error(&format!(
           "couldn't read content of image file {} ({})",
           path, e
-        ))),
+        )),
       },
-      None => base.element(Element::Error(
-        "There was no path of inline image defined".to_string(),
-      )),
+      None => base.error("There was no path of inline image defined"),
     },
     Some(_) | None => base,
   }
@@ -521,7 +519,7 @@ fn process_table_content<'a>(
     Ok(ast) => ast,
     Err(e) => {
       return vec![ElementSpan {
-        element: Element::Error(format!("couldnet parse cell: {}", e)),
+        element: Element::Error(format!("could not parse cell: {}", e)),
         source: None,
         content: input,
         start: 0,
@@ -649,9 +647,7 @@ fn extract_inner_rule<'a>(
   let base = set_span(&element);
   match element.into_inner().next() {
     Some(element) => process_element(element, env),
-    None => Some(base.element(Element::Error(
-      "must have a subfield in the parser but nothing is found".to_string(),
-    ))),
+    None => Some(base.error("must have a subfield in the parser but nothing is found")),
   }
 }
 
