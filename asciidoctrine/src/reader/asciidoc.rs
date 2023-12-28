@@ -138,43 +138,38 @@ fn process_inline_attribute_list<'a>(
   element: Pair<'a, asciidoc::Rule>,
   base: ElementSpan<'a>,
 ) -> ElementSpan<'a> {
-  element.into_inner().fold(base, |base, sub| {
-    match sub.as_rule() {
-      Rule::attribute => {
-        sub.into_inner().fold(base, |base, sub| {
-          match sub.as_rule() {
-            Rule::attribute_value => {
-              base.add_positional_attribute(AttributeValue::Ref(sub.as_str()))
-            }
-            Rule::named_attribute => {
-              let mut key = None;
-              let mut value = None;
-
-              for subelement in sub.into_inner() {
-                match subelement.as_rule() {
-                  Rule::identifier => key = Some(subelement.as_str()),
-                  Rule::attribute_value => {
-                    value = Some(subelement.into_inner().concat());
-                  }
-                  // TODO Fehler abfangen und anzeigen
-                  _ => (),
-                }
-              }
-
-              base.add_attribute(Attribute {
-                key: key.unwrap().to_string(),
-                value: AttributeValue::String(value.unwrap()),
+  element
+    .into_inner()
+    .fold(base, |base, sub| match sub.as_rule() {
+      Rule::attribute => sub
+        .into_inner()
+        .fold(base, |base, sub| match sub.as_rule() {
+          Rule::attribute_value => base.add_positional_attribute(AttributeValue::Ref(sub.as_str())),
+          Rule::named_attribute => {
+            let mut rules = sub.into_inner();
+            let key = rules
+              .find_map(|sub| match sub.as_rule() {
+                Rule::identifier => Some(sub.as_str()),
+                _ => None,
               })
-            }
-            // TODO Fehler abfangen und anzeigen
-            _ => base,
+              .unwrap()
+              .to_string();
+            let value = rules
+              .find_map(|sub| match sub.as_rule() {
+                Rule::attribute_value => Some(sub.into_inner().concat()),
+                _ => None,
+              })
+              .unwrap();
+
+            base.add_attribute(Attribute {
+              key: key,
+              value: AttributeValue::String(value),
+            })
           }
-        })
-      }
-      // TODO Fehler abfangen und anzeigen
-      _ => base,
-    }
-  })
+          _ => base.add_child(set_span(&sub)),
+        }),
+      _ => base.add_child(set_span(&sub)),
+    })
 }
 
 fn process_attribute_list<'a>(
