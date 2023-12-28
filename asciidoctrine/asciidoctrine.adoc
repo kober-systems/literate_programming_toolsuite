@@ -123,6 +123,7 @@ Modulen zu:
 ----
 mod ast;         // <1>
 pub use ast::*;
+pub mod cli_template;
 pub mod options;
 pub mod util;
 pub mod reader;
@@ -217,19 +218,18 @@ Die grundlegende Syntax definieren wir in einer eigenen Datei welche wir in unse
 // inline elements
 
 inline = {
-  !empty_lines ~ !EOI ~
-  ( comment |
-    link |
-    strong |
-    emphasized |
-    monospaced |
-    quoted |
-    footnote |
-    footnoteref |
-    xref
-  )
+  comment |
+  link |
+  strong |
+  emphasized |
+  monospaced |
+  quoted |
+  footnote |
+  footnoteref |
+  xref
 }
-other_inline = @{ (!empty_lines ~ !EOI ~ !inline ~ ANY)+ }
+other_inline = @{ (!inline ~ ANY)+ }
+inline_parser = ${ (inline | other_inline)* ~ EOI }
 
 <<inline_elements|join="\n\n">>
 
@@ -303,18 +303,11 @@ fn process_element<'a>(
   element: Pair<'a, asciidoc::Rule>,
   env: &mut Env,
 ) -> Option<ElementSpan<'a>> {
-  let mut base = set_span(&element);
+  let base = set_span(&element);
 
   let element = match element.as_rule() {
     <<asciidoc_element_rules>>
-    Rule::block => {
-      for subelement in element.into_inner() {
-        if let Some(e) = process_element(subelement, env) {
-          base = e;
-        }
-      }
-      Some(base)
-    }
+    Rule::block => extract_inner_rule(element, env),
     Rule::inline => Some(process_inline(element, base)),
     Rule::EOI => None,
     _ => Some(base),
@@ -342,6 +335,34 @@ fn concat_elements<'a>(
     Some(elements.join(join))
   } else {
     None
+  }
+}
+
+fn process_children<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  base: ElementSpan<'a>,
+  env: &mut Env,
+) -> ElementSpan<'a> {
+  let mut base = base;
+
+  base.children = element
+    .into_inner()
+    .filter_map(|sub| process_element(sub, env))
+    .collect();
+
+  base
+}
+
+fn extract_inner_rule<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  env: &mut Env,
+) -> Option<ElementSpan<'a>> {
+  let base = set_span(&element);
+  match element.into_inner().next() {
+    Some(element) => process_element(element, env),
+    None => Some(base.element(Element::Error(
+      "must have a subfield in the parser but nothing is found".to_string(),
+    ))),
   }
 }
 
@@ -441,38 +462,29 @@ inline_anchor = { "[[" ~ (identifier | path) ~ "]]" }
 [[asciidoc_parser_functions]]
 [source, rust]
 ----
-fn process_anchor<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-) -> ElementSpan<'a> {
-  for element in element.into_inner() {
-    match element.as_rule() {
-      Rule::inline_anchor => {
-        base = process_inline_anchor(element, base);
-      }
-      _ => (),
-    };
-  }
-  base
+fn process_anchor<'a>(element: Pair<'a, asciidoc::Rule>, base: ElementSpan<'a>) -> ElementSpan<'a> {
+  element
+    .into_inner()
+    .fold(base, |base, element| match element.as_rule() {
+      Rule::inline_anchor => process_inline_anchor(element, base),
+      _ => base,
+    })
 }
 
 fn process_inline_anchor<'a>(
   element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
+  base: ElementSpan<'a>,
 ) -> ElementSpan<'a> {
-  for element in element.into_inner() {
+  element.into_inner().fold(base, |base, element| {
     match element.as_rule() {
-      Rule::identifier => {
-        base.attributes.push(Attribute {
-          key: "anchor".to_string(),
-          value: AttributeValue::Ref(element.as_str()),
-        });
-      }
+      Rule::identifier => base.add_attribute(Attribute {
+        key: "anchor".to_string(),
+        value: AttributeValue::Ref(element.as_str()),
+      }),
       // TODO Fehler abfangen und anzeigen
-      _ => (),
+      _ => base,
     }
-  }
-  base
+  })
 }
 ----
 ====
@@ -527,25 +539,21 @@ inner_attribute_value = { ( "\\\"" | (!"\"" ~ ANY))* }
 ----
 fn process_inline_attribute_list<'a>(
   element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
+  base: ElementSpan<'a>,
 ) -> ElementSpan<'a> {
-  for subelement in element.into_inner() {
-    match subelement.as_rule() {
+  element.into_inner().fold(base, |base, sub| {
+    match sub.as_rule() {
       Rule::attribute => {
-        for subelement in subelement.into_inner() {
-          match subelement.as_rule() {
+        sub.into_inner().fold(base, |base, sub| {
+          match sub.as_rule() {
             Rule::attribute_value => {
-              // TODO Wir müssen unterschiedlich damit umgehen, ob ein oder mehrere
-              // identifier existieren
-              base
-                .positional_attributes
-                .push(AttributeValue::Ref(subelement.as_str()));
+              base.add_positional_attribute(AttributeValue::Ref(sub.as_str()))
             }
             Rule::named_attribute => {
               let mut key = None;
               let mut value = None;
 
-              for subelement in subelement.into_inner() {
+              for subelement in sub.into_inner() {
                 match subelement.as_rule() {
                   Rule::identifier => key = Some(subelement.as_str()),
                   Rule::attribute_value => {
@@ -556,21 +564,20 @@ fn process_inline_attribute_list<'a>(
                 }
               }
 
-              base.attributes.push(Attribute {
+              base.add_attribute(Attribute {
                 key: key.unwrap().to_string(),
                 value: AttributeValue::String(value.unwrap()),
-              });
+              })
             }
             // TODO Fehler abfangen und anzeigen
-            _ => (),
+            _ => base,
           }
-        }
+        })
       }
       // TODO Fehler abfangen und anzeigen
-      _ => (),
+      _ => base,
     }
-  }
-  base
+  })
 }
 
 fn process_attribute_list<'a>(
@@ -718,13 +725,18 @@ fn process_delimited_block<'a>(
 
 fn process_delimited_inner<'a>(
   element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
+  base: ElementSpan<'a>,
   env: &mut Env,
 ) -> ElementSpan<'a> {
-  for element in element.into_inner() {
+  element.into_inner().fold(base, |base, element| {
+    let mut base = base;
+
     match element.as_rule() {
       Rule::delimited_inner => {
-        if let Element::TypedBlock { kind: BlockType::Example } = base.element {
+        if let Element::TypedBlock {
+          kind: BlockType::Example,
+        } = base.element
+        {
           let ast = AsciidocParser::parse(Rule::asciidoc, element.as_str()).unwrap();
 
           for element in ast {
@@ -733,15 +745,14 @@ fn process_delimited_inner<'a>(
             }
           }
         }
-        base.attributes.push(Attribute {
-          key: "content".to_string(), // TODO
+        base.add_attribute(Attribute {
+          key: "content".to_string(),
           value: AttributeValue::Ref(element.as_str()),
-        });
+        })
       }
-      _ => (),
-    };
-  }
-  base
+      _ => base,
+    }
+  })
 }
 ----
 
@@ -782,29 +793,6 @@ author_info = { word+ ~ email? ~ &NEWLINE }
 email = { "<" ~ (LETTER | "." )+ ~ "@" ~ (LETTER | "." )+ ~ ">" }
 ----
 
-[[asciidoc_element_rules]]
-[source, rust]
-----
-Rule::header => {
-  for subelement in element.into_inner() {
-    match subelement.as_rule() {
-      Rule::title => {
-        if let Some(e) = process_title(subelement, base.clone()) {
-          base = e;
-        }
-      }
-      // We just take the attributes at the beginning
-      // of the element.
-      _ => {
-        break;
-      } // TODO improve matching
-    }
-  }
-  // TODO
-  Some(base)
-}
-----
-
 == Überschriften
 Überschriften werden verwendet um das Dokument in Unterthemen zu gruppieren.
 
@@ -826,89 +814,54 @@ atx_title_style = { "="+ }
 [[asciidoc_element_rules]]
 [source, rust]
 ----
-Rule::title => process_title(element, base),
-Rule::title_block => {
-  for subelement in element.into_inner() {
+Rule::title => Some(process_title(element, base)),
+Rule::header | Rule::title_block => {
+  Some(element.into_inner().fold(base, |base, subelement| {
     match subelement.as_rule() {
-      Rule::title => {
-        if let Some(e) = process_title(subelement, base.clone()) {
-          base = e;
-        }
-      }
-      Rule::anchor => {
-        base = process_anchor(subelement, base);
-      }
+      Rule::title => process_title(subelement, base.clone()),
+      Rule::anchor => process_anchor(subelement, base),
       // We just take the attributes at the beginning
       // of the element.
-      _ => {
-        break;
-      } // TODO improve matching
+      _ => base,
     }
-  }
-  Some(base)
+  }))
 }
 ----
 
 [[asciidoc_parser_functions]]
 [source, rust]
 ----
-fn process_title<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-) -> Option<ElementSpan<'a>> {
+fn process_title<'a>(element: Pair<'a, asciidoc::Rule>, base: ElementSpan<'a>) -> ElementSpan<'a> {
   match element.as_rule() {
     Rule::title => {
-      for subelement in element.into_inner() {
+      element.into_inner().fold(base, |base, subelement| {
         match subelement.as_rule() {
-          Rule::atx_title_style => {
-            base.element = Element::Title {
-              level: subelement.as_str().trim().len() as u32,
-            };
-          }
-          Rule::setext_title_style => {
-            let ch = subelement.as_str().chars().next().unwrap(); // TODO Check None?
-            let level;
-
-            match ch {
-              '=' => {
-                level = 1;
-              }
-              '-' => {
-                level = 2;
-              }
-              '~' => {
-                level = 3;
-              }
-              '^' => {
-                level = 4;
-              }
+          Rule::atx_title_style => base.element(Element::Title {
+            level: subelement.as_str().trim().len() as u32,
+          }),
+          Rule::setext_title_style => base.clone().element(Element::Title {
+            level: match subelement.as_str().chars().next().unwrap() {
+              '=' => 1,
+              '-' => 2,
+              '~' => 3,
+              '^' => 4,
               _ => {
-                base.element = Element::Error("Unsupported title formatting".to_string());
-                break;
+                return base.element(Element::Error("Unsupported title formatting".to_string()));
               }
-            }
-            base.element = Element::Title {
-              level: level as u32,
-            };
-          }
-          Rule::line => {
-            base.attributes.push(Attribute {
-              key: "name".to_string(),
-              value: AttributeValue::Ref(subelement.as_str()),
-            });
-          }
+            },
+          }),
+          Rule::line => base.add_attribute(Attribute {
+            key: "name".to_string(),
+            value: AttributeValue::Ref(subelement.as_str()),
+          }),
           // We just take the attributes at the beginning
           // of the element.
-          _ => {
-            break; // TODO Error
-          } // TODO improve matching
+          _ => base.element(Element::Error("Unsupported title formatting".to_string())),
         }
-      }
+      })
     }
-    _ => (),
-  };
-
-  Some(base)
+    _ => base,
+  }
 }
 ----
 
@@ -1013,7 +966,7 @@ oder mehrere Leerzeilen getrennt.
 [[blocks]]
 [source, pest]
 ----
-paragraph = ${ (inline | other_inline)+ }
+paragraph = ${ (!empty_lines ~ !EOI ~ ANY)+ }
 ----
 
 [%collapsible]
@@ -1028,16 +981,33 @@ Rule::paragraph => Some(process_paragraph(element)),
 [[asciidoc_parser_functions]]
 [source, rust]
 ----
+fn parse_paragraph<'a>(content: &'a str) -> Vec<ElementSpan<'a>> {
+  let mut out = vec![];
+
+  let ast = AsciidocParser::parse(Rule::inline_parser, content).unwrap();
+
+  for element in ast {
+    for subelement in element.into_inner() {
+      if subelement.as_rule() != Rule::EOI {
+        out.push(match subelement.as_rule() {
+          Rule::other_inline | Rule::other_list_inline => from_element(&subelement, Element::Text),
+          Rule::inline => process_inline(subelement.clone(), set_span(&subelement)),
+          _ => set_span(&subelement),
+        });
+      }
+    }
+  }
+
+  out
+}
+
 fn process_paragraph<'a>(element: Pair<'a, asciidoc::Rule>) -> ElementSpan<'a> {
   let mut base = from_element(&element, Element::Paragraph);
 
-  for subelement in element.into_inner() {
-    base.children.push(match subelement.as_rule() {
-      Rule::other_inline | Rule::other_list_inline => from_element(&subelement, Element::Text),
-      Rule::inline => process_inline(subelement.clone(), set_span(&subelement)),
-      _ => set_span(&subelement),
-    });
-  }
+  base.children = parse_paragraph(element.as_str())
+    .into_iter()
+    .map(|child| child.add_offset(&base))
+    .collect();
 
   base
 }
@@ -1165,72 +1135,39 @@ Some text is `monospaced`.
 [[asciidoc_parser_functions]]
 [source, rust]
 ----
-fn process_inline<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-) -> ElementSpan<'a> {
-  for element in element.into_inner() {
-    match element.as_rule() {
-      Rule::link => {
-        base = process_link(element, base);
-      }
-      Rule::xref => {
-        base = process_xref(element, base);
-      }
-      Rule::monospaced => {
-        base.element = Element::Styled;
-        base.attributes.push(Attribute {
+fn process_inline<'a>(element: Pair<'a, asciidoc::Rule>, base: ElementSpan<'a>) -> ElementSpan<'a> {
+  element
+    .into_inner()
+    .fold(base, |base, element| match element.as_rule() {
+      Rule::link => process_link(element, base),
+      Rule::xref => process_xref(element, base),
+      Rule::monospaced | Rule::strong | Rule::emphasized => {
+        let base = base.element(Element::Styled).add_attribute(Attribute {
           key: "style".to_string(),
-          value: AttributeValue::Ref("monospaced"),
+          value: AttributeValue::Ref(match element.as_rule() {
+            Rule::monospaced => "monospaced",
+            Rule::strong => "strong",
+            Rule::emphasized => "em",
+            _ => "not_supported",
+          }),
         });
 
-        if let Some(content) = concat_elements(element.clone(), Rule::linechar, "") {
-          base.attributes.push(Attribute {
+        let base = match concat_elements(element.clone(), Rule::linechar, "") {
+          Some(content) => base.add_attribute(Attribute {
             key: "content".to_string(),
             value: AttributeValue::String(content),
-          });
+          }),
+          None => base,
         };
-        for subelement in element.into_inner() {
-          match subelement.as_rule() {
-            Rule::inline_anchor => {
-              base = process_inline_anchor(subelement, base);
-            }
-            _ => (),
-          }
-        }
+        element
+          .into_inner()
+          .fold(base, |base, subelement| match subelement.as_rule() {
+            Rule::inline_anchor => process_inline_anchor(subelement, base),
+            _ => base,
+          })
       }
-      Rule::strong => {
-        base.element = Element::Styled;
-        base.attributes.push(Attribute {
-          key: "style".to_string(),
-          value: AttributeValue::Ref("strong"),
-        });
-
-        if let Some(content) = concat_elements(element, Rule::linechar, "") {
-          base.attributes.push(Attribute {
-            key: "content".to_string(),
-            value: AttributeValue::String(content),
-          });
-        };
-      }
-      Rule::emphasized => {
-        base.element = Element::Styled;
-        base.attributes.push(Attribute {
-          key: "style".to_string(),
-          value: AttributeValue::Ref("em"),
-        });
-
-        if let Some(content) = concat_elements(element, Rule::linechar, "") {
-          base.attributes.push(Attribute {
-            key: "content".to_string(),
-            value: AttributeValue::String(content),
-          });
-        };
-      }
-      _ => (),
-    };
-  }
-  base
+      _ => base,
+    })
 }
 ----
 ====
@@ -1268,14 +1205,7 @@ other_list_inline = @{ (!empty_lines ~ !EOI ~ !inline ~ !(NEWLINE ~ (bullet | nu
 [[asciidoc_element_rules]]
 [source, rust]
 ----
-Rule::list => {
-  for subelement in element.into_inner() {
-    if let Some(e) = process_element(subelement, env) {
-      base = e;
-    }
-  }
-  Some(base)
-}
+Rule::list => extract_inner_rule(element, env),
 Rule::list_paragraph => Some(process_paragraph(element)),
 Rule::other_list_inline => Some(from_element(&element, Element::Text)),
 Rule::continuation => None,
@@ -1411,38 +1341,11 @@ bullet_list = { bullet_list_element+ }
 [[asciidoc_element_rules]]
 [source, rust]
 ----
-Rule::bullet_list => {
-  base.element = Element::List(ListType::Bullet);
-
-  for subelement in element.into_inner() {
-    if let Some(e) = process_element(subelement, env) {
-      base.children.push(e);
-    }
-  }
-
-  Some(base)
-}
-Rule::bullet_list_element => {
-  for subelement in element.into_inner() {
-    match subelement.as_rule() {
-      Rule::bullet => {
-        base.element = Element::ListItem(subelement.as_str().trim().len() as u32);
-      }
-      Rule::list_element => {
-        for subelement in subelement.into_inner() {
-          if let Some(e) = process_element(subelement, env) {
-            base.children.push(e);
-          }
-        }
-      }
-      _ => {
-        base.children.push(set_span(&subelement));
-      }
-    }
-  }
-
-  Some(base)
-}
+Rule::bullet_list => Some(process_children(
+  element.clone(),
+  set_span(&element).element(Element::List(ListType::Bullet)),
+  env,
+)),
 ----
 
 ====
@@ -1523,38 +1426,28 @@ numbered_list = { number_bullet_list_element+ }
 [[asciidoc_element_rules]]
 [source, rust]
 ----
-Rule::numbered_list => {
-  base.element = Element::List(ListType::Number);
-
-  for subelement in element.into_inner() {
-    if let Some(e) = process_element(subelement, env) {
-      base.children.push(e);
-    }
-  }
-
-  Some(base)
-}
-Rule::number_bullet_list_element => {
-  for subelement in element.into_inner() {
-    match subelement.as_rule() {
-      Rule::number_bullet => {
-        base.element = Element::ListItem(subelement.as_str().trim().len() as u32);
+Rule::numbered_list => Some(process_children(
+  element.clone(),
+  set_span(&element).element(Element::List(ListType::Number)),
+  env,
+)),
+Rule::bullet_list_element | Rule::number_bullet_list_element => Some(
+  element
+    .clone()
+    .into_inner()
+    .fold(set_span(&element), |base, sub| match sub.as_rule() {
+      Rule::bullet | Rule::number_bullet => {
+        base.element(Element::ListItem(sub.as_str().trim().len() as u32))
       }
-      Rule::list_element => {
-        for subelement in subelement.into_inner() {
-          if let Some(e) = process_element(subelement, env) {
-            base.children.push(e);
-          }
-        }
-      }
+      Rule::list_element => process_children(sub, base, env),
+      Rule::EOI => base,
       _ => {
-        base.children.push(set_span(&subelement));
+        let mut base = base;
+        base.children.push(set_span(&sub));
+        base
       }
-    }
-  }
-
-  Some(base)
-}
+    }),
+),
 ----
 
 ====
@@ -1592,33 +1485,26 @@ proto = ${ ("http" ~ "s"?) |
 [[asciidoc_parser_functions]]
 [source, rust]
 ----
-fn process_link<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-) -> ElementSpan<'a> {
-  base.element = Element::Link;
-  for element in element.into_inner() {
-    match element.as_rule() {
-      Rule::url => {
-        base.attributes.push(Attribute {
-          key: "url".to_string(),
-          value: AttributeValue::Ref(element.as_str()),
-        });
-        let element = element.into_inner().next().unwrap(); // TODO Fehler möglich?
-        base.attributes.push(Attribute {
-          key: "protocol".to_string(),
-          value: AttributeValue::Ref(element.as_str()),
-        });
+fn process_link<'a>(element: Pair<'a, asciidoc::Rule>, base: ElementSpan<'a>) -> ElementSpan<'a> {
+  element
+    .into_inner()
+    .fold(base.element(Element::Link), |base, element| {
+      match element.as_rule() {
+        Rule::url => {
+          let base = base.add_attribute(Attribute {
+            key: "url".to_string(),
+            value: AttributeValue::Ref(element.as_str()),
+          });
+          let element = element.into_inner().next().unwrap(); // TODO Fehler möglich?
+          base.add_attribute(Attribute {
+            key: "protocol".to_string(),
+            value: AttributeValue::Ref(element.as_str()),
+          })
+        }
+        Rule::inline_attribute_list => process_inline_attribute_list(element, base),
+        _ => base.add_child(set_span(&element)),
       }
-      Rule::inline_attribute_list => {
-        base = process_inline_attribute_list(element, base);
-      }
-      _ => {
-        base.children.push(set_span(&element));
-      }
-    };
-  }
-  base
+    })
 }
 ----
 
@@ -1639,32 +1525,28 @@ xref = !{ "<<" ~ identifier ~ (NEWLINE? ~ "," ~ NEWLINE? ~ word+)? ~ ">>" }
 [[asciidoc_parser_functions]]
 [source, rust]
 ----
-fn process_xref<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-) -> ElementSpan<'a> {
-  base.element = Element::XRef;
-  for element in element.clone().into_inner() {
-    match element.as_rule() {
-      Rule::identifier => {
-        base.attributes.push(Attribute {
+fn process_xref<'a>(element: Pair<'a, asciidoc::Rule>, base: ElementSpan<'a>) -> ElementSpan<'a> {
+  let base = element
+    .clone()
+    .into_inner()
+    .fold(base.element(Element::XRef), |base, element| {
+      match element.as_rule() {
+        Rule::identifier => base.add_attribute(Attribute {
           key: "id".to_string(),
           value: AttributeValue::Ref(element.as_str()),
-        });
+        }),
+        Rule::word => base,
+        _ => base,
       }
-      Rule::word => {}
-      _ => (),
-    };
-  }
+    });
 
-  if let Some(content) = concat_elements(element, Rule::word, " ") {
-    base.attributes.push(Attribute {
+  match concat_elements(element, Rule::word, " ") {
+    Some(content) => base.add_attribute(Attribute {
       key: "content".to_string(),
       value: AttributeValue::String(content),
-    });
-  };
-
-  base
+    }),
+    None => base,
+  }
 }
 ----
 
@@ -1698,60 +1580,47 @@ image = { "image::" ~ (url | path) ~ inline_attribute_list }
 [[asciidoc_element_rules]]
 [source, rust]
 ----
-Rule::image_block => Some(process_image(element, base, env)),
+Rule::image_block => Some(process_image(element, env)),
 ----
 
 [[asciidoc_parser_functions]]
 [source, rust]
 ----
-fn process_image<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-  env: &mut Env,
-) -> ElementSpan<'a> {
-  base.element = Element::Image;
-  for element in element.into_inner().flatten() {
-    match element.as_rule() {
-      Rule::url => {
-        base.attributes.push(Attribute {
-          key: "path".to_string(),
-          value: AttributeValue::Ref(element.as_str()),
-        });
-      }
-      Rule::path => {
-        base.attributes.push(Attribute {
-          key: "path".to_string(),
-          value: AttributeValue::Ref(element.as_str()),
-        });
-      }
-      Rule::inline_attribute_list => {
-        base = process_inline_attribute_list(element, base);
-      }
-      _ => (),
-    };
-  }
+fn process_image<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> ElementSpan<'a> {
+  let base = element.clone().into_inner().flatten().fold(
+    set_span(&element).element(Element::Image),
+    |base, element| match element.as_rule() {
+      Rule::url => base.add_attribute(Attribute {
+        key: "path".to_string(),
+        value: AttributeValue::Ref(element.as_str()),
+      }),
+      Rule::path => base.add_attribute(Attribute {
+        key: "path".to_string(),
+        value: AttributeValue::Ref(element.as_str()),
+      }),
+      Rule::inline_attribute_list => process_inline_attribute_list(element, base),
+      _ => base,
+    },
+  );
 
-  if let Some(value) = base.get_attribute("opts") {
-    if value == "inline" {
-      if let Some(path) = base.get_attribute("path") {
-        match env.read_to_string(path) {
-          Ok(content) => {
-            base.attributes.push(Attribute {
-              key: "content".to_string(),
-              value: AttributeValue::String(content),
-            });
-          }
-          Err(e) => {
-            error!("couldn't read content of image file {} ({})", path, e);
-          }
-        }
-      } else {
-        error!("There was no path of inline image defined");
-      }
-    }
+  match base.get_attribute("opts") {
+    Some("inline") => match base.get_attribute("path") {
+      Some(path) => match env.read_to_string(path) {
+        Ok(content) => base.add_attribute(Attribute {
+          key: "content".to_string(),
+          value: AttributeValue::String(content),
+        }),
+        Err(e) => base.clone().element(Element::Error(format!(
+          "couldn't read content of image file {} ({})",
+          path, e
+        ))),
+      },
+      None => base.element(Element::Error(
+        "There was no path of inline image defined".to_string(),
+      )),
+    },
+    Some(_) | None => base,
   }
-
-  base
 }
 ----
 
@@ -1770,11 +1639,7 @@ delimited_table = {
 }
 
 table_inner = {
-  (table_row ~ NEWLINE*)+
-}
-
-table_row = {
-  (!NEWLINE ~ table_cell)+
+  (table_cell ~ NEWLINE*)+
 }
 
 table_cell = {
@@ -1782,7 +1647,7 @@ table_cell = {
 }
 
 table_cell_content = {
-  (!"|" ~ !NEWLINE ~ ANY)*
+  (!"|" ~ ANY)*
 }
 ----
 
@@ -1955,69 +1820,168 @@ Rule::delimited_table => {
 }
 ----
 
-[[asciidoc_element_rules]]
-[source, rust]
-----
-Rule::table_row => Some(process_table_row(element, base, env)),
-Rule::table_cell => Some(process_table_cell(element, base, env)),
-----
-
 [[asciidoc_parser_functions]]
 [source, rust]
 ----
+#[derive(Debug, PartialEq)]
+enum ColKind {
+  Default,
+  Asciidoc,
+}
+
+#[derive(Debug, PartialEq)]
+struct ColumnFormat {
+  length: usize,
+  kind: ColKind,
+}
+
+fn parse_column_format(input: &str) -> ColumnFormat {
+  ColumnFormat {
+    length: 1,
+    kind: match input {
+      "a" => ColKind::Asciidoc,
+      _ => ColKind::Default,
+    },
+  }
+}
+
+fn parse_columns_format(input: &str) -> Vec<ColumnFormat> {
+  input
+    .split(',')
+    .map(|input| parse_column_format(input.trim()))
+    .collect()
+}
+
+fn parse_columns_format_from_content(input: &str) -> Vec<ColumnFormat> {
+  input
+    .lines()
+    .next()
+    .unwrap_or("")
+    .matches('|')
+    .map(|_| ColumnFormat {
+      length: 1,
+      kind: ColKind::Default,
+    })
+    .collect()
+}
+
 fn process_inner_table<'a>(
   element: Pair<'a, asciidoc::Rule>,
   mut base: ElementSpan<'a>,
   env: &mut Env,
 ) -> ElementSpan<'a> {
-  for element in element.into_inner() {
-    match element.as_rule() {
-      Rule::delimited_inner => {
-        let ast = AsciidocParser::parse(Rule::table_inner, element.as_str()).unwrap();
+  let content = element
+    .into_inner()
+    .find(|sub| sub.as_rule() == Rule::delimited_inner)
+    .unwrap()
+    .as_str();
 
-        for element in ast {
-          for subelement in element.into_inner() {
-            if let Some(e) = process_element(subelement, env) {
-              base.children.push(e);
-            }
-          }
-        }
-        base.attributes.push(Attribute {
-          key: "content".to_string(),
-          value: AttributeValue::Ref(element.as_str()),
-        });
-      }
-      _ => (),
-    };
-  }
+  let col_format = match base.get_attribute("cols") {
+    Some(fmt) => parse_columns_format(fmt),
+    None => parse_columns_format_from_content(content),
+  };
+
+  base.attributes.push(Attribute {
+    key: "content".to_string(),
+    value: AttributeValue::Ref(content),
+  });
+  base.children = process_table_content(content, col_format, env);
+
   base
 }
 
-fn process_table_row<'a>(
-  element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
+fn process_table_content<'a>(
+  input: &'a str,
+  col_format: Vec<ColumnFormat>,
   env: &mut Env,
-) -> ElementSpan<'a> {
-  base.element = Element::TableRow;
-  for cell_element in element.into_inner() {
-    let cell = process_table_cell(cell_element, base.clone(), env);
-    base.children.push(cell);
+) -> Vec<ElementSpan<'a>> {
+  let ast = match AsciidocParser::parse(Rule::table_inner, input) {
+    Ok(ast) => ast,
+    Err(e) => {
+      return vec![ElementSpan {
+        element: Element::Error(format!("couldnet parse cell: {}", e)),
+        source: None,
+        content: input,
+        start: 0,
+        end: 0,
+        start_line: 0,
+        start_col: 0,
+        end_line: 0,
+        end_col: 0,
+        children: vec![],
+        positional_attributes: vec![],
+        attributes: vec![],
+      }];
+    }
+  };
+
+  let mut cells = vec![];
+
+  for element in ast {
+    for (subelement, fmt) in element.into_inner().zip(col_format.iter().cycle()) {
+      cells.push(process_table_cell(subelement, fmt, env))
+    }
   }
-  base
+
+  let mut rows = vec![];
+  let len = col_format.len();
+  for chunk in cells.chunks(len) {
+    rows.push(ElementSpan {
+      element: Element::TableRow,
+      source: None,
+      content: "",
+      start: 0,
+      end: 0,
+      start_line: 0,
+      start_col: 0,
+      end_line: 0,
+      end_col: 0,
+      children: chunk.to_vec(),
+      positional_attributes: vec![],
+      attributes: vec![],
+    })
+  }
+
+  rows
 }
 
 fn process_table_cell<'a>(
   element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
-  _env: &mut Env,
+  fmt: &ColumnFormat,
+  env: &mut Env,
 ) -> ElementSpan<'a> {
-  base.element = Element::TableCell;
-  base.content = element
+  let mut base = set_span(&element).element(Element::TableCell);
+
+  let content = element
     .into_inner()
     .find(|sub| sub.as_rule() == Rule::table_cell_content)
     .unwrap()
     .as_str()
     .trim();
+
+  base.content = content;
+  base.children = match fmt.kind {
+    ColKind::Asciidoc => {
+      let ast = AsciidocParser::parse(Rule::asciidoc, content).unwrap();
+
+      let mut elements = vec![];
+
+      for element in ast {
+        if let Some(element) = process_element(element, env) {
+          elements.push(element);
+        }
+      }
+      elements
+    }
+    ColKind::Default => {
+      let mut base = base.clone();
+      base.element = Element::Paragraph;
+      base.children = parse_paragraph(content);
+
+      vec![base]
+    }
+  };
+
   base
 }
 ----
