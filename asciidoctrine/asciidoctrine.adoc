@@ -2494,7 +2494,7 @@ pub struct ElementSpan<'a> {
   pub attributes: Vec<Attribute<'a>>,
 }
 
-impl ElementSpan<'_> {
+impl<'a> ElementSpan<'a> {
   pub fn get_attribute(&self, name: &str) -> Option<&str> {
     for attribute in self.attributes.iter() {
       if &attribute.key == name {
@@ -2506,6 +2506,47 @@ impl ElementSpan<'_> {
     }
 
     None
+  }
+
+  pub fn add_offset(self, other: &ElementSpan<'_>) -> Self {
+    let mut base = self;
+
+    base.start += other.start;
+    base.end += other.start;
+    base.start_line += other.start_line - 1;
+    base.end_line += other.start_line - 1;
+    base.start_col += other.start_col - 1;
+    base.end_col += other.start_col - 1;
+
+    base
+  }
+
+  pub fn element(self, e: Element<'a>) -> Self {
+    let mut base = self;
+
+    base.element = e;
+    base
+  }
+
+  pub fn add_attribute(self, a: Attribute<'a>) -> Self {
+    let mut base = self;
+
+    base.attributes.push(a);
+    base
+  }
+
+  pub fn add_positional_attribute(self, a: AttributeValue<'a>) -> Self {
+    let mut base = self;
+
+    base.positional_attributes.push(a);
+    base
+  }
+
+  pub fn add_child(self, e: ElementSpan<'a>) -> Self {
+    let mut base = self;
+
+    base.children.push(e);
+    base
   }
 }
 
