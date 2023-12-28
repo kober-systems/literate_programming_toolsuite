@@ -186,20 +186,17 @@ fn process_attribute_list<'a>(
 
 fn process_blocktitle<'a>(
   element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
+  base: ElementSpan<'a>,
 ) -> ElementSpan<'a> {
-  for element in element.into_inner() {
-    match element.as_rule() {
-      Rule::line => {
-        base.attributes.push(Attribute {
-          key: "title".to_string(), // TODO
-          value: AttributeValue::Ref(element.as_str()),
-        });
-      }
-      _ => (),
-    };
-  }
-  base
+  element
+    .into_inner()
+    .fold(base, |base, sub| match sub.as_rule() {
+      Rule::line => base.add_attribute(Attribute {
+        key: "title".to_string(),
+        value: AttributeValue::Ref(sub.as_str()),
+      }),
+      _ => base.add_child(set_span(&sub)),
+    })
 }
 
 fn process_delimited_block<'a>(
