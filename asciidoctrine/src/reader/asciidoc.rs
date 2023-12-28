@@ -174,17 +174,14 @@ fn process_inline_attribute_list<'a>(
 
 fn process_attribute_list<'a>(
   element: Pair<'a, asciidoc::Rule>,
-  mut base: ElementSpan<'a>,
+  base: ElementSpan<'a>,
 ) -> ElementSpan<'a> {
-  for element in element.into_inner() {
-    match element.as_rule() {
-      Rule::inline_attribute_list => {
-        base = process_inline_attribute_list(element, base);
-      }
-      _ => (),
-    };
-  }
-  base
+  element
+    .into_inner()
+    .fold(base, |base, sub| match sub.as_rule() {
+      Rule::inline_attribute_list => process_inline_attribute_list(sub, base),
+      _ => base.add_child(set_span(&sub)),
+    })
 }
 
 fn process_blocktitle<'a>(
