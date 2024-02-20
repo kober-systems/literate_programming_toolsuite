@@ -3073,6 +3073,8 @@ version = "0.2.0"
 authors = ["Benjamin Kober <benko@kober-systems.com>"]
 edition = "2018"
 license = "MIT"
+keywords = ["literate-programming", "asciidoc", "cli"]
+categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]
 <<cargo_dependencies>>
