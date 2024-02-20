@@ -1798,6 +1798,12 @@ But paragraphs
 [%collapsible]
 ====
 
+[[delimited_block_rules]]
+[source, rust]
+----
+Rule::delimited_table => process_inner_table(sub, base.element(Element::Table), env),
+----
+
 [[asciidoc_parser_functions]]
 [source, rust]
 ----
@@ -1989,6 +1995,12 @@ comment = { NEWLINE ~ "//" ~ (!NEWLINE ~ ANY)* ~ &NEWLINE }
     delimiter := "/" >>
 ----
 
+[[delimited_block_rules]]
+[source, rust]
+----
+Rule::delimited_comment => BlockType::Comment,
+----
+
 ====
 
 == Quellcode Blöcke
@@ -2012,6 +2024,12 @@ werden.
 <<delimited_block_template|
     blocktype := "source",
     delimiter := "-" >>
+----
+
+[[delimited_block_rules]]
+[source, rust]
+----
+Rule::delimited_source | Rule::delimited_literal => BlockType::Listing,
 ----
 
 ====
@@ -2100,6 +2118,12 @@ Zeichen.
     delimiter := "=" >>
 
 delimited_verse = { "verse" } // TODO
+----
+
+[[delimited_block_rules]]
+[source, rust]
+----
+Rule::delimited_example => BlockType::Example,
 ----
 
 ====
