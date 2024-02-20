@@ -13,11 +13,40 @@ ASCIIdoctrine will möglichst kompatibel zur asciidoc Interpretation von http://
 Je nach Interessenlage und Beweggrund zum lesen dieses Artikels wird man
 unterschiedlich an ihn herangehen.
 
+[cols="a,a"]
+|===
+|
+Einstieg & Tutorials
+~~~~~~~~~~~~~~~~~~~~
+
 * Will man einfach Texte mit `asciidoc` Markup verfassen sollte man zum
   <<asciidoc-syntax, ASCIIdoc Syntax>> Abschnitt gehen oder zur Beschreibung
   der <<cmd-api, Kommandozeilenparameter>>.
+** Alternativ findet man auch in der
+   https://docs.asciidoctor.org/asciidoc/latest/[Aciidoc Language
+   Documentation] vom asciidoctor Projekt eine hervorragende Übersicht.
+** Dort gibt es auch eine
+   https://docs.asciidoctor.org/asciidoc/latest/syntax-quick-reference/[Quick
+   Syntax Reference].
+
+|
+How-To Guides
+~~~~~~~~~~~~~
+
+|
+Hintergrund Informationen
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
 * Will man wissen wie das Programm funktioniert oder es anpassen kann man
   einfach weiterlesen.
+
+|
+Referenz
+~~~~~~~~
+
+* API https://docs.rs/asciidoctrine/latest/asciidoctrine/[documentation]
+
+|===
 
 == Übersicht
 Dieses Programm ist im https://en.wikipedia.org/wiki/Literate_programming[literate programming] Stil geschrieben. Gie Grundidee ist eine ASCIIdoc Benutzeranleitung so umzuarbeiten, dass sie sich automatisch zu einem ausführbaren Programm mit Tests kompilieren lässt.
