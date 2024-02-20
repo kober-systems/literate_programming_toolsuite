@@ -79,20 +79,6 @@ pub struct Snippet {
 }
 
 impl Snippet {
-  fn get_content(&self, join_str: &str) -> String {
-    if self.children.len() > 0 {
-      let mut iter = self.children.iter();
-      let start = iter.next().unwrap().content.clone();
-      iter.fold(start, |mut base, snippet| {
-        base.push_str(join_str);
-        base.push_str(&snippet.content);
-        base
-      })
-    } else {
-      self.content.to_string()
-    }
-  }
-
   fn get_raw_content(&self, join_str: &str) -> String {
     if self.children.len() > 0 {
       let mut iter = self.children.iter();
@@ -413,7 +399,8 @@ impl Lisa {
   }
 
   /// Build all snippets (Runs the vm)
-  pub fn generate_outputs(&mut self, snippets: SnippetDB, mut ast: &AST) -> Result<(), Error> {
+  pub fn generate_outputs(&mut self, snippets: SnippetDB, ast: &AST) -> Result<(), Error> {
+
     let source = ast.get_attribute("source").unwrap_or("");
     let db = Rc::new(RefCell::new(snippets));
     let snippets = Rc::clone(&db);

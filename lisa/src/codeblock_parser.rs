@@ -94,6 +94,10 @@ fn substitude_params(
     }
     None => match snippets.get(identifier) {
       Some(snippet) => {
+        if let SnippetType::Pipe = snippet.kind {
+          warn!("depends on pipe snippet {}", identifier);
+        }
+
         let input = snippet.get_raw_content(&join_str);
 
         let content = if snippet.raw {
@@ -134,7 +138,7 @@ fn substitude_params(
           );
         }
       }
-    },
+    }
   }
 }
 
