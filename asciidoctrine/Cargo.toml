@@ -9,6 +9,13 @@ edition = "2018"
 license = "MIT"
 keywords = ["documentation", "asciidoc", "cli"]
 categories = ["command-line-utilities", "text-processing", "parser-implementations"]
+include = [
+  "**/*.rs",
+  "**/*.pest",
+  "**/assets/*.html",
+  "**/assets/*.css",
+  "Cargo.toml",
+]
 
 [dependencies]
 pest = "2.1.0"
