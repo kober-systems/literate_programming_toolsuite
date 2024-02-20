@@ -221,6 +221,11 @@ Die `ID` kann verwendet werden, um Quelltextelemente in anderen
 Qelltexten einzubinden. Der `filename` kann dazu benutzt werden, um den
 Dateinamen einer Ausgabedatei festzulegen und der `Quelltext` kann als
 Inhalt dieser Dateien dienen.
+
+TODO Wahrscheinlich ist es das beste beim asciidoc import ein attribut
+zu übergeben, welches eine Art Prefix an die ID anfügt (Falls keins
+definiert wird der Dateiname). Auf diese Art wird das einfügen fremder
+Dokumente sehr einfach.
 ////////////////////////////////////////////////////////////////////////////////
 
 [[usage_import_snippets]]
