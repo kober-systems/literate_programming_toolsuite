@@ -1126,6 +1126,61 @@ Die Anwendungsmöglichkeiten von `pipe` sind extrem vielfältig und
 mächtig. Deshalb werden wir in den nächsten Abschnitten einige
 Anwendungsfälle besprechen, die sich mit `pipe` elegant lösen lassen.
 
+====== Unit Tests mit pipe
+TODO kann auch einen link auf die Benutzer Dokumentation Beschreibung enthalten
+
+====== Aspect oriented Programming mit pipe
+https://en.wikipedia.org/wiki/Aspect-oriented_programming[Aspect
+oriented Programming] ist ein Programmieransatz welcher die Modifikation
+von bestehenden Modulen erlaubt. Das ist oftmals sehr problematisch und
+führt (meiner Meinung nach) bei breitem Einsatz zu schlecht wartbarem
+und undurchschaubaren Quellcode. Wird es allerdings sparsam eingesetzt
+kann es manchmal sehr schwierige Probleme einfach lösen.
+
+Ein Beispiel sind Bedingungen an einen Typ welche zur Einführung des
+Typs noch nicht klar sind. In https://www.rust-lang.org/[Rust] möchte
+man z.B. oft Typen mit einem `derive` Macro automatisch Funktionen
+implementieren lassen (z.B. serde). Zum Zeitpunkt der Definition des
+Typs ist diese Notwendigkeit aber noch gar nicht klar oder nicht
+offensichtlich. Dies führt zu Problemen in der Erklärung (welche bei
+einem Literate Programm ja immer das wichtigste überhaupt ist) da man
+anmerken muss, dass diese Code Stelle später noch erklärt wird und in
+der späteren Erklärung den Quellcode nicht sieht. ...
+
+TODO
+
+====== Macro Systeme mit pipe
+Ein `pipe` Block kann natürlich selber <<usage_import_snippets, Snippets
+importieren>>. Dadurch ist es möglich Funktionen zu definieren (sogar
+in einem anderen Dokument) und diese später in verschiedenen `pipe`
+Schnipseln zu benutzen.
+
+TODO
+
+[source, asciidoc, lisa-raw]
+....
+First we define our macro lib:
+
+[[pipe_functions]]
+[source, rhai]
+---
+fn mystuff(string) {
+  // Do my fancy manipulation functions here
+}
+---
+
+Then we can use it in our pipes
+
+[source, rhai, pipe]
+---
+<<pipe_functions>>
+
+lisa.store("out", mystuff("test"));
+---
+
+We can also use this functions in other snippets and even in other documents.
+....
+
 [[usage_control_flow]]
 Den Ausführungsfluss steuern
 ++++++++++++++++++++++++++++
