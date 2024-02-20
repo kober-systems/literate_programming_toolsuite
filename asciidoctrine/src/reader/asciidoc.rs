@@ -69,7 +69,7 @@ fn process_element<'a>(
       }))
     }
     Rule::paragraph => Some(process_paragraph(element)),
-    Rule::block | Rule::list => extract_inner_rule(element, env),
+    Rule::list => extract_inner_rule(element, env),
     Rule::list_paragraph => Some(process_paragraph(element)),
     Rule::other_list_inline => Some(from_element(&element, Element::Text)),
     Rule::continuation => None,
@@ -101,6 +101,7 @@ fn process_element<'a>(
         }),
     ),
     Rule::image_block => Some(process_image(element, env)),
+    Rule::block => extract_inner_rule(element, env),
     Rule::inline => Some(process_inline(element, base)),
     Rule::EOI => None,
     _ => Some(base),
