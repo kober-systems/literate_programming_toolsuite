@@ -1473,14 +1473,18 @@ impl SnippetDB {
 
   <<snippet_db_functions>>
 
+  /// Get the snippet with the name `name`
   pub fn get(&self, name: &str) -> Option<&Snippet> {
     self.snippets.get(name)
   }
 
+  /// Get the snippet with the name `name` and
+  /// remove it from the snippet database
   pub fn pop(&mut self, name: &str) -> Option<Snippet> {
     self.snippets.remove(name)
   }
 
+  /// Get iterator over all snippets
   pub fn iter(&self) -> hash_map::Iter<String, Snippet> {
     self.snippets.iter()
   }
@@ -2127,7 +2131,7 @@ Dabei müssen wir einiges beachten:
 * Zunächst müssen wir sicher gehen, dass der Name des Parameters nicht
   der gleiche ist, wie die Referenz. Ansonsten würde sich die Funktion
   endlos selbst aufrufen.
-** Falls der Parameter identisch ist, durchsuchen wir die 
+** Falls der Parameter identisch ist, durchsuchen wir die
    Aufrufhierarchie um zu überprüfen, ob einer der aufrufenden Snippets
    den Parameter definert hat.
 * Außerdem haben Referenzen manchmal eigene Parameter. Diese müssen wir

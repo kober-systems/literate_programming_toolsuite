@@ -44,14 +44,18 @@ impl SnippetDB {
     }
   }
 
+  /// Get the snippet with the name `name`
   pub fn get(&self, name: &str) -> Option<&Snippet> {
     self.snippets.get(name)
   }
 
+  /// Get the snippet with the name `name` and
+  /// remove it from the snippet database
   pub fn pop(&mut self, name: &str) -> Option<Snippet> {
     self.snippets.remove(name)
   }
 
+  /// Get iterator over all snippets
   pub fn iter(&self) -> hash_map::Iter<String, Snippet> {
     self.snippets.iter()
   }
