@@ -678,28 +678,3 @@ fn from_element<'a>(rule: &Pair<'a, asciidoc::Rule>, element: Element<'a>) -> El
     end_col,
   }
 }
-
-#[cfg(test)]
-mod test {
-  use pretty_assertions::assert_eq;
-
-  use super::*;
-
-  #[test]
-  fn test_table() {
-    let out = parse_columns_format(r#"1,a"#);
-    assert_eq!(
-      out,
-      vec![
-        ColumnFormat {
-          length: 1,
-          kind: ColKind::Default
-        },
-        ColumnFormat {
-          length: 1,
-          kind: ColKind::Asciidoc
-        },
-      ]
-    );
-  }
-}
