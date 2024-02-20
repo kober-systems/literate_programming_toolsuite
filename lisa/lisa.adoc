@@ -112,7 +112,7 @@ impl Lisa {
   }
 
   /// Build all snippets (Runs the vm)
-  pub fn generate_outputs(&mut self, snippets: SnippetDB, mut ast: &AST) -> Result<(), Error> { // <4>
+  pub fn generate_outputs(&mut self, snippets: SnippetDB, ast: &AST) -> Result<(), Error> { // <4>
     <<generate_outputs>>
 
     Ok(())
@@ -2338,20 +2338,6 @@ Hierfür müssen wir den Inhalt eines Snippets genereieren können.
 [[snippet_functions]]
 [source, rust]
 ----
-fn get_content(&self, join_str: &str) -> String {
-  if self.children.len() > 0 {
-    let mut iter = self.children.iter();
-    let start = iter.next().unwrap().content.clone();
-    iter.fold(start, |mut base, snippet| {
-      base.push_str(join_str);
-      base.push_str(&snippet.content);
-      base
-    })
-  } else {
-    self.content.to_string()
-  }
-}
-
 fn get_raw_content(&self, join_str: &str) -> String {
   if self.children.len() > 0 {
     let mut iter = self.children.iter();
@@ -2515,7 +2501,7 @@ loop {
         None => { // <4>
           // TODO Fehlermeldung im AST. Ein Snippet sollte zu
           // diesem Zeitpunkt immer bereits erstellt sein.
-          warn!("Dependency `{}` nicht gefunden", key);
+          warn!("{}: Dependency `{}` nicht gefunden", source, key);
           None
         }
       }
@@ -3009,7 +2995,7 @@ das Programm (und die Bibliothek) kompiliert werden können.
 [package]
 name = "lisa"
 version = "0.2.0"
-authors = ["Benjamin Kober <k.o.b.e.r@web.de>"]
+authors = ["Benjamin Kober <benko@kober-systems.com>"]
 edition = "2018"
 
 [dependencies]
