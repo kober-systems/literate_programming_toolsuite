@@ -19,6 +19,7 @@ unterschiedlich an ihn herangehen.
 Einstieg & Tutorials
 ~~~~~~~~~~~~~~~~~~~~
 
+* <<install, Installation>>
 * Will man einfach Texte mit `asciidoc` Markup verfassen sollte man zum
   <<asciidoc-syntax, ASCIIdoc Syntax>> Abschnitt gehen oder zur Beschreibung
   der <<cmd-api, Kommandozeilenparameter>>.
@@ -2904,8 +2905,20 @@ impl Environment for Env {
 
 ====
 
+[[install]]
 == Installation
-TODO
+To install directly from the sources you will need to have
+https://doc.rust-lang.org/cargo/getting-started/installation.html[cargo]
+installed first.
+
+After that run
+
+[source, sh]
+----
+cargo install asciidoctrine
+----
+
+from the command line.
 
 == Build
 TODO
