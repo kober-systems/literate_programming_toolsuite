@@ -2494,6 +2494,7 @@ verarbeiten sie anschließend gemäß ihrem jeweiligen Typ.
 [[generate_outputs]]
 [source, rust]
 ----
+let source = ast.get_attribute("source").unwrap_or("");
 let db = Rc::new(RefCell::new(snippets));
 let snippets = Rc::clone(&db);
 

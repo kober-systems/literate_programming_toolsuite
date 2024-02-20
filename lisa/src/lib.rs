@@ -400,7 +400,6 @@ impl Lisa {
 
   /// Build all snippets (Runs the vm)
   pub fn generate_outputs(&mut self, snippets: SnippetDB, ast: &AST) -> Result<(), Error> {
-
     let source = ast.get_attribute("source").unwrap_or("");
     let db = Rc::new(RefCell::new(snippets));
     let snippets = Rc::clone(&db);
