@@ -3072,6 +3072,7 @@ name = "lisa"
 version = "0.2.0"
 authors = ["Benjamin Kober <benko@kober-systems.com>"]
 edition = "2018"
+license = "MIT"
 
 [dependencies]
 <<cargo_dependencies>>
