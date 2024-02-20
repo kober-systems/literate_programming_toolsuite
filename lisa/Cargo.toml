@@ -11,7 +11,7 @@ keywords = ["literate-programming", "asciidoc", "cli"]
 categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]
-asciidoctrine = { path = "../asciidoctrine" }
+asciidoctrine = { path = "../asciidoctrine", version = "0.1" }
 pest = "2.1.0"
 pest_derive = "2.1.0"
 topological-sort = "0.2"

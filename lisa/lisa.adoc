@@ -46,7 +46,7 @@ use asciidoctrine::*;
 [[cargo_dependencies]]
 [source, toml]
 ----
-asciidoctrine = { path = "../asciidoctrine" }
+asciidoctrine = { path = "../asciidoctrine", version = "0.1" }
 ----
 
 [[lisa-overview]]
