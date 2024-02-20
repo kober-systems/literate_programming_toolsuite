@@ -2611,6 +2611,8 @@ loop {
     Datenbank abgelegt, muss eine Fehlermeldung generiert werden. Wahrscheinlich
     wurde dann ein Snippet referenziert aber nie definiert.
 
+TODO Wir sollten auch warnen, wenn ein Snippet zwar einen anchor hat aber niergendwo eingebunden wird. Das würde auf einen Fehler in der Logik deuten, da man wahrscheinlich vergessen hat ihn einzubinden. Diese Überprüfung sollte erst nach der Abarbeitung der Pipes abgeschlossen werden, da manche Snippets eventuell dynamisch eingebunden werden und dementsprechend doch nicht vergessen wurden.
+
 Je nach Snippet Typ können wir nun die entsprechende Aktion ausführen.
 
 [[execute_snippet_action]]
@@ -2707,6 +2709,12 @@ if success {
   error!("External command failed:\n {}", err) // TODO entfernen
 }
 ----
+
+TODO Die Ergebnisse ließen sich sicher auch als Bilder, Audio etc einbinden. Hier kann man bestimmt etwas von https://jupyter.org/ und https://observablehq.com/ lernen.
+
+Um die <<usage_display_mime,Daten anzuzeigen welche dargestellt werden sollen>> wird der `stdout` Stream nach dem Delimiter (TODO link) abgesucht, welcher den speziellen Inhalt enthält. Dann wird der mime_type (TODO Wikipedia link) ermittelt. Alle binären Daten müssen in base64 (TODO link) Format umgewandelt werden.
+
+TODO
 
 ==== Pipe: Snippets dynamisch erzeugen
 Beim `pipe` Befehl werden snippets als interne Scripte ausgeführt. Wir
@@ -2832,6 +2840,11 @@ use core::cell::RefCell;
 use std::rc::Rc;
 ----
 
+==== Umgang mit Fehlern beim Raussuchen der Schnipsel
+Es kann vorkommen, dass der Benutzer ein Schnipsel referenziert, welches er nie definiert. Das zeigt sich dadurch, dass eine Dependency fehlt.
+
+TODO
+
 [[side-effects]]
 === Seiteneffekte (Zugriff auf die Betriebsystem-Umgebung)
 Lisa kann Seiteneffekte nutzen (Das ist sogar eine der Hauptaufgaben von `lisa`). Das bedeutet es erzeugt und nutzt Ein- und Ausgaben welche nicht direkt als Parameter übergeben wurden.
@@ -2842,6 +2855,8 @@ Das ist sehr schön und einer der Gründe, warum Lisa so mächtig ist, doch in m
 
 * Beim Testen (TODO link) müssen wir wissen welche Seiteneffekte genutzt werden (und auf welche Art).
 * Wollen wir `lisa` in eingeschränkten Umgebungen nutzen (embedded Kontext, WASM) stehen uns viele dieser betriebssystemabhängigen Seiteneffekte nicht zur Verfügung und wir müssen Alternative Wege finden sie zu implementieren.
+
+TODO Die Seiteneffekt API beschreiben sowie dependency injektion. Eventuell auch in asciidoctrine nutzen (z.B. für import)
 
 [[lisa_internal_variables]]
 [source, rust]
