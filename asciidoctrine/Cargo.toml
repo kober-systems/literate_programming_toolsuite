@@ -1,6 +1,9 @@
 [package]
 name = "asciidoctrine"
 version = "0.1.1"
+description = "process asciidoc files"
+homepage = "https://kober-systems.github.io/literate_programming_toolsuite/asciidoctrine/asciidoctrine.html"
+repository = "https://github.com/kober-systems/literate_programming_toolsuite"
 authors = ["Benjamin Kober <benko@kober-systems.com>"]
 edition = "2018"
 license = "MIT"
