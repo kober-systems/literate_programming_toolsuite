@@ -2,10 +2,10 @@
 This is a suite of programs to use for literate programming. They try to
 make this process as smooth as possible.
 
-image:https://img.shields.io/github/languages/code-size/lammermann/literate_programming_toolsuite?style=flat-square[link=https://github.com/lammermann/literate_programming_toolsuite]
-image:https://img.shields.io/github/actions/workflow/status/lammermann/literate_programming_toolsuite/rust.yml?style=flat-square[link=https://github.com/lammermann/literate_programming_toolsuite/actions]
+image:https://img.shields.io/github/languages/code-size/kober-systems/literate_programming_toolsuite?style=flat-square[link=https://github.com/kober-systems/literate_programming_toolsuite]
+image:https://img.shields.io/github/actions/workflow/status/kober-systems/literate_programming_toolsuite/rust.yml?style=flat-square[link=https://github.com/kober-systems/literate_programming_toolsuite/actions]
 image:https://img.shields.io/docker/image-size/lammermann/lisa/bleeding?label=docker&style=flat-square[link=https://hub.docker.com/r/lammermann/lisa]
-image:https://deps.rs/repo/github/lammermann/literate_programming_toolsuite/status.svg[link=https://deps.rs/repo/github/lammermann/literate_programming_toolsuite]
+image:https://deps.rs/repo/github/kober-systems/literate_programming_toolsuite/status.svg[link=https://deps.rs/repo/github/kober-systems/literate_programming_toolsuite]
 
 == Basic design decisions
 This software is written in rust. It uses it's own tools to gererate the

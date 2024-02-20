@@ -22,7 +22,7 @@ unterschiedlich an ihn herangehen.
 == Übersicht
 Dieses Programm ist im https://en.wikipedia.org/wiki/Literate_programming[literate programming] Stil geschrieben. Gie Grundidee ist eine ASCIIdoc Benutzeranleitung so umzuarbeiten, dass sie sich automatisch zu einem ausführbaren Programm mit Tests kompilieren lässt.
 
-Dazu verwenden wir https://lammermann.github.io/literate_programming_toolsuite/lisa/lisa.html[lisa] (welches im gleichen Repo verwaltet wird) als Werkzeug.
+Dazu verwenden wir https://kober-systems.github.io/literate_programming_toolsuite/lisa/lisa.html[lisa] (welches im gleichen Repo verwaltet wird) als Werkzeug.
 
 === Motivation und Hintergrund
 Das Programm http://jgm.github.io/lunamark/doc/lunamark.html[lunamark] hat
