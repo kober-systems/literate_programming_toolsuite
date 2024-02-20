@@ -812,6 +812,17 @@ author_info = { word+ ~ email? ~ &NEWLINE }
 email = { "<" ~ (LETTER | "." )+ ~ "@" ~ (LETTER | "." )+ ~ ">" }
 ----
 
+== Attribute
+Manchmal will man eine Eigenschaft des Dokument verändern. Dazu
+verwendet man Attributblöcke.
+
+[[blocks]]
+[source, pest]
+----
+attribute_entry = { ":" ~ identifier ~ ":" ~ identifier? ~ &NEWLINE }
+attribute_entry_block = { attribute_entry ~ NEWLINE }
+----
+
 == Überschriften
 Überschriften werden verwendet um das Dokument in Unterthemen zu gruppieren.
 

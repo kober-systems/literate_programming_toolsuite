@@ -26,9 +26,6 @@ block = {
   (!EOI ~ ANY)+
 }
 
-attribute_entry = { ":" ~ identifier ~ ":" ~ identifier? ~ &NEWLINE }
-attribute_entry_block = { attribute_entry ~ NEWLINE }
-
 delimited_block = {
   (anchor | attribute_list | blocktitle)* ~
   (
@@ -66,6 +63,9 @@ revision_info = { identifier } // TODO
 author_info = { word+ ~ email? ~ &NEWLINE }
 
 email = { "<" ~ (LETTER | "." )+ ~ "@" ~ (LETTER | "." )+ ~ ">" }
+
+attribute_entry = { ":" ~ identifier ~ ":" ~ identifier? ~ &NEWLINE }
+attribute_entry_block = { attribute_entry ~ NEWLINE }
 
 title_block = { anchor* ~ title }
 title = {
