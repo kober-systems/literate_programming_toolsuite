@@ -2,7 +2,6 @@ asciidoc = _{ (NEWLINE* ~ block)*  ~ NEWLINE* ~ EOI }
 
 block = {
   delimited_block |
-  header |
   // admonition |
   // example |
   // fenced |
