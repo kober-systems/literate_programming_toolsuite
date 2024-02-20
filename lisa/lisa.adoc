@@ -3070,6 +3070,9 @@ das Programm (und die Bibliothek) kompiliert werden können.
 [package]
 name = "lisa"
 version = "0.2.0"
+description = "literate programming with asciidoc"
+homepage = "https://kober-systems.github.io/literate_programming_toolsuite/lisa/lisa.html"
+repository = "https://github.com/kober-systems/literate_programming_toolsuite"
 authors = ["Benjamin Kober <benko@kober-systems.com>"]
 edition = "2018"
 license = "MIT"
