@@ -4,6 +4,8 @@ version = "0.1.1"
 authors = ["Benjamin Kober <benko@kober-systems.com>"]
 edition = "2018"
 license = "MIT"
+keywords = ["documentation", "asciidoc", "cli"]
+categories = ["command-line-utilities", "text-processing", "parser-implementations"]
 
 [dependencies]
 pest = "2.1.0"
