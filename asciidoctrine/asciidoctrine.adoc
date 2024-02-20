@@ -753,10 +753,9 @@ Viele Dokumente beginnen mit einem Header. Es ist die Hauptüberschrift
 und kann optional noch einige Metadaten enthalten welche sich auf das
 ganze Doument beziehen.
 
-[[block_entries]]
-[source, pest]
+
 ----
-header |
+asciidoc = _{ header? ~ (NEWLINE* ~ block)*  ~ NEWLINE* ~ EOI }
 ----
 
 [[blocks]]
