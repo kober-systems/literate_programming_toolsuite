@@ -9,6 +9,11 @@ edition = "2018"
 license = "MIT"
 keywords = ["literate-programming", "asciidoc", "cli"]
 categories = ["command-line-utilities", "development-tools"]
+include = [
+  "**/*.rs",
+  "**/*.pest",
+  "Cargo.toml",
+]
 
 [dependencies]
 asciidoctrine = { path = "../asciidoctrine", version = "0.1" }
