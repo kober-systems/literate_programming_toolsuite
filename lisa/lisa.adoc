@@ -648,6 +648,12 @@ Dateinamen angeben.
 
   TODO Quellcodebeispiele zwischen jedem Absatz
 
+Manchmal möchte man keine Ersetzung der `cross reference` in einem
+Snippet haben. In diesem Fall kann man das Attribut `lisa-raw` übergeben
+und der Snippet bleibt unangetastet.
+
+TODO Codebeispiel
+
 ===== Parameterierte Snippets
 Manche Schnipsel sind sehr allgemein und haben eine vielfältige
 Verwendung. Mit parameterisierten Schnipseln kann man Bibliotheken
