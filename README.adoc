@@ -30,6 +30,23 @@ dolmetscher:: A <<dolmetscher/dolmetscher.adoc#,translation helper
 I think asciidoc is superior to markdown so we use this as our basic
 input format.
 
+== Install
+To install and use this software there are some different options:
+
+//Install from your distro package manager::
+//NixOS::: `nix-env -i -f lisi.nix` TODO Put this in build: `nix-build lisi.nix`
+Download precompiled binaries:: For windows you can download
+  https://nightly.link/kober-systems/literate_programming_toolsuite/actions/runs/8063422942/lisi-Windows.zip[latest
+  Windows binaries] built through github actions
+Use the docker image:: You can use the precompiled image
+  https://hub.docker.com/r/lammermann/lisi[lammermann/lisi] from
+  Dockerhub. If you want to modify the code for the Dockerfile itself
+  you can find the code in a <<dockerfile, seperate section>>.
+Build from source:: This makes most sense if you want to contribute to
+  the project or otherwise modify the code for personal use. You can
+  the find instructions <<build_instructions, later in this document>>.
+
+[[build_instructions]]
 == Build from source
 If you want to modify how the programs work to suit your usecase you
 will need build and compile the code.
