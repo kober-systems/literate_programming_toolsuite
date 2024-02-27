@@ -46,9 +46,30 @@ Reihe Probleme.
   Programmiersprache einfügen möchte.
 . ...
 
+///////////////////////////////////////////////
+Der Zguide ist eine gute Anlaufstelle für alternative Implementierungen in
+verschiedenen Programmiersprachen.
+///////////////////////////////////////////////
+
+
 === Architektur
 
-TODO
+[ditaa]
+....
+
+ +---------------+
+ | Hauptdokument |
+ +---------------+
+
+                      +-------------+
+                      | Dolmetscher |
+                      +-------------+
+
+ +-------------+
+ | Übersetzung |
+ +-------------+
+
+....
 
 == Benutzung
 Aus meiner Sicht kommt eine hochwertige Übersetzung durch einen
@@ -62,6 +83,8 @@ Dabei kann die "Verfeinerung" durchaus aus mehreren Schritten bestehen,
 je nachdem welche Ansprüche man an das Ergebnis stellt.
 
 === Die Config-Datei
+TODO Vielleicht sollten wir diesen Absatz nach hinten (ans Ende der Benutzung) verschieben.
+
 Bevor wir damit anfangen können, ein Dokument (bzw ein Projekt welches
 aus mehreren Dokumenten bestehen kann) zu übersetzen müssen wir uns
 zunächst Gedanken über die Strukturierung unseres Projektes machen. Da
@@ -208,7 +231,7 @@ TODO Beschreibung wie sich die Texte und Attribute verändern und wie der Übers
 Manchmal kommt es vor, dass man bestimmte Blöcke nicht übersetzen will,
 sondern sie in allen Übersetzungen im Original belassen möchte.
 
-Das kommt besonders häufig bei literate Programmen (TODO link zu lisa)
+Das kommt besonders häufig bei literate Programmen (TODO link zu lisi)
 vor, da man ja hier bei allen Übersetzungen dass gleiche Programm
 erzeugen will.
 
