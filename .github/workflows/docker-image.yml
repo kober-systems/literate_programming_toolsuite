@@ -15,6 +15,6 @@ jobs:
     - name: Login to DockerHub Registry
       run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag lammermann/lisa:$(date +%Y-%m-%d) --tag lammermann/lisa:bleeding
+      run: docker build . --file Dockerfile --tag lammermann/lisi:$(date +%Y-%m-%d) --tag lammermann/lisi:bleeding
     - name: Push the latest Docker image
-      run: docker push --all-tags lammermann/lisa
+      run: docker push --all-tags lammermann/lisi

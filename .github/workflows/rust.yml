@@ -29,9 +29,9 @@ jobs:
     - name: Create artifact directory
       run: mkdir -p artifacts/${{ runner.os }}
     - name: Create archive for Windows
-      run: cp ./target/release/lisa.exe ./artifacts/${{ runner.os }}/
+      run: cp ./target/release/lisi.exe ./artifacts/${{ runner.os }}/
       if: matrix.os == 'windows-latest'
     - uses: actions/upload-artifact@v3
       with:
-        name: lisa-${{ runner.os }}
+        name: lisi-${{ runner.os }}
         path: ./artifacts/${{ runner.os }}
