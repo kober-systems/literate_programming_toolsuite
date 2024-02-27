@@ -70,6 +70,8 @@ set -e # <4>
 
 <<ask_for_vcs_check_in>> # <2>
 
+<<publish_on_crates_io>>
+
 <<ask_for_local_install>> # <3>
 ----
 <1> If we have edited some of the generated sources by hand we may don't want
@@ -273,6 +275,41 @@ while true; do
     case $yn in
         [Yy]* )
           <<install_with_nix>>;
+          break;;
+        [Nn]* ) exit;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
+----
+
+== Release
+When everything goes well it's time to think about releasing.
+
+[[publish_on_crates_io]]
+[source, sh]
+----
+cargo publish --dry-run -p asciidoctrine
+
+while true; do
+    read -p "Do you wish to publish asciidoctrine? [yes|no] " yn
+    case $yn in
+        [Yy]* )
+          cargo login;
+          cargo publish --dry-run -p asciidoctrine;
+          break;;
+        [Nn]* ) exit;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
+
+cargo publish --dry-run -p lisi
+
+while true; do
+    read -p "Do you wish to publish lisi? [yes|no] " yn
+    case $yn in
+        [Yy]* )
+          cargo login;
+          cargo publish --dry-run -p lisi;
           break;;
         [Nn]* ) exit;;
         * ) echo "Please answer yes or no.";;

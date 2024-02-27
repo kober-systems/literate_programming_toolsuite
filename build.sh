@@ -101,6 +101,34 @@ while true; do
     esac
 done
 
+cargo publish --dry-run -p asciidoctrine
+
+while true; do
+    read -p "Do you wish to publish asciidoctrine? [yes|no] " yn
+    case $yn in
+        [Yy]* )
+          cargo login;
+          cargo publish --dry-run -p asciidoctrine;
+          break;;
+        [Nn]* ) exit;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
+
+cargo publish --dry-run -p lisi
+
+while true; do
+    read -p "Do you wish to publish lisi? [yes|no] " yn
+    case $yn in
+        [Yy]* )
+          cargo login;
+          cargo publish --dry-run -p lisi;
+          break;;
+        [Nn]* ) exit;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
+
 while true; do
     read -p "Do you wish to install this program? [yes|no] " yn
     case $yn in
