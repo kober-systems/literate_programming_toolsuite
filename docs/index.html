@@ -209,13 +209,10 @@ table.tableblock.fit-content>caption.title{white-space:nowrap;width:0}
 .admonitionblock>table td.content{padding-left:1.125em;padding-right:1.25em;border-left:1px solid #dddddf;color:rgba(0,0,0,.6);word-wrap:anywhere}
 .admonitionblock>table td.content>:last-child>:last-child{margin-bottom:0}
 .exampleblock>.content{border:1px solid #e6e6e6;margin-bottom:1.25em;padding:1.25em;background:#fff;border-radius:4px}
-.exampleblock>.content>:first-child{margin-top:0}
-.exampleblock>.content>:last-child{margin-bottom:0}
 .sidebarblock{border:1px solid #dbdbd6;margin-bottom:1.25em;padding:1.25em;background:#f3f3f2;border-radius:4px}
-.sidebarblock>:first-child{margin-top:0}
-.sidebarblock>:last-child{margin-bottom:0}
 .sidebarblock>.content>.title{color:#7a2518;margin-top:0;text-align:center}
-.exampleblock>.content>:last-child>:last-child,.exampleblock>.content .olist>ol>li:last-child>:last-child,.exampleblock>.content .ulist>ul>li:last-child>:last-child,.exampleblock>.content .qlist>ol>li:last-child>:last-child,.sidebarblock>.content>:last-child>:last-child,.sidebarblock>.content .olist>ol>li:last-child>:last-child,.sidebarblock>.content .ulist>ul>li:last-child>:last-child,.sidebarblock>.content .qlist>ol>li:last-child>:last-child{margin-bottom:0}
+.exampleblock>.content>:first-child,.sidebarblock>.content>:first-child{margin-top:0}
+.exampleblock>.content>:last-child,.exampleblock>.content>:last-child>:last-child,.exampleblock>.content .olist>ol>li:last-child>:last-child,.exampleblock>.content .ulist>ul>li:last-child>:last-child,.exampleblock>.content .qlist>ol>li:last-child>:last-child,.sidebarblock>.content>:last-child,.sidebarblock>.content>:last-child>:last-child,.sidebarblock>.content .olist>ol>li:last-child>:last-child,.sidebarblock>.content .ulist>ul>li:last-child>:last-child,.sidebarblock>.content .qlist>ol>li:last-child>:last-child{margin-bottom:0}
 .literalblock pre,.listingblock>.content>pre{border-radius:4px;overflow-x:auto;padding:1em;font-size:.8125em}
 @media screen and (min-width:768px){.literalblock pre,.listingblock>.content>pre{font-size:.90625em}}
 @media screen and (min-width:1280px){.literalblock pre,.listingblock>.content>pre{font-size:1em}}
@@ -394,7 +391,7 @@ b.conum *{color:inherit!important}
 dt,th.tableblock,td.content,div.footnote{text-rendering:optimizeLegibility}
 h1,h2,p,td.content,span.alt,summary{letter-spacing:-.01em}
 p strong,td.content strong,div.footnote strong{letter-spacing:-.005em}
-p,blockquote,dt,td.content,span.alt,summary{font-size:1.0625rem}
+p,blockquote,dt,td.content,td.hdlist1,span.alt,summary{font-size:1.0625rem}
 p{margin-bottom:1.25rem}
 .sidebarblock p,.sidebarblock dt,.sidebarblock td.content,p.tableblock{font-size:1em}
 .exampleblock>.content{background:#fffef7;border-color:#e0e0dc;box-shadow:0 1px 4px #e0e0dc}
@@ -513,23 +510,33 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <div id="header">
 <h1>Literate programming toolsuite</h1>
 <div class="details">
-<span id="author" class="author">This is a suite of programs to use for literate programming. They try to make</span><br>
-<span id="revdate">this process as smooth as possible.</span>
+<span id="author" class="author">This is a suite of programs to use for literate programming. They try to</span><br>
+<span id="revdate">make this process as smooth as possible.</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
 <ul class="sectlevel1">
 <li><a href="#_basic_design_decisions">Basic design decisions</a></li>
-<li><a href="#_build">Build</a>
+<li><a href="#_install">Install</a></li>
+<li><a href="#build_instructions">Build from source</a>
 <ul class="sectlevel2">
+<li><a href="#_prerequisites">Prerequisites</a></li>
 <li><a href="#_check_if_generated_files_are_untouched_in_vcs">Check if generated files are untouched in VCS</a></li>
 <li><a href="#_generate_source_files">Generate source files</a></li>
 <li><a href="#_build_and_test">Build and test</a></li>
 <li><a href="#_build_websites_for_github_pages">Build websites for github pages</a></li>
+</ul>
+</li>
+<li><a href="#_hacking_guide">Hacking Guide</a>
+<ul class="sectlevel2">
+<li><a href="#_poor_mans_ci">Poor mans ci</a></li>
 <li><a href="#_ask_for_checkin_into_the_vcs">Ask for checkin into the VCS</a></li>
 <li><a href="#_install_the_tools_on_our_computer">Install the tools on our computer</a></li>
 </ul>
 </li>
+<li><a href="#_review_process">Review process</a></li>
+<li><a href="#_release">Release</a></li>
+<li><a href="#dockerfile">Dockerfile</a></li>
 </ul>
 </div>
 </div>
@@ -552,9 +559,10 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 rust sourcecode.</p>
 </div>
 <div class="paragraph">
-<p>Every logical part is seperated in its own subcrate. Most of those subcrates
-define a cmdline util of the same name in this crate. In everey subcrate folder
-we have a <code>&lt;name&gt;.adoc</code> file which is the main source for that subcrate.</p>
+<p>Every logical part is seperated in its own subcrate. Most of those
+subcrates define a cmdline util of the same name in this crate. In
+everey subcrate folder we have a <code>&lt;name&gt;.adoc</code> file which is the main
+source for that subcrate.</p>
 </div>
 <div class="paragraph">
 <p>The subrates are:</p>
@@ -578,43 +586,106 @@ to use in conjunction with literate programming tools. Currently just a draft.</
 </dd>
 <dt class="hdlist1">dolmetscher</dt>
 <dd>
-<p>A translation helper tool. Not started yet.</p>
+<p>A <a href="dolmetscher/dolmetscher.html">translation helper
+tool</a>. Currently just a draft.</p>
 </dd>
 </dl>
 </div>
 <div class="paragraph">
-<p>I think asciidoc is superior to markdown so we use this as our basic input
-format.</p>
+<p>I think asciidoc is superior to markdown so we use this as our basic
+input format.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_build">Build</h2>
+<h2 id="_install">Install</h2>
 <div class="sectionbody">
+<div class="paragraph">
+<p>To install and use this software there are some different options:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Download precompiled binaries</dt>
+<dd>
+<p>For windows you can download
+<a href="https://nightly.link/kober-systems/literate_programming_toolsuite/actions/runs/8063422942/lisi-Windows.zip">latest
+Windows binaries</a> built through github actions</p>
+</dd>
+<dt class="hdlist1">Use the docker image</dt>
+<dd>
+<p>You can use the precompiled image
+<a href="https://hub.docker.com/r/lammermann/lisi">lammermann/lisi</a> from
+Dockerhub. If you want to modify the code for the Dockerfile itself
+you can find the code in a <a href="#dockerfile">seperate section</a>.</p>
+</dd>
+<dt class="hdlist1">Install from cargo</dt>
+<dd>
+<p>run <a id="install_with_cargo"></a><code>cargo install --force --path lisi</code></p>
+</dd>
+<dt class="hdlist1">Build from source</dt>
+<dd>
+<p>This makes most sense if you want to contribute to
+the project or otherwise modify the code for personal use. You can
+the find instructions <a href="#build_instructions">later in this document</a>.</p>
+</dd>
+<dt class="hdlist1">NixOS/nix</dt>
+<dd>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">install</dt>
+<dd>
+<p><a id="install_with_nix"></a><code>nix-env -i -f lisi.nix</code></p>
+</dd>
+<dt class="hdlist1">build locally</dt>
+<dd>
+<p><code>nix-build lisi.nix</code></p>
+</dd>
+</dl>
+</div>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="build_instructions">Build from source</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>If you want to modify how the programs work to suit your usecase you
+will need build and compile the code.</p>
+</div>
 <div class="paragraph">
 <p>There are a few steps to build the toolsuite.</p>
 </div>
 <div class="listingblock">
 <div class="title">build.sh</div>
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><table class="linenotable"><tr><td class="linenos"><div class="linenodiv"><pre>1
-2
-3
-4
-5
-6
-7
-8
-9</pre></div></td><td class="code"><pre><span></span><span class="tok-s">&lt;&lt;check_generated_sources_are_vcs_clean&gt;&gt; </span><i class="conum" data-value="1"></i><b>(1)</b>
+<pre class="pygments highlight"><code data-lang="sh"><div class="lineno"><table class="linenotable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span></pre></div></td><td class="code"><div><pre><span></span><span class="tok-nb">set</span><span class="tok-w"> </span>-e<span class="tok-w"> </span><i class="conum" data-value="4"></i><b>(4)</b>
+
+<span class="tok-s">&lt;&lt;check_generated_sources_are_vcs_clean&gt;&gt; </span><i class="conum" data-value="1"></i><b>(1)</b>
 
 <span class="tok-s">&lt;&lt;generate_sources&gt;&gt;</span>
 <span class="tok-s">&lt;&lt;build_and_test&gt;&gt;</span>
 <span class="tok-s">&lt;&lt;update_docs&gt;&gt;</span>
 
-<span class="tok-s">&lt;&lt;ask_for_vcs_check_</span>in&gt;&gt; <i class="conum" data-value="2"></i><b>(2)</b>
+<span class="tok-s">&lt;&lt;ask_for_vcs_check_</span>in&gt;&gt;<span class="tok-w"> </span><i class="conum" data-value="2"></i><b>(2)</b>
 
-<span class="tok-s">&lt;&lt;ask_for_loca</span>l_install&gt;&gt; <i class="conum" data-value="3"></i><b>(3)</b>
-</pre></td></tr></table></code></pre>
+&lt;&lt;publish_on_crates_io&gt;&gt;
+
+<span class="tok-s">&lt;&lt;ask_for_loca</span>l_install&gt;&gt;<span class="tok-w"> </span><i class="conum" data-value="3"></i><b>(3)</b>
+</pre></div></td></tr></table></div></code></pre>
 </div>
 </div>
 <div class="colist arabic">
@@ -635,15 +706,81 @@ our vcs.</td>
 <td>If everything went good we may want to install our new version of the
 toolsuite locally.</td>
 </tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>When a step fails we want the script to end</td>
+</tr>
 </table>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_check_if_generated_files_are_untouched_in_vcs">Check if generated files are untouched in VCS</h2>
-<div class="sectionbody">
+<div class="sect2">
+<h3 id="_prerequisites">Prerequisites</h3>
 <div class="paragraph">
-<p>TODO</p>
+<p>There must be some programms installed on your computer to release a version of
+the <code>literate programming toolsuite</code>.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">git</dt>
+<dd>
+<p>It is currently published on github so we need git.</p>
+</dd>
+<dt class="hdlist1">rust, cargo, etc</dt>
+<dd>
+<p>These porgramms are written in rust therefore we need the
+rust toolchain.</p>
+</dd>
+<dt class="hdlist1">asciidoctor</dt>
+<dd>
+<p>Right now we need <code>asciidcotor</code> to build the docs. In future
+versions it is planned to use our own <code>asciidoctrine</code> programm. There are some
+additional dependencies for our doc generation process.</p>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">asciidcotor-diagram</dt>
+<dd>
+<p>For our diagrams.</p>
+</dd>
+<dt class="hdlist1">ditaa</dt>
+<dd>
+<p>For our diagrams.</p>
+</dd>
+<dt class="hdlist1">pygments</dt>
+<dd>
+<p>For source code highlighting.</p>
+</dd>
+</dl>
+</div>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_check_if_generated_files_are_untouched_in_vcs">Check if generated files are untouched in VCS</h3>
+<div class="paragraph">
+<p>Maybe we have edited some of our generated source files by hand. In that
+case we would like to be warned before generating the files. This way we
+could check if we want to put our changes into our asciidoc sources or
+don&#8217;t care if they are overwritten.</p>
+</div>
+<div class="paragraph">
+<p>We assume that all changed files that are not asciidoc files are
+potentially in danger to be overwritten.</p>
+</div>
+<div id="check_generated_sources_are_vcs_clean" class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-nv">changed_files</span><span class="tok-o">=</span><span class="tok-sb">`</span>git<span class="tok-w"> </span>diff<span class="tok-w"> </span>--name-only<span class="tok-w"> </span><span class="tok-p">|</span><span class="tok-w"> </span>grep<span class="tok-w"> </span>--invert-match<span class="tok-w"> </span><span class="tok-s1">&#39;\.adoc$&#39;</span><span class="tok-sb">`</span>
+<span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-o">[[</span><span class="tok-w"> </span>!<span class="tok-w"> </span>-z<span class="tok-w"> </span><span class="tok-s2">&quot;</span><span class="tok-nv">$changed_files</span><span class="tok-s2">&quot;</span><span class="tok-w"> </span><span class="tok-o">]]</span><span class="tok-p">;</span><span class="tok-w"> </span><span class="tok-k">then</span>
+<span class="tok-w">  </span><span class="tok-k">while</span><span class="tok-w"> </span>true<span class="tok-p">;</span><span class="tok-w"> </span><span class="tok-k">do</span>
+<span class="tok-w">      </span><span class="tok-nb">echo</span><span class="tok-w"> </span><span class="tok-s2">&quot;some files are modified&quot;</span>
+<span class="tok-w">      </span><span class="tok-nb">echo</span><span class="tok-w"> </span><span class="tok-s2">&quot;</span><span class="tok-nv">$changed_files</span><span class="tok-s2">&quot;</span>
+<span class="tok-w">      </span><span class="tok-nb">read</span><span class="tok-w"> </span>-p<span class="tok-w"> </span><span class="tok-s2">&quot;Do you wish continue anyway? [yes|no] &quot;</span><span class="tok-w"> </span>yn
+<span class="tok-w">      </span><span class="tok-k">case</span><span class="tok-w"> </span><span class="tok-nv">$yn</span><span class="tok-w"> </span><span class="tok-k">in</span>
+<span class="tok-w">          </span><span class="tok-o">[</span>Yy<span class="tok-o">]</span>*<span class="tok-w"> </span><span class="tok-o">)</span><span class="tok-w"> </span><span class="tok-k">break</span><span class="tok-p">;;</span>
+<span class="tok-w">          </span><span class="tok-o">[</span>Nn<span class="tok-o">]</span>*<span class="tok-w"> </span><span class="tok-o">)</span><span class="tok-w"> </span>exit<span class="tok-p">;;</span>
+<span class="tok-w">          </span>*<span class="tok-w"> </span><span class="tok-o">)</span><span class="tok-w"> </span><span class="tok-nb">echo</span><span class="tok-w"> </span><span class="tok-s2">&quot;Please answer yes or no.&quot;</span><span class="tok-p">;;</span>
+<span class="tok-w">      </span><span class="tok-k">esac</span>
+<span class="tok-w">  </span><span class="tok-k">done</span>
+<span class="tok-k">fi</span></code></pre>
 </div>
 </div>
 </div>
@@ -651,18 +788,23 @@ toolsuite locally.</td>
 <h3 id="_generate_source_files">Generate source files</h3>
 <div id="generate_sources" class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-nb">echo</span> <span class="tok-s2">&quot;Start generating source files ...&quot;</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-nb">echo</span><span class="tok-w"> </span><span class="tok-s2">&quot;Start generating source files ...&quot;</span>
 
-<span class="tok-nb">cd</span> lisi
-lisi lisi.adoc <i class="conum" data-value="1"></i><b>(1)</b>
+<span class="tok-nb">cd</span><span class="tok-w"> </span>asciidoctrine/
+lisi<span class="tok-w"> </span>-o<span class="tok-w"> </span>../docs/asciidoctrine/asciidoctrine.lisi.html<span class="tok-w"> </span>asciidoctrine.adoc<span class="tok-w"> </span><span class="tok-se">\</span>
+<span class="tok-w">  </span><span class="tok-o">||</span><span class="tok-w"> </span><span class="tok-nb">echo</span><span class="tok-w"> </span><span class="tok-s2">&quot;lisi is currenty not installed&quot;</span>
+<span class="tok-nb">cd</span><span class="tok-w"> </span>..
+
+<span class="tok-nb">cd</span><span class="tok-w"> </span>lisi
+lisi<span class="tok-w"> </span>-o<span class="tok-w"> </span>/dev/null<span class="tok-w"> </span>lisi.adoc<span class="tok-w"> </span><span class="tok-o">||</span><span class="tok-w"> </span><span class="tok-nb">echo</span><span class="tok-w"> </span><span class="tok-s2">&quot;lisi is currenty not installed&quot;</span><span class="tok-w"> </span><i class="conum" data-value="1"></i><b>(1)</b>
 <span class="tok-c1"># The new generated source must be able to</span>
 <span class="tok-c1"># generate itself</span>
-cargo run --manifest-path ../Cargo.toml --bin lisi -- lisi.adoc <span class="tok-o">||</span> <span class="tok-nb">exit</span> <span class="tok-m">1</span>
-<span class="tok-nb">cd</span> ..
+cargo<span class="tok-w"> </span>run<span class="tok-w"> </span>--manifest-path<span class="tok-w"> </span>../Cargo.toml<span class="tok-w"> </span>--bin<span class="tok-w"> </span>lisi<span class="tok-w"> </span>--<span class="tok-w"> </span>-o<span class="tok-w"> </span>lisi.html<span class="tok-w"> </span>lisi.adoc
+<span class="tok-nb">cd</span><span class="tok-w"> </span>..
 
-cargo run --bin lisi -- README.adoc <span class="tok-o">||</span> <span class="tok-nb">exit</span> <span class="tok-m">1</span> <i class="conum" data-value="2"></i><b>(2)</b>
+cargo<span class="tok-w"> </span>run<span class="tok-w"> </span>--bin<span class="tok-w"> </span>lisi<span class="tok-w"> </span>--<span class="tok-w"> </span>-o<span class="tok-w"> </span>/dev/null<span class="tok-w"> </span>README.adoc<span class="tok-w"> </span><i class="conum" data-value="2"></i><b>(2)</b>
 
-<span class="tok-nb">echo</span> <span class="tok-s2">&quot;Generating source files done!&quot;</span></code></pre>
+<span class="tok-nb">echo</span><span class="tok-w"> </span><span class="tok-s2">&quot;Generating source files done!&quot;</span></code></pre>
 </div>
 </div>
 <div class="colist arabic">
@@ -715,6 +857,10 @@ asciidoctor<span class="tok-w"> </span><span class="tok-se">\</span>
 <span class="tok-w">            </span><span class="tok-s">&lt;&lt;asciidoctor-styles&gt;&gt;</span>
 <span class="tok-s">            -D docs/ansicht \</span>
 <span class="tok-s">            ansicht/ansicht.adoc</span>
+<span class="tok-s">asciidoctor</span><span class="tok-w"> </span><span class="tok-se">\</span>
+<span class="tok-w">            </span><span class="tok-s">&lt;&lt;asciidoctor-styles&gt;&gt;</span>
+<span class="tok-s">            -D docs/dolmetscher \</span>
+<span class="tok-s">            dolmetscher/dolmetscher.a</span>doc
 
 <span class="tok-nb">echo</span><span class="tok-w"> </span><span class="tok-s2">&quot;Generating html files done!&quot;</span></code></pre>
 </div>
@@ -724,30 +870,95 @@ asciidoctor<span class="tok-w"> </span><span class="tok-se">\</span>
 </div>
 <div id="asciidoctor-styles" class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>-r asciidoctor-diagram <span class="tok-se">\</span>
--a source-highlighter<span class="tok-o">=</span>pygments <span class="tok-se">\</span>
--a <span class="tok-nv">toc</span><span class="tok-o">=</span>left <span class="tok-se">\</span>
--a <span class="tok-nv">icons</span><span class="tok-o">=</span>font <span class="tok-se">\</span>
--a <span class="tok-nv">toclevels</span><span class="tok-o">=</span><span class="tok-m">4</span> <span class="tok-se">\</span>
--a data-uri <span class="tok-se">\</span></code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>-r<span class="tok-w"> </span>asciidoctor-diagram<span class="tok-w"> </span><span class="tok-se">\</span>
+-a<span class="tok-w"> </span>source-highlighter<span class="tok-o">=</span>pygments<span class="tok-w"> </span><span class="tok-se">\</span>
+-a<span class="tok-w"> </span><span class="tok-nv">toc</span><span class="tok-o">=</span>left<span class="tok-w"> </span><span class="tok-se">\</span>
+-a<span class="tok-w"> </span><span class="tok-nv">icons</span><span class="tok-o">=</span>font<span class="tok-w"> </span><span class="tok-se">\</span>
+-a<span class="tok-w"> </span><span class="tok-nv">toclevels</span><span class="tok-o">=</span><span class="tok-m">4</span><span class="tok-w"> </span><span class="tok-se">\</span>
+-a<span class="tok-w"> </span>data-uri<span class="tok-w"> </span><span class="tok-se">\</span>
+-a<span class="tok-w"> </span>reproducible<span class="tok-w"> </span><span class="tok-se">\</span></code></pre>
 </div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_hacking_guide">Hacking Guide</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>If you want to modify the code to fit your own needs you could follow
+this describes my process of doing it:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Changing the sources</dt>
+<dd>
+<p>This is a literate program so the source of truth
+here is the asciidoc document. However I often consider the literate
+document and the generated source code as to differnt views on the
+same programm. To keep them both in sync I make sure to commit any
+changes I make at the generated source code to the VCS <strong>before</strong> I
+regenerate the source code from the literate source. Than I can view
+the diff between the generated source and my own modified version and
+change the literate sources accodingly until the generated code does
+not differ anymore from the one in VCS.<br>
+When the two sources are in sync, than I can modify the literate
+sources however I like and direkty regenerate the source code.</p>
+</dd>
+<dt class="hdlist1">Compile</dt>
+<dd>
+<p>I compile and test in a loop during the whole modification
+process. For this I use watchexec as my own poor mans ci.</p>
+</dd>
+<dt class="hdlist1">Commit</dt>
+<dd>
+<p>When the bug is fixed or the feature is implemented etc I
+commit my modifications to VCS.</p>
+</dd>
+<dt class="hdlist1">Check</dt>
+<dd>
+<p>After some time I reach a point where I want to release. Here I
+do the following: Check the literate and generated sources are in
+sync. Rerender the docs. Push to github. Let the ci do his work.</p>
+</dd>
+</dl>
+</div>
+<div class="sect2">
+<h3 id="_poor_mans_ci">Poor mans ci</h3>
+<div class="paragraph">
+<p>Whenever the rust files change we want to rebuild and test the program.</p>
+</div>
+<div class="listingblock">
+<div class="title">auto_build_loop.sh</div>
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><div class="lineno"><table class="linenotable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span>watchexec<span class="tok-w"> </span>-w<span class="tok-w"> </span>.<span class="tok-w"> </span>-c<span class="tok-w"> </span>-e<span class="tok-w"> </span>rs,toml<span class="tok-w"> </span>--no-vcs-ignore<span class="tok-w"> </span>--<span class="tok-w"> </span><span class="tok-s2">&quot;&lt;&lt;build_and_test&gt;&gt;&quot;</span>
+</pre></div></td></tr></table></div></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Whenever the asciidoc files change we want to regenerate the source
+files. But before we can do that we have to make sure the aktual source
+files and the generated source files are in sync.</p>
+</div>
+<div class="paragraph">
+<p>TODO This isn&#8217;t easy because when the asciidoc files are moified they generate "dirty" source files (from the perspective of the VCS). So we have to stash the changes somehow so that it is seen, that the sources are in sync.</p>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_ask_for_checkin_into_the_vcs">Ask for checkin into the VCS</h3>
 <div id="ask_for_vcs_check_in" class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-k">while</span> true<span class="tok-p">;</span> <span class="tok-k">do</span>
-    <span class="tok-nb">read</span> -p <span class="tok-s2">&quot;Do you wish to commit your changes to git? [yes|no] &quot;</span> yn
-    <span class="tok-k">case</span> <span class="tok-nv">$yn</span> in
-        <span class="tok-o">[</span>Yy<span class="tok-o">]</span>* <span class="tok-o">)</span>
-          git diff<span class="tok-p">;</span> <i class="conum" data-value="1"></i><b>(1)</b>
-          git add .<span class="tok-p">;</span> <i class="conum" data-value="2"></i><b>(2)</b>
-          git commit<span class="tok-p">;</span> <i class="conum" data-value="2"></i><b>(2)</b>
-          break<span class="tok-p">;;</span>
-        <span class="tok-o">[</span>Nn<span class="tok-o">]</span>* <span class="tok-o">)</span> exit<span class="tok-p">;;</span>
-        * <span class="tok-o">)</span> <span class="tok-nb">echo</span> <span class="tok-s2">&quot;Please answer yes or no.&quot;</span><span class="tok-p">;;</span>
-    <span class="tok-k">esac</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-k">while</span><span class="tok-w"> </span>true<span class="tok-p">;</span><span class="tok-w"> </span><span class="tok-k">do</span>
+<span class="tok-w">    </span>git<span class="tok-w"> </span>diff<span class="tok-p">;</span><span class="tok-w"> </span><i class="conum" data-value="1"></i><b>(1)</b>
+<span class="tok-w">    </span><span class="tok-nb">read</span><span class="tok-w"> </span>-p<span class="tok-w"> </span><span class="tok-s2">&quot;Do you wish to commit your changes to git? [yes|no] &quot;</span><span class="tok-w"> </span>yn
+<span class="tok-w">    </span><span class="tok-k">case</span><span class="tok-w"> </span><span class="tok-nv">$yn</span><span class="tok-w"> </span><span class="tok-k">in</span>
+<span class="tok-w">        </span><span class="tok-o">[</span>Yy<span class="tok-o">]</span>*<span class="tok-w"> </span><span class="tok-o">)</span>
+<span class="tok-w">          </span>git<span class="tok-w"> </span>add<span class="tok-w"> </span>.<span class="tok-p">;</span><span class="tok-w"> </span><i class="conum" data-value="2"></i><b>(2)</b>
+<span class="tok-w">          </span>git<span class="tok-w"> </span>commit<span class="tok-p">;</span><span class="tok-w"> </span><i class="conum" data-value="2"></i><b>(2)</b>
+<span class="tok-w">          </span><span class="tok-k">break</span><span class="tok-p">;;</span>
+<span class="tok-w">        </span><span class="tok-o">[</span>Nn<span class="tok-o">]</span>*<span class="tok-w"> </span><span class="tok-o">)</span><span class="tok-w"> </span>exit<span class="tok-p">;;</span>
+<span class="tok-w">        </span>*<span class="tok-w"> </span><span class="tok-o">)</span><span class="tok-w"> </span><span class="tok-nb">echo</span><span class="tok-w"> </span><span class="tok-s2">&quot;Please answer yes or no.&quot;</span><span class="tok-p">;;</span>
+<span class="tok-w">    </span><span class="tok-k">esac</span>
 <span class="tok-k">done</span></code></pre>
 </div>
 </div>
@@ -771,16 +982,142 @@ changing the included chunks in another shell).</td>
 <h3 id="_install_the_tools_on_our_computer">Install the tools on our computer</h3>
 <div id="ask_for_local_install" class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-k">while</span> true<span class="tok-p">;</span> <span class="tok-k">do</span>
-    <span class="tok-nb">read</span> -p <span class="tok-s2">&quot;Do you wish to install this program? [yes|no] &quot;</span> yn
-    <span class="tok-k">case</span> <span class="tok-nv">$yn</span> in
-        <span class="tok-o">[</span>Yy<span class="tok-o">]</span>* <span class="tok-o">)</span> cargo install --force --path lisi<span class="tok-p">;</span> break<span class="tok-p">;;</span>
-        <span class="tok-o">[</span>Nn<span class="tok-o">]</span>* <span class="tok-o">)</span> exit<span class="tok-p">;;</span>
-        * <span class="tok-o">)</span> <span class="tok-nb">echo</span> <span class="tok-s2">&quot;Please answer yes or no.&quot;</span><span class="tok-p">;;</span>
-    <span class="tok-k">esac</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-k">while</span><span class="tok-w"> </span>true<span class="tok-p">;</span><span class="tok-w"> </span><span class="tok-k">do</span>
+<span class="tok-w">    </span><span class="tok-nb">read</span><span class="tok-w"> </span>-p<span class="tok-w"> </span><span class="tok-s2">&quot;Do you wish to install this program? [yes|no] &quot;</span><span class="tok-w"> </span>yn
+<span class="tok-w">    </span><span class="tok-k">case</span><span class="tok-w"> </span><span class="tok-nv">$yn</span><span class="tok-w"> </span><span class="tok-k">in</span>
+<span class="tok-w">        </span><span class="tok-o">[</span>Yy<span class="tok-o">]</span>*<span class="tok-w"> </span><span class="tok-o">)</span>
+<span class="tok-w">          </span><span class="tok-s">&lt;&lt;install_wi</span>th_nix&gt;&gt;<span class="tok-p">;</span>
+<span class="tok-w">          </span><span class="tok-k">break</span><span class="tok-p">;;</span>
+<span class="tok-w">        </span><span class="tok-o">[</span>Nn<span class="tok-o">]</span>*<span class="tok-w"> </span><span class="tok-o">)</span><span class="tok-w"> </span>exit<span class="tok-p">;;</span>
+<span class="tok-w">        </span>*<span class="tok-w"> </span><span class="tok-o">)</span><span class="tok-w"> </span><span class="tok-nb">echo</span><span class="tok-w"> </span><span class="tok-s2">&quot;Please answer yes or no.&quot;</span><span class="tok-p">;;</span>
+<span class="tok-w">    </span><span class="tok-k">esac</span>
 <span class="tok-k">done</span></code></pre>
 </div>
 </div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_review_process">Review process</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Whenever the code is updated on the master branch or via pull request it
+will be reviewed. The main part of that review follows the guidelines
+documented in this section.</p>
+</div>
+<div class="paragraph">
+<p>TODO github actions</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_release">Release</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>When everything goes well it&#8217;s time to think about releasing.</p>
+</div>
+<div id="publish_on_crates_io" class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>cargo<span class="tok-w"> </span>publish<span class="tok-w"> </span>--dry-run<span class="tok-w"> </span>-p<span class="tok-w"> </span>asciidoctrine
+
+<span class="tok-k">while</span><span class="tok-w"> </span>true<span class="tok-p">;</span><span class="tok-w"> </span><span class="tok-k">do</span>
+<span class="tok-w">    </span><span class="tok-nb">read</span><span class="tok-w"> </span>-p<span class="tok-w"> </span><span class="tok-s2">&quot;Do you wish to publish asciidoctrine? [yes|no] &quot;</span><span class="tok-w"> </span>yn
+<span class="tok-w">    </span><span class="tok-k">case</span><span class="tok-w"> </span><span class="tok-nv">$yn</span><span class="tok-w"> </span><span class="tok-k">in</span>
+<span class="tok-w">        </span><span class="tok-o">[</span>Yy<span class="tok-o">]</span>*<span class="tok-w"> </span><span class="tok-o">)</span>
+<span class="tok-w">          </span>cargo<span class="tok-w"> </span>login<span class="tok-p">;</span>
+<span class="tok-w">          </span>cargo<span class="tok-w"> </span>publish<span class="tok-w"> </span>--dry-run<span class="tok-w"> </span>-p<span class="tok-w"> </span>asciidoctrine<span class="tok-p">;</span>
+<span class="tok-w">          </span><span class="tok-k">break</span><span class="tok-p">;;</span>
+<span class="tok-w">        </span><span class="tok-o">[</span>Nn<span class="tok-o">]</span>*<span class="tok-w"> </span><span class="tok-o">)</span><span class="tok-w"> </span>exit<span class="tok-p">;;</span>
+<span class="tok-w">        </span>*<span class="tok-w"> </span><span class="tok-o">)</span><span class="tok-w"> </span><span class="tok-nb">echo</span><span class="tok-w"> </span><span class="tok-s2">&quot;Please answer yes or no.&quot;</span><span class="tok-p">;;</span>
+<span class="tok-w">    </span><span class="tok-k">esac</span>
+<span class="tok-k">done</span>
+
+cargo<span class="tok-w"> </span>publish<span class="tok-w"> </span>--dry-run<span class="tok-w"> </span>-p<span class="tok-w"> </span>lisi
+
+<span class="tok-k">while</span><span class="tok-w"> </span>true<span class="tok-p">;</span><span class="tok-w"> </span><span class="tok-k">do</span>
+<span class="tok-w">    </span><span class="tok-nb">read</span><span class="tok-w"> </span>-p<span class="tok-w"> </span><span class="tok-s2">&quot;Do you wish to publish lisi? [yes|no] &quot;</span><span class="tok-w"> </span>yn
+<span class="tok-w">    </span><span class="tok-k">case</span><span class="tok-w"> </span><span class="tok-nv">$yn</span><span class="tok-w"> </span><span class="tok-k">in</span>
+<span class="tok-w">        </span><span class="tok-o">[</span>Yy<span class="tok-o">]</span>*<span class="tok-w"> </span><span class="tok-o">)</span>
+<span class="tok-w">          </span>cargo<span class="tok-w"> </span>login<span class="tok-p">;</span>
+<span class="tok-w">          </span>cargo<span class="tok-w"> </span>publish<span class="tok-w"> </span>--dry-run<span class="tok-w"> </span>-p<span class="tok-w"> </span>lisi<span class="tok-p">;</span>
+<span class="tok-w">          </span><span class="tok-k">break</span><span class="tok-p">;;</span>
+<span class="tok-w">        </span><span class="tok-o">[</span>Nn<span class="tok-o">]</span>*<span class="tok-w"> </span><span class="tok-o">)</span><span class="tok-w"> </span>exit<span class="tok-p">;;</span>
+<span class="tok-w">        </span>*<span class="tok-w"> </span><span class="tok-o">)</span><span class="tok-w"> </span><span class="tok-nb">echo</span><span class="tok-w"> </span><span class="tok-s2">&quot;Please answer yes or no.&quot;</span><span class="tok-p">;;</span>
+<span class="tok-w">    </span><span class="tok-k">esac</span>
+<span class="tok-k">done</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="dockerfile">Dockerfile</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>To use <code>lisi</code> in ci-scripts (at least thats my usecase) it is very handy to have a docker image at hand. However when it comes to docker images size is key. For this reason we use to <a href="https://docs.docker.com/develop/develop-images/multistage-build/">multiple different stages</a> in our Dockerfile:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>one that builds our software and has all the build dependencies</p>
+</li>
+<li>
+<p>one that only holds our final binaries and minimal runtime dependencies to enable a small image size.</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="title">Dockerfile</div>
+<div class="content">
+<pre class="pygments highlight"><code data-lang="Dockerfile"><div class="lineno"><table class="linenotable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span>&lt;&lt;docker_build_step&gt;&gt;
+
+&lt;&lt;docker_final_image_step&gt;&gt;
+</pre></div></td></tr></table></div></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To build binaries that later have minimal runtime dependencies we use the <a href="https://musl.libc.org/">musl</a> target which lets us build statically compiled binaries. To do this we use the rust docker image based on <a href="https://www.alpinelinux.org/">alpine</a></p>
+</div>
+<div id="docker_build_step" class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="Dockerfile"><span></span>FROM rust:alpine AS builder
+
+RUN apk --no-cache add g++ <i class="conum" data-value="1"></i><b>(1)</b>
+
+WORKDIR /home/rust/
+COPY . .
+RUN cargo test
+RUN cargo build --release
+
+RUN strip target/release/lisi <i class="conum" data-value="2"></i><b>(2)</b></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>We can only compile on this system if we have <code>g++</code> installed for some weird reason I don&#8217;t understand (see the related bug <a href="https://github.com/rust-lang/cargo/issues/7563">here</a>).</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>After building the binaries we can shrink down the size significantly by striping them.</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>After we build our program we take a fresh image based on alpine (becase it&#8217;s small) and copy only our binaries over.</p>
+</div>
+<div id="docker_final_image_step" class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="Dockerfile"><span></span>FROM alpine:latest
+WORKDIR /home/lisi
+COPY --from=builder /home/rust/target/release/lisi .
+ENV PATH=&quot;${PATH}:/home/lisi&quot;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>TODO github actions for docker image</p>
 </div>
 </div>
 </div>
@@ -789,76 +1126,5 @@ changing the included chunks in another shell).</td>
 <div id="footer-text">
 </div>
 </div>
-<style>
-pre.pygments .hll { background-color: #ffffcc }
-pre.pygments  { background: #f8f8f8; }
-pre.pygments .tok-c { color: #408080; font-style: italic } /* Comment */
-pre.pygments .tok-err { border: 1px solid #FF0000 } /* Error */
-pre.pygments .tok-k { color: #008000; font-weight: bold } /* Keyword */
-pre.pygments .tok-o { color: #666666 } /* Operator */
-pre.pygments .tok-ch { color: #408080; font-style: italic } /* Comment.Hashbang */
-pre.pygments .tok-cm { color: #408080; font-style: italic } /* Comment.Multiline */
-pre.pygments .tok-cp { color: #BC7A00 } /* Comment.Preproc */
-pre.pygments .tok-cpf { color: #408080; font-style: italic } /* Comment.PreprocFile */
-pre.pygments .tok-c1 { color: #408080; font-style: italic } /* Comment.Single */
-pre.pygments .tok-cs { color: #408080; font-style: italic } /* Comment.Special */
-pre.pygments .tok-gd { color: #A00000 } /* Generic.Deleted */
-pre.pygments .tok-ge { font-style: italic } /* Generic.Emph */
-pre.pygments .tok-gr { color: #FF0000 } /* Generic.Error */
-pre.pygments .tok-gh { color: #000080; font-weight: bold } /* Generic.Heading */
-pre.pygments .tok-gi { color: #00A000 } /* Generic.Inserted */
-pre.pygments .tok-go { color: #888888 } /* Generic.Output */
-pre.pygments .tok-gp { color: #000080; font-weight: bold } /* Generic.Prompt */
-pre.pygments .tok-gs { font-weight: bold } /* Generic.Strong */
-pre.pygments .tok-gu { color: #800080; font-weight: bold } /* Generic.Subheading */
-pre.pygments .tok-gt { color: #0044DD } /* Generic.Traceback */
-pre.pygments .tok-kc { color: #008000; font-weight: bold } /* Keyword.Constant */
-pre.pygments .tok-kd { color: #008000; font-weight: bold } /* Keyword.Declaration */
-pre.pygments .tok-kn { color: #008000; font-weight: bold } /* Keyword.Namespace */
-pre.pygments .tok-kp { color: #008000 } /* Keyword.Pseudo */
-pre.pygments .tok-kr { color: #008000; font-weight: bold } /* Keyword.Reserved */
-pre.pygments .tok-kt { color: #B00040 } /* Keyword.Type */
-pre.pygments .tok-m { color: #666666 } /* Literal.Number */
-pre.pygments .tok-s { color: #BA2121 } /* Literal.String */
-pre.pygments .tok-na { color: #7D9029 } /* Name.Attribute */
-pre.pygments .tok-nb { color: #008000 } /* Name.Builtin */
-pre.pygments .tok-nc { color: #0000FF; font-weight: bold } /* Name.Class */
-pre.pygments .tok-no { color: #880000 } /* Name.Constant */
-pre.pygments .tok-nd { color: #AA22FF } /* Name.Decorator */
-pre.pygments .tok-ni { color: #999999; font-weight: bold } /* Name.Entity */
-pre.pygments .tok-ne { color: #D2413A; font-weight: bold } /* Name.Exception */
-pre.pygments .tok-nf { color: #0000FF } /* Name.Function */
-pre.pygments .tok-nl { color: #A0A000 } /* Name.Label */
-pre.pygments .tok-nn { color: #0000FF; font-weight: bold } /* Name.Namespace */
-pre.pygments .tok-nt { color: #008000; font-weight: bold } /* Name.Tag */
-pre.pygments .tok-nv { color: #19177C } /* Name.Variable */
-pre.pygments .tok-ow { color: #AA22FF; font-weight: bold } /* Operator.Word */
-pre.pygments .tok-w { color: #bbbbbb } /* Text.Whitespace */
-pre.pygments .tok-mb { color: #666666 } /* Literal.Number.Bin */
-pre.pygments .tok-mf { color: #666666 } /* Literal.Number.Float */
-pre.pygments .tok-mh { color: #666666 } /* Literal.Number.Hex */
-pre.pygments .tok-mi { color: #666666 } /* Literal.Number.Integer */
-pre.pygments .tok-mo { color: #666666 } /* Literal.Number.Oct */
-pre.pygments .tok-sa { color: #BA2121 } /* Literal.String.Affix */
-pre.pygments .tok-sb { color: #BA2121 } /* Literal.String.Backtick */
-pre.pygments .tok-sc { color: #BA2121 } /* Literal.String.Char */
-pre.pygments .tok-dl { color: #BA2121 } /* Literal.String.Delimiter */
-pre.pygments .tok-sd { color: #BA2121; font-style: italic } /* Literal.String.Doc */
-pre.pygments .tok-s2 { color: #BA2121 } /* Literal.String.Double */
-pre.pygments .tok-se { color: #BB6622; font-weight: bold } /* Literal.String.Escape */
-pre.pygments .tok-sh { color: #BA2121 } /* Literal.String.Heredoc */
-pre.pygments .tok-si { color: #BB6688; font-weight: bold } /* Literal.String.Interpol */
-pre.pygments .tok-sx { color: #008000 } /* Literal.String.Other */
-pre.pygments .tok-sr { color: #BB6688 } /* Literal.String.Regex */
-pre.pygments .tok-s1 { color: #BA2121 } /* Literal.String.Single */
-pre.pygments .tok-ss { color: #19177C } /* Literal.String.Symbol */
-pre.pygments .tok-bp { color: #008000 } /* Name.Builtin.Pseudo */
-pre.pygments .tok-fm { color: #0000FF } /* Name.Function.Magic */
-pre.pygments .tok-vc { color: #19177C } /* Name.Variable.Class */
-pre.pygments .tok-vg { color: #19177C } /* Name.Variable.Global */
-pre.pygments .tok-vi { color: #19177C } /* Name.Variable.Instance */
-pre.pygments .tok-vm { color: #19177C } /* Name.Variable.Magic */
-pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
-</style>
 </body>
 </html>
