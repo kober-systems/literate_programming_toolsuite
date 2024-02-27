@@ -676,7 +676,7 @@ einfach weiterlesen.</p>
 <p>Dieses Programm ist im <a href="https://en.wikipedia.org/wiki/Literate_programming">literate programming</a> Stil geschrieben. Gie Grundidee ist eine ASCIIdoc Benutzeranleitung so umzuarbeiten, dass sie sich automatisch zu einem ausführbaren Programm mit Tests kompilieren lässt.</p>
 </div>
 <div class="paragraph">
-<p>Dazu verwenden wir <a href="https://kober-systems.github.io/literate_programming_toolsuite/lisa/lisa.html">lisa</a> (welches im gleichen Repo verwaltet wird) als Werkzeug.</p>
+<p>Dazu verwenden wir <a href="https://kober-systems.github.io/literate_programming_toolsuite/lisi/lisi.html">lisi</a> (welches im gleichen Repo verwaltet wird) als Werkzeug.</p>
 </div>
 <div class="sect2">
 <h3 id="_motivation_und_hintergrund">Motivation und Hintergrund</h3>
@@ -3673,7 +3673,7 @@ Unresolved directive in asciidoctrine.adoc - include::src/output/json-ast.adoc[]
 <div class="sect2">
 <h3 id="extension">Den AST verarbeiten/modifizieren</h3>
 <div class="paragraph">
-<p>Manchmal will man den <a href="#ast">Abstract Syntax Tree</a> verarbeiten und daraus Informationen nutzen (<a href="#../lisa.adoc#">lisa</a> verwendet ihn z.B. um daraus Quelltext-Dateien zu extrahieren). Das ermöglicht sehr viele Anwendungsfälle:</p>
+<p>Manchmal will man den <a href="#ast">Abstract Syntax Tree</a> verarbeiten und daraus Informationen nutzen (<a href="#../lisi.adoc#">lisi</a> verwendet ihn z.B. um daraus Quelltext-Dateien zu extrahieren). Das ermöglicht sehr viele Anwendungsfälle:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -4447,22 +4447,22 @@ welche mit entsprechenden Attributen gekennzeichnet wurden.</p>
 <span class="normal">21</span>
 <span class="normal">22</span>
 <span class="normal">23</span>
-<span class="normal">24</span></pre></div></td><td class="code"><div><pre><span></span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nx">template</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nx">lisa</span><span class="tok-p">.</span><span class="tok-nx">get_snippet</span><span class="tok-p">(</span><span class="tok-s2">&quot;unit-test-template&quot;</span><span class="tok-p">).</span><span class="tok-nx">content</span><span class="tok-p">;</span>
+<span class="normal">24</span></pre></div></td><td class="code"><div><pre><span></span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nx">template</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nx">lisi</span><span class="tok-p">.</span><span class="tok-nx">get_snippet</span><span class="tok-p">(</span><span class="tok-s2">&quot;unit-test-template&quot;</span><span class="tok-p">).</span><span class="tok-nx">content</span><span class="tok-p">;</span>
 <span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nx">tests</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s2">&quot;&quot;</span><span class="tok-p">;</span>
 
-<span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-nx">name</span><span class="tok-w"> </span><span class="tok-ow">in</span><span class="tok-w"> </span><span class="tok-nx">lisa.get_snippet_names</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-nx">name</span><span class="tok-w"> </span><span class="tok-ow">in</span><span class="tok-w"> </span><span class="tok-nx">lisi.get_snippet_names</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">  </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-nx">name</span><span class="tok-p">.</span><span class="tok-nx">contains</span><span class="tok-p">(</span><span class="tok-s2">&quot;unittest_&quot;</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">&amp;&amp;</span><span class="tok-w"> </span><span class="tok-nx">name</span><span class="tok-p">.</span><span class="tok-nx">contains</span><span class="tok-p">(</span><span class="tok-s2">&quot;_input&quot;</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nx">out_template</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nx">template</span><span class="tok-p">;</span>
 <span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nx">compare_out</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s2">&quot;&quot;</span><span class="tok-p">;</span>
 
-<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nx">snippet</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nx">lisa</span><span class="tok-p">.</span><span class="tok-nx">get_snippet</span><span class="tok-p">(</span><span class="tok-nx">name</span><span class="tok-p">);</span>
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nx">snippet</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nx">lisi</span><span class="tok-p">.</span><span class="tok-nx">get_snippet</span><span class="tok-p">(</span><span class="tok-nx">name</span><span class="tok-p">);</span>
 <span class="tok-w">    </span><span class="tok-nx">out_template</span><span class="tok-p">.</span><span class="tok-nx">replace</span><span class="tok-p">(</span><span class="tok-s2">&quot;{test_name}&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-nx">snippet</span><span class="tok-p">.</span><span class="tok-nx">attrs</span><span class="tok-p">.</span><span class="tok-nx">name</span><span class="tok-p">);</span>
 <span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nx">asciidoc_content</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s2">&quot;\n&quot;</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-nx">snippet</span><span class="tok-p">.</span><span class="tok-nx">content</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-s2">&quot;\n&quot;</span><span class="tok-p">;</span>
 <span class="tok-w">    </span><span class="tok-nx">asciidoc_content</span><span class="tok-p">.</span><span class="tok-nx">replace</span><span class="tok-p">(</span><span class="tok-s2">&quot; -- &lt;1&gt;&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-s2">&quot;&quot;</span><span class="tok-p">);</span>
 <span class="tok-w">    </span><span class="tok-nx">asciidoc_content</span><span class="tok-p">.</span><span class="tok-nx">replace</span><span class="tok-p">(</span><span class="tok-s2">&quot; -- &lt;2&gt;&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-s2">&quot;&quot;</span><span class="tok-p">);</span>
 <span class="tok-w">    </span><span class="tok-nx">out_template</span><span class="tok-p">.</span><span class="tok-nx">replace</span><span class="tok-p">(</span><span class="tok-s2">&quot;{asciidoc_content}&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-nx">asciidoc_content</span><span class="tok-p">);</span>
 
-<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nx">output_snippet</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nx">lisa</span><span class="tok-p">.</span><span class="tok-nx">get_snippet</span><span class="tok-p">(</span><span class="tok-nx">snippet</span><span class="tok-p">.</span><span class="tok-nx">attrs</span><span class="tok-p">.</span><span class="tok-nx">output</span><span class="tok-p">);</span>
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nx">output_snippet</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nx">lisi</span><span class="tok-p">.</span><span class="tok-nx">get_snippet</span><span class="tok-p">(</span><span class="tok-nx">snippet</span><span class="tok-p">.</span><span class="tok-nx">attrs</span><span class="tok-p">.</span><span class="tok-nx">output</span><span class="tok-p">);</span>
 <span class="tok-w">    </span><span class="tok-nx">out_template</span><span class="tok-p">.</span><span class="tok-nx">replace</span><span class="tok-p">(</span><span class="tok-s2">&quot;{expected_content}&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-nx">output_snippet</span><span class="tok-p">.</span><span class="tok-nx">content</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-s2">&quot;\n&quot;</span><span class="tok-p">);</span>
 
 <span class="tok-w">    </span><span class="tok-nx">tests</span><span class="tok-w"> </span><span class="tok-o">+=</span><span class="tok-w"> </span><span class="tok-nx">out_template</span><span class="tok-p">;</span>
@@ -4470,7 +4470,7 @@ welche mit entsprechenden Attributen gekennzeichnet wurden.</p>
 <span class="tok-w">  </span><span class="tok-p">}</span>
 <span class="tok-p">}</span>
 
-<span class="tok-nx">lisa</span><span class="tok-p">.</span><span class="tok-nx">store</span><span class="tok-p">(</span><span class="tok-s2">&quot;html-unit-tests&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-nx">tests</span><span class="tok-p">);</span>
+<span class="tok-nx">lisi</span><span class="tok-p">.</span><span class="tok-nx">store</span><span class="tok-p">(</span><span class="tok-s2">&quot;html-unit-tests&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-nx">tests</span><span class="tok-p">);</span>
 </pre></div></td></tr></table></div></code></pre>
 </div>
 </div>
