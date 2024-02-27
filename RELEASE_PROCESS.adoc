@@ -54,10 +54,10 @@ fi
 ----
 echo "Start generating source files ..."
 
-cd lisa
+cd lisi
 # The new generated source must be able to
 # generate itself
-cargo run --manifest-path ../Cargo.toml -- lisa.adoc || exit 1
+cargo run --manifest-path ../Cargo.toml -- lisi.adoc || exit 1
 cd ..
 
 echo "Generating source files done!"
@@ -86,11 +86,11 @@ asciidoctor -r asciidoctor-diagram \
             -a icons=font \
             README.adoc -o index.html
 asciidoctor -r asciidoctor-diagram \
-            -D docs/lisa \
+            -D docs/lisi \
             -a source-highlighter=pygments \
             -a toc=left \
             -a icons=font \
-            lisa/lisa.adoc
+            lisi/lisi.adoc
 asciidoctor -r asciidoctor-diagram \
             -D docs/asciidoctrine \
             -a source-highlighter=pygments \
