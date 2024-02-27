@@ -74,6 +74,16 @@ asciidoctor \
             -a reproducible \
             -D docs/ansicht \
             ansicht/ansicht.adoc
+asciidoctor \
+            -r asciidoctor-diagram \
+            -a source-highlighter=pygments \
+            -a toc=left \
+            -a icons=font \
+            -a toclevels=4 \
+            -a data-uri \
+            -a reproducible \
+            -D docs/dolmetscher \
+            dolmetscher/dolmetscher.adoc
 
 echo "Generating html files done!"
 
