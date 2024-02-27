@@ -245,10 +245,10 @@ watchexec -w . -c -e rs,toml --no-vcs-ignore -- "<<build_and_test>>"
 [source, sh]
 ----
 while true; do
+    git diff; # <1>
     read -p "Do you wish to commit your changes to git? [yes|no] " yn
     case $yn in
         [Yy]* )
-          git diff; # <1>
           git add .; # <2>
           git commit; # <2>
           break;;

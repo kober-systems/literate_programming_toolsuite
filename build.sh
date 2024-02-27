@@ -89,10 +89,10 @@ echo "Generating html files done!"
 
 
 while true; do
+    git diff;
     read -p "Do you wish to commit your changes to git? [yes|no] " yn
     case $yn in
         [Yy]* )
-          git diff;
           git add .;
           git commit;
           break;;
