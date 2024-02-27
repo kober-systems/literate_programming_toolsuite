@@ -241,6 +241,12 @@ Whenever the rust files change we want to rebuild and test the program.
 watchexec -w . -c -e rs,toml --no-vcs-ignore -- "<<build_and_test>>"
 ----
 
+Whenever the asciidoc files change we want to regenerate the source
+files. But before we can do that we have to make sure the aktual source
+files and the generated source files are in sync.
+
+TODO This isn't easy because when the asciidoc files are moified they generate "dirty" source files (from the perspective of the VCS). So we have to stash the changes somehow so that it is seen, that the sources are in sync.
+
 === Ask for checkin into the VCS
 
 [[ask_for_vcs_check_in]]
@@ -281,6 +287,13 @@ while true; do
     esac
 done
 ----
+
+== Review process
+Whenever the code is updated on the master branch or via pull request it
+will be reviewed. The main part of that review follows the guidelines
+documented in this section.
+
+TODO github actions
 
 == Release
 When everything goes well it's time to think about releasing.
@@ -362,3 +375,4 @@ COPY --from=builder /home/rust/target/release/lisi .
 ENV PATH="${PATH}:/home/lisi"
 ----
 
+TODO github actions for docker image
