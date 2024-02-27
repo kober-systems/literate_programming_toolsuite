@@ -4,7 +4,7 @@ make this process as smooth as possible.
 
 image:https://img.shields.io/github/languages/code-size/kober-systems/literate_programming_toolsuite?style=flat-square[link=https://github.com/kober-systems/literate_programming_toolsuite]
 image:https://img.shields.io/github/actions/workflow/status/kober-systems/literate_programming_toolsuite/rust.yml?style=flat-square[link=https://github.com/kober-systems/literate_programming_toolsuite/actions]
-image:https://img.shields.io/docker/image-size/lammermann/lisa/bleeding?label=docker&style=flat-square[link=https://hub.docker.com/r/lammermann/lisa]
+image:https://img.shields.io/docker/image-size/lammermann/lisi/bleeding?label=docker&style=flat-square[link=https://hub.docker.com/r/lammermann/lisi]
 image:https://deps.rs/repo/github/kober-systems/literate_programming_toolsuite/status.svg[link=https://deps.rs/repo/github/kober-systems/literate_programming_toolsuite]
 
 == Basic design decisions
@@ -20,7 +20,7 @@ The subrates are:
 
 asciidoctrine:: An extensible <<asciidoctrine/asciidoctrine.adoc#, asciidoc interpreter>>. It
   isn't very mature right now.
-lisa:: A flexible <<lisa/lisa.adoc#,literate programming tool>> for both tangle
+lisi:: A flexible <<lisi/lisi.adoc#,literate programming tool>> for both tangle
   and weave. It has some basic functionality right now.
 ansicht:: A <<ansicht/ansicht.adoc#,visual programming tool>> primerily meant
   to use in conjunction with literate programming tools. Currently just a draft.
@@ -77,25 +77,26 @@ TODO
 echo "Start generating source files ..."
 
 cd asciidoctrine/
-lisa -o /dev/null asciidoctrine.adoc
+lisi -o ../docs/asciidoctrine/asciidoctrine.lisi.html asciidoctrine.adoc \
+  || echo "lisi is currenty not installed"
 cd ..
 
-cd lisa
-lisa lisa.adoc # <1>
+cd lisi
+lisi lisi.adoc # <1>
 # The new generated source must be able to
 # generate itself
-cargo run --manifest-path ../Cargo.toml --bin lisa -- lisa.adoc
+cargo run --manifest-path ../Cargo.toml --bin lisi -- -o lisi.html lisi.adoc
 cd ..
 
-cargo run --bin lisa -- -o /dev/null README.adoc # <2>
+cargo run --bin lisi -- -o /dev/null README.adoc # <2>
 
 echo "Generating source files done!"
 ----
-<1> We use a preinstalled version of `lisa` to build the sources. This helps us
-    if theres a bug in our generated sources. If we have no version of `lisa`
+<1> We use a preinstalled version of `lisi` to build the sources. This helps us
+    if theres a bug in our generated sources. If we have no version of `lisi`
     installed yet theres no problem the script will just give us a warning and
     generate the sources in the next step.
-<2> Since `lisa` is currently unable to evaluate scripts with user cmdline input
+<2> Since `lisi` is currently unable to evaluate scripts with user cmdline input
     we need to refresh the build script regulary.
 
 === Build and test
@@ -120,8 +121,8 @@ asciidoctor \
             README.adoc -o index.html
 asciidoctor \
             <<asciidoctor-styles>>
-            -D docs/lisa \
-            lisa/lisa.adoc
+            -D docs/lisi \
+            lisi/lisi.adoc
 asciidoctor \
             <<asciidoctor-styles>>
             -D docs/asciidoctrine \
@@ -217,7 +218,7 @@ done
 while true; do
     read -p "Do you wish to install this program? [yes|no] " yn
     case $yn in
-        [Yy]* ) cargo install --force --path lisa; break;;
+        [Yy]* ) cargo install --force --path lisi; break;;
         [Nn]* ) exit;;
         * ) echo "Please answer yes or no.";;
     esac
@@ -226,7 +227,7 @@ done
 
 [[dockerfile]]
 == Dockerfile
-To use `lisa` in ci-scripts (at least thats my usecase) it is very handy to have a docker image at hand. However when it comes to docker images size is key. For this reason we use to https://docs.docker.com/develop/develop-images/multistage-build/[multiple different stages] in our Dockerfile:
+To use `lisi` in ci-scripts (at least thats my usecase) it is very handy to have a docker image at hand. However when it comes to docker images size is key. For this reason we use to https://docs.docker.com/develop/develop-images/multistage-build/[multiple different stages] in our Dockerfile:
 
 * one that builds our software and has all the build dependencies
 * one that only holds our final binaries and minimal runtime dependencies to enable a small image size.
@@ -253,7 +254,7 @@ COPY . .
 RUN cargo test
 RUN cargo build --release
 
-RUN strip target/release/lisa # <2>
+RUN strip target/release/lisi # <2>
 ----
 <1> We can only compile on this system if we have `g++` installed for some weird reason I don't understand (see the related bug https://github.com/rust-lang/cargo/issues/7563[here]).
 <2> After building the binaries we can shrink down the size significantly by striping them.
@@ -264,8 +265,8 @@ After we build our program we take a fresh image based on alpine (becase it's sm
 [source, Dockerfile]
 ----
 FROM alpine:latest
-WORKDIR /home/lisa
-COPY --from=builder /home/rust/target/release/lisa .
-ENV PATH="${PATH}:/home/lisa"
+WORKDIR /home/lisi
+COPY --from=builder /home/rust/target/release/lisi .
+ENV PATH="${PATH}:/home/lisi"
 ----
 

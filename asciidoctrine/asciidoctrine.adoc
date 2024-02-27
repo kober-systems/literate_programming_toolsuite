@@ -52,7 +52,7 @@ Referenz
 == Übersicht
 Dieses Programm ist im https://en.wikipedia.org/wiki/Literate_programming[literate programming] Stil geschrieben. Gie Grundidee ist eine ASCIIdoc Benutzeranleitung so umzuarbeiten, dass sie sich automatisch zu einem ausführbaren Programm mit Tests kompilieren lässt.
 
-Dazu verwenden wir https://kober-systems.github.io/literate_programming_toolsuite/lisa/lisa.html[lisa] (welches im gleichen Repo verwaltet wird) als Werkzeug.
+Dazu verwenden wir https://kober-systems.github.io/literate_programming_toolsuite/lisi/lisi.html[lisi] (welches im gleichen Repo verwaltet wird) als Werkzeug.
 
 === Motivation und Hintergrund
 Das Programm http://jgm.github.io/lunamark/doc/lunamark.html[lunamark] hat
@@ -901,7 +901,7 @@ fn process_title<'a>(element: Pair<'a, asciidoc::Rule>, base: ElementSpan<'a>) -
 |====
 |
 [[unittest_header_setext_input]]
-[source, asciidoc, lisa-raw]
+[source, asciidoc, lisi-raw]
 [output="setext_header_html_output", name="setext_headers"]
 ....
 This is a header
@@ -949,7 +949,7 @@ This is a subsubsubheader
 Auch Titel im ATX Format werden erkannt.
 
 [[unittest_header_atx_input]]
-[source, asciidoc, lisa-raw]
+[source, asciidoc, lisi-raw]
 [output="atx_header_html_output", name="atx_headers"]
 ....
 = This is a header
@@ -1055,7 +1055,7 @@ Formatierungen werden unterstützt:
 *Fett*
 
 [[unittest_inline_bold_input]]
-[source, asciidoc, lisa-raw]
+[source, asciidoc, lisi-raw]
 [output="inline_bold_html_output", name="inline_bold"]
 ....
 Some text is *bold*.
@@ -1091,7 +1091,7 @@ Some text is *bold*.
 _Kursiv_
 
 [[unittest_inline_italic_input]]
-[source, asciidoc, lisa-raw]
+[source, asciidoc, lisi-raw]
 [output="inline_italic_html_output", name="inline_italic"]
 ....
 Some text is _italic_.
@@ -1127,7 +1127,7 @@ Some text is _italic_.
 `Monospaced`
 
 [[unittest_inline_monospaced_input]]
-[source, asciidoc, lisa-raw]
+[source, asciidoc, lisi-raw]
 [output="inline_monospaced_html_output", name="inline_monospaced"]
 ....
 Some text is `monospaced`.
@@ -1270,7 +1270,7 @@ bullet_list = { bullet_list_element+ }
 |
 
 [[unittest_bullet_list_input]]
-[source, asciidoc, lisa-raw]
+[source, asciidoc, lisi-raw]
 [output="bullet_list_html_output", name="bullet_list"]
 ....
 * This
@@ -1339,7 +1339,7 @@ bullet_list = { bullet_list_element+ }
 |
 
 [[unittest_bullet_list_dashes_input]]
-[source, asciidoc, lisa-raw]
+[source, asciidoc, lisi-raw]
 [output="bullet_list_html_output", name="bullet_list_with_dashes"]
 ....
 - This
@@ -1401,7 +1401,7 @@ numbered_list = { number_bullet_list_element+ }
 |
 
 [[unittest_numbered_list_input]]
-[source, asciidoc, lisa-raw]
+[source, asciidoc, lisi-raw]
 [output="numbered_list_html_output", name="numbered_list"]
 ....
 . This
@@ -1683,7 +1683,7 @@ table_cell_content = {
 !===
 
 [[unittest_simple_table_input]]
-[source, asciidoc, lisa-raw]
+[source, asciidoc, lisi-raw]
 [output="simple_table_html_output", name="simple_table"]
 ....
 |===
@@ -1738,7 +1738,7 @@ table_cell_content = {
 !===
 
 [[unittest_formated_table_input]]
-[source, asciidoc, lisa-raw]
+[source, asciidoc, lisi-raw]
 [output="formated_table_html_output", name="formated_table"]
 ....
 [cols="1,a"]
@@ -2080,7 +2080,7 @@ Rule::delimited_source | Rule::delimited_literal => BlockType::Listing,
 |
 
 [[unittest_sourcecode_block_input]]
-[source, asciidoc, lisa-raw]
+[source, asciidoc, lisi-raw]
 [output="sourceblock_html_output", name="sourcecode_blocks"]
 ....
 [source, bash]
@@ -2112,7 +2112,7 @@ echo "hello world!"
 |
 
 [[unittest_sourcecode_block_input]]
-[source, asciidoc, lisa-raw]
+[source, asciidoc, lisi-raw]
 [output="sourceblock_html_output", name="sourcecode_blocks"]
 ----
 [source, bash]
@@ -2178,7 +2178,7 @@ ohne dass der normale Leser überfordert wird.
 |====
 |
 [[unittest_collapsible_input]]
-[source, asciidoc, lisa-raw]
+[source, asciidoc, lisi-raw]
 [output="collapsible_html_output", name="collapsible_blocks"]
 ....
 [%collapsible]
@@ -2216,7 +2216,7 @@ Additional Information, that will only be shown on demand.
 Blöcke können auch standardmäßig geöffnet sein.
 
 [[unittest_collapsible_open_input]]
-[source, asciidoc, lisa-raw]
+[source, asciidoc, lisi-raw]
 [output="collapsible_open_html_output", name="collapsible_blocks_open"]
 ....
 [%collapsible%open]
@@ -2462,7 +2462,7 @@ pub trait Reader {
 
 [[extension]]
 === Den AST verarbeiten/modifizieren
-Manchmal will man den <<ast, Abstract Syntax Tree>> verarbeiten und daraus Informationen nutzen (<<../lisa.adoc#, lisa>> verwendet ihn z.B. um daraus Quelltext-Dateien zu extrahieren). Das ermöglicht sehr viele Anwendungsfälle:
+Manchmal will man den <<ast, Abstract Syntax Tree>> verarbeiten und daraus Informationen nutzen (<<../lisi.adoc#, lisi>> verwendet ihn z.B. um daraus Quelltext-Dateien zu extrahieren). Das ermöglicht sehr viele Anwendungsfälle:
 
 * Daten extrahieren und Prüfungen oder Statistiken damit durchführen
 * Rechtschreibprüfung durchführen
@@ -2988,22 +2988,22 @@ welche mit entsprechenden Attributen gekennzeichnet wurden.
 [[html-unit-tests]]
 [source, js, pipe]
 ----
-let template = lisa.get_snippet("unit-test-template").content;
+let template = lisi.get_snippet("unit-test-template").content;
 let tests = "";
 
-for name in lisa.get_snippet_names() {
+for name in lisi.get_snippet_names() {
   if name.contains("unittest_") && name.contains("_input") {
     let out_template = template;
     let compare_out = "";
 
-    let snippet = lisa.get_snippet(name);
+    let snippet = lisi.get_snippet(name);
     out_template.replace("{test_name}", snippet.attrs.name);
     let asciidoc_content = "\n" + snippet.content + "\n";
     asciidoc_content.replace(" -- <1>", "");
     asciidoc_content.replace(" -- <2>", "");
     out_template.replace("{asciidoc_content}", asciidoc_content);
 
-    let output_snippet = lisa.get_snippet(snippet.attrs.output);
+    let output_snippet = lisi.get_snippet(snippet.attrs.output);
     out_template.replace("{expected_content}", output_snippet.content + "\n");
 
     tests += out_template;
@@ -3011,7 +3011,7 @@ for name in lisa.get_snippet_names() {
   }
 }
 
-lisa.store("html-unit-tests", tests);
+lisi.store("html-unit-tests", tests);
 ----
 
 == Verwandte Projekte

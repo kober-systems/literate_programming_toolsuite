@@ -7,9 +7,9 @@ COPY . .
 RUN cargo test
 RUN cargo build --release
 
-RUN strip target/release/lisa
+RUN strip target/release/lisi
 
 FROM alpine:latest
-WORKDIR /home/lisa
-COPY --from=builder /home/rust/target/release/lisa .
-ENV PATH="${PATH}:/home/lisa"
+WORKDIR /home/lisi
+COPY --from=builder /home/rust/target/release/lisi .
+ENV PATH="${PATH}:/home/lisi"

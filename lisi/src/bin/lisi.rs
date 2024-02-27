@@ -2,11 +2,11 @@ use anyhow::Result;
 use asciidoctrine::*;
 use lisi::*;
 
-fn run_lisa<'a>(_opts: &'a options::Opts, ast: AST<'a>) -> Result<AST<'a>> {
+fn run_lisi<'a>(_opts: &'a options::Opts, ast: AST<'a>) -> Result<AST<'a>> {
   let mut lisi = Lisi::new();
   Ok(lisi.transform(ast)?)
 }
 
 fn main() -> Result<()> {
-  cli_template::cli_template(run_lisa)
+  cli_template::cli_template(run_lisi)
 }

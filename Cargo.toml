@@ -1,5 +1,5 @@
 [workspace]
 members = [
   "asciidoctrine",
-  "lisa",
+  "lisi",
 ]
