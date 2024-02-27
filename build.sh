@@ -22,7 +22,7 @@ lisi -o ../docs/asciidoctrine/asciidoctrine.lisi.html asciidoctrine.adoc \
 cd ..
 
 cd lisi
-lisi -o lisi.previous.html lisi.adoc || echo "lisi is currenty not installed"
+lisi -o /dev/null lisi.adoc || echo "lisi is currenty not installed"
 # The new generated source must be able to
 # generate itself
 cargo run --manifest-path ../Cargo.toml --bin lisi -- -o lisi.html lisi.adoc
