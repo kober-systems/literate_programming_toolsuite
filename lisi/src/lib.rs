@@ -99,11 +99,11 @@ impl Snippet {
 }
 
 #[derive(Clone)]
-struct LisaWrapper {
+struct LisiWrapper {
   pub snippets: Rc<RefCell<SnippetDB>>,
 }
 
-impl LisaWrapper {
+impl LisiWrapper {
   pub fn store(&mut self, name: &str, content: &str) {
     let mut snippets = self.snippets.borrow_mut();
 
@@ -363,15 +363,15 @@ impl Lisi {
 
     let mut scope = rhai::Scope::new();
 
-    let wrapper = LisaWrapper {
-      snippets: Rc::clone(&db)
+    let wrapper = LisiWrapper {
+      snippets: Rc::clone(&db),
     };
-    scope.push_constant("lisa", wrapper);
+    scope.push_constant("lisi", wrapper);
 
-    engine.register_type_with_name::<LisaWrapper>("LisaType");
-    engine.register_fn("store", LisaWrapper::store);
-    engine.register_fn("get_snippet", LisaWrapper::get_snippet);
-    engine.register_fn("get_snippet_names", LisaWrapper::get_snippet_names);
+    engine.register_type_with_name::<LisiWrapper>("LisiType");
+    engine.register_fn("store", LisiWrapper::store);
+    engine.register_fn("get_snippet", LisiWrapper::get_snippet);
+    engine.register_fn("get_snippet_names", LisiWrapper::get_snippet_names);
 
     engine.eval_with_scope::<()>(&mut scope, content)
       .unwrap_or_else(|e| {
