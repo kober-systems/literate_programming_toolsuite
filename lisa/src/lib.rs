@@ -172,14 +172,14 @@ pub enum Error {
   Io(#[from] std::io::Error),
 }
 
-pub struct Lisa {
+pub struct Lisi {
   dependencies: TopologicalSort<String>,
   env: asciidoctrine::util::Env,
 }
 
-impl Lisa {
+impl Lisi {
   pub fn new() -> Self {
-    Lisa {
+    Lisi {
       dependencies: TopologicalSort::new(),
       env: util::Env::Io(util::Io::new()),
     }
@@ -232,7 +232,7 @@ impl Lisa {
             AttributeValue::Ref("pipe") => {
               kind = SnippetType::Pipe;
             }
-            AttributeValue::Ref("lisa-raw") => {
+            AttributeValue::Ref("lisi-raw") => {
               raw = true;
             }
             _ => (),
@@ -382,7 +382,7 @@ impl Lisa {
   }
 
   pub fn from_env(env: util::Env) -> Self {
-    let mut base = Lisa::new();
+    let mut base = Lisi::new();
     base.env = env;
 
     base
@@ -476,7 +476,7 @@ impl Lisa {
   }
 }
 
-impl Extension for Lisa {
+impl Extension for Lisi {
   fn transform<'a>(&mut self, input: AST<'a>) -> anyhow::Result<AST<'a>> {
     let snippets = self.extract_ast(&input)?;
 

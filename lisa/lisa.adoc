@@ -1,4 +1,4 @@
-= Lisa - LIterate Scripting for Asciidoc
+= Lisi - LIterate Scripting Interpreter
 Benjamin Kober <benko@kober-systems.com>
 :toc: left
 
@@ -35,7 +35,7 @@ besteht bereits ein hervoragendes Programm zu diesem Zweck. Da ich
 aber https://www.rust-lang.org/[rust] besser kennenlernen will und
 mit <<../asciidoctrine/asciidoctrine.adoc#, asciidoctrine>> einen
 eigenen asciidoc Interpreter in rust geschrieben habe, habe ich mich
-entschlossen `lisa` als asciidoctrine-extension zu implementieren.
+entschlossen `lisi` als asciidoctrine-extension zu implementieren.
 
 [[crate_usages]]
 [source, rust]
@@ -49,14 +49,14 @@ use asciidoctrine::*;
 asciidoctrine = { path = "../asciidoctrine", version = "0.1" }
 ----
 
-[[lisa-overview]]
+[[lisi-overview]]
 [ditaa]
-.Aufbau von lisa
+.Aufbau von lisi
 ----
 
          /-----\   +-------+   /-----\
          |     |   | {io}  |   |     |
-  ... -->| AST +-->| lisa  +-->| AST +--> ...
+  ... -->| AST +-->| lisi  +-->| AST +--> ...
          |     |   |       |   |     |
          \-----/   +---+---+   \-----/
                        |
@@ -68,7 +68,7 @@ asciidoctrine = { path = "../asciidoctrine", version = "0.1" }
 
 ----
 
-`lisa` arbeitet direkt auf einem asciidoc
+`lisi` arbeitet direkt auf einem asciidoc
 https://en.wikipedia.org/wiki/Abstract_syntax_tree[AST] und erzeugt aus
 den darin enthaltenen Quelltext-Snippets (TODO link) Sourcecode Dateien
 (und manchmal auch weitere Dateien). Im AST fügt es einige zusätzliche
@@ -88,14 +88,14 @@ Die Hauptdatei hat dabei folgendes Gerüst:
 
 <<internal_structs|join="\n\n">>
 
-pub struct Lisa {
-  <<lisa_internal_variables>>
+pub struct Lisi {
+  <<lisi_internal_variables>>
 }
 
-impl Lisa {
+impl Lisi {
   pub fn new() -> Self {
-    Lisa {
-      <<lisa_init_variables>>
+    Lisi {
+      <<lisi_init_variables>>
     }
   }
 
@@ -119,7 +119,7 @@ impl Lisa {
   }
 }
 
-impl Extension for Lisa { // <1>
+impl Extension for Lisi { // <1>
   fn transform<'a>(&mut self, input: AST<'a>) -> anyhow::Result<AST<'a>> { // <2>
     let snippets = self.extract_ast(&input)?; // <3>
 
@@ -131,7 +131,7 @@ impl Extension for Lisa { // <1>
   }
 }
 ----
-<1> Da `lisa` eine <<../asciidoctrine/asciidoctrine.adoc#,
+<1> Da `lisi` eine <<../asciidoctrine/asciidoctrine.adoc#,
     asciidoctrine>> Erweiterung ist, implementiert das Programm die
     dafür erforderliche Schnittstelle.
 <2> Als erste Funktion aller Erweiterungen wird immer die Funktion `transform`
@@ -211,7 +211,7 @@ Quelltext ... <1>
 
 Fliestext ... <3>
 ....
-<1> `lisa` kümmert sich nur um Quelltext-Snippets.
+<1> `lisi` kümmert sich nur um Quelltext-Snippets.
 <2> Die ID (`anchor`) kann benutzt werden, um Code-Snippets zu
     referenzieren.
 <4> Der restliche Text wird von dem Programm ignoriert.
@@ -235,7 +235,7 @@ einbinden. Dafür verwendet man einfach eine `cross reference` auf den
 `anchor` des jeweiligen Schnipsels:
 
 [[unittest_sample1_input]]
-[source, asciidoc, lisa-raw]
+[source, asciidoc, lisi-raw]
 [outputs="unittest_sample1_output", name="use_snippets"]
 ....
 We need the testmodule for this project.
@@ -274,7 +274,7 @@ print(testmodule.version)
 Die Reihenfolge ist dabei egal.
 
 [[unittest_sample2_input]]
-[source, asciidoc, lisa-raw]
+[source, asciidoc, lisi-raw]
 [outputs="unittest_sample2_output", name="handle_snippet_order"]
 ....
 First we give a short outline of the program. It imports the required modules
@@ -314,7 +314,7 @@ Außerdem kann man einen Codeschnipsel beliebig oft in einem oder mehreren
 anderen Codeschnipseln einfügen.
 
 [[unittest_sample3_input]]
-[source, asciidoc, lisa-raw]
+[source, asciidoc, lisi-raw]
 [outputs="unittest_sample3_output1,unittest_sample3_output2", name="use_snippet_multiple_times"]
 ....
 Lets assume we want to use the following snippet in multiple places.
@@ -378,7 +378,7 @@ Quelltext einfügen oder an verschiedenen Stellen Ergänzungen zu einem
 Codebereich hinzufügen (z.B. die Imports erweitern).
 
 [[unittest_sample4_input]]
-[source, asciidoc, lisa-raw]
+[source, asciidoc, lisi-raw]
 [outputs="unittest_sample4_output", name="append_snippets"]
 ....
 We do some thing in our code.
@@ -434,7 +434,7 @@ In diesem Fall kann man an der einfügenden Stelle festlegen, welche
 Trennzeichen einem am besten gefallen.
 
 [[unittest_sample5_input]]
-[source, asciidoc, lisa-raw]
+[source, asciidoc, lisi-raw]
 [outputs="unittest_sample5_output", name="append_snippets_with_customized_join"]
 ....
 Let's imagine we need some rust struct.
@@ -522,7 +522,7 @@ Snippets kann es praktischer sein ein Inline Code Objekt zu verwenden.
 So könnte man den vorigen Quelltext auch folgendermaßen schreiben:
 
 [[unittest_sample6_input]]
-[source, asciidoc, lisa-raw]
+[source, asciidoc, lisi-raw]
 [outputs="unittest_sample5_output", name="use_inline_snippets"]
 ....
 Let's imagine we need some rust struct.
@@ -578,7 +578,7 @@ importierte Quelltext ebenfalls um die gleiche Höhe eingerückt (im Grunde wird
 vor jedem Zeilenbeginn der Text vor der `cross reference` wieder eingefügt).
 
 [[unittest_sample7_input]]
-[source, asciidoc, lisa-raw]
+[source, asciidoc, lisi-raw]
 [outputs="unittest_sample7_output", name="indented_snippets"]
 .Eingerückte Snippets
 ....
@@ -649,7 +649,7 @@ Dateinamen angeben.
   TODO Quellcodebeispiele zwischen jedem Absatz
 
 Manchmal möchte man keine Ersetzung der `cross reference` in einem
-Snippet haben. In diesem Fall kann man das Attribut `lisa-raw` übergeben
+Snippet haben. In diesem Fall kann man das Attribut `lisi-raw` übergeben
 und der Snippet bleibt unangetastet.
 
 TODO Codebeispiel
@@ -663,7 +663,7 @@ Dazu kann man einfach die Platzhalter überschreiben. Zum definieren
 eines Parameters wird `:=` verwendet.
 
 [[unittest_sample8_input]]
-[source, asciidoc, lisa-raw]
+[source, asciidoc, lisi-raw]
 [outputs="unittest_sample8_output", name="snippets_with_params"]
 ....
 There is a snippet we want to use in different contexts.
@@ -816,7 +816,7 @@ echo "you passed all checks"
 Das funktioniert auch, wenn die Snippets eingerückt wurden
 
 [[unittest_09indented_param_snippets_input]]
-[source, asciidoc, lisa-raw]
+[source, asciidoc, lisi-raw]
 [outputs="unittest_indented_param_snippets_output"]
 [name="indented_snippets_with_params"]
 ....
@@ -873,7 +873,7 @@ höher gar keine Ahnung hat. Da das ein bisschen schwer zu verstehen ist,
 schauen wir uns ein Beispiel an:
 
 [[unittest_10deep_nested_param_snippets_input]]
-[source, asciidoc, lisa-raw]
+[source, asciidoc, lisi-raw]
 [outputs="unittest_deep_nested_param_snippets_output"]
 [name="deep_nested_snippets_with_params"]
 ....
@@ -943,7 +943,7 @@ parametrisierte Snippets als Parameter einsetzt. Um das zu erklären
 gehen wir nochmal auf das Beispiel einer yaml Konfigurationsdatei ein.
 
 [[unittest_params_in_param_snippets_input]]
-[source, asciidoc, lisa-raw]
+[source, asciidoc, lisi-raw]
 [outputs="unittest_params_in_param_snippets_output"]
 [name="snippets_with_nested_params"]
 ....
@@ -1073,14 +1073,14 @@ print("Hello World")
 
 Dieses Beispiel würde direkt "Hello World" auf der Konsole schreiben.
 
-Als Interpreter verwendet `lisa` standardmäßig die angegebende Scriptsprache (in den meisten Fällen stimmen der Name der Sprache und der Name des Interpreter-Executables überein).
+Als Interpreter verwendet `lisi` standardmäßig die angegebende Scriptsprache (in den meisten Fällen stimmen der Name der Sprache und der Name des Interpreter-Executables überein).
 
 [[usage_pipe]]
 ===== pipe
 Manchmal möchte man einen Codeschnipsel in leicht modifizierter Form vielfach
 verwenden. In diesem Fall ist `pipe` ein sehr mächtiges Werkzeug.
 
-Wird `pipe` als Attribut an einen Code Block angehangen, wird der darin befindliche Code, wie bei `eval`, ausgeführt. Im Gegensatz zu `eval` hat `pipe` die Möglichkeit die Code-Schnipsel selbst zu manipulieren. Dazu bekommt es eine Variable `lisa` zu Verfügung gestellt, welche Zugriff auf die Code-Generierung erhält.
+Wird `pipe` als Attribut an einen Code Block angehangen, wird der darin befindliche Code, wie bei `eval`, ausgeführt. Im Gegensatz zu `eval` hat `pipe` die Möglichkeit die Code-Schnipsel selbst zu manipulieren. Dazu bekommt es eine Variable `lisi` zu Verfügung gestellt, welche Zugriff auf die Code-Generierung erhält.
 
 Die Sprache des `pipe` Interpreters ist https://github.com/jonathandturner/rhai[rhai].
 
@@ -1090,7 +1090,7 @@ Print out the doctument header when running the program.
 
 [source, rhai, pipe]
 ---
-lisa.store("print_header", [[=[print("${doc.header}")]]=])
+lisi.store("print_header", [[=[print("${doc.header}")]]=])
 ---
 ....
 
@@ -1100,7 +1100,7 @@ Transformieren und Zusammenfügen lassen sich auch mit `pipe` verwenden, so dass
 man sogar mit `pipe` erzeugte Codeschnipsel verwenden könnte um neue `pipe`
 Codeschnipsel zu erzeugen.
 
-Folgende Funktionen werden von der `lisa` Variable zur Verfügung gestellt:
+Folgende Funktionen werden von der `lisi` Variable zur Verfügung gestellt:
 
 store(name, schnipsel):: Speichert einen String unter einem Namen als Schnipsel
   ab.
@@ -1157,7 +1157,7 @@ Schnipseln zu benutzen.
 
 TODO
 
-[source, asciidoc, lisa-raw]
+[source, asciidoc, lisi-raw]
 ....
 First we define our macro lib:
 
@@ -1175,7 +1175,7 @@ Then we can use it in our pipes
 ---
 <<pipe_functions>>
 
-lisa.store("out", mystuff("test"));
+lisi.store("out", mystuff("test"));
 ---
 
 We can also use this functions in other snippets and even in other documents.
@@ -1215,7 +1215,7 @@ bearbeitet wird. Außerdem werden alle Snippets vorher ausgeführt, die eine in
 // definiert? Sollen die anderen Funktionen überhaupt `provides` definieren
 // können?
 
-Bei der Ausführung überprüft `lisa`, ob alle benötigten Snippets definiert
+Bei der Ausführung überprüft `lisi`, ob alle benötigten Snippets definiert
 wurden und ob keine Kreisabhängigkeiten bestehen (z.B. Snippet1 benötigt
 Snippet2 welches wiederum Snippet1 benötigt). In beiden Fällen würde der `AST`
 um eine Fehlermeldung erweitert werden, welche einmal direkt an der jeweiligen
@@ -1227,7 +1227,7 @@ TODO Implementierung
 TODO Soll eine graphische Darstellung des Kontrollflusses generiert werden
 können? Notfalls wäre das mit `pipe` leicht implementiert.
 
-TODO Während der Ausführung könnte `lisa` leicht überprüfen, ob `pipe`
+TODO Während der Ausführung könnte `lisi` leicht überprüfen, ob `pipe`
 tatsächlich alle ids speichert, die es in `provides` definiert und ob es keine
 weiteres definiert.
 
@@ -1274,7 +1274,7 @@ einem Auseinanderdriften von Vorgaben und Implementierung Vorschub (oftmals
 werden die Tests erst sehr spät in der Entwicklung geschrieben und dann auch
 oft nur unvollständig).
 
-`lisa` hebt diese Einschränkung auf. Unit Tests können irgendwo in den
+`lisi` hebt diese Einschränkung auf. Unit Tests können irgendwo in den
 Quelltext eingefügt werden. Dass macht es möglich eine normale
 Benutzerdokumentation zu schreiben und bei jeder Änderung zu überprüfen, ob
 sich das Nutzererlebnis verändert. Gleichzeitig kann man die Doku flexibel
@@ -1372,7 +1372,7 @@ Eine Präsentation als literate program
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 TODO Alles in dieser Sektion sollte später in eine eigene Datei ausgelagert
 werden. Es ist gleichzeitig ein Beispiel, wie man eine Präsentation als
-literate program verfassen kann und eine Präsentation von `lisa`. ...
+literate program verfassen kann und eine Präsentation von `lisi`. ...
 
 Präsentationen haben oft ein Problem: Sie sind langweilig, da sie lienear
 aufgebaut sind, user menschliches Denken aber mit Räumen und Assotiationen
@@ -1386,7 +1386,7 @@ Um dem abzuhelfen bietet sich literate programing an. Da der Nutzer vor allem
 versucht seine Ideen als Text zu verfassen stehen sie wieder im Mittelpunkt und
 die Effekte helfen wieder die Idee klarer herauszustellen, statt als
 Selbstzweck zu dienen. Im folgenden wird gezeigt, wie man eine moderne
-Präsentation über den Einsatz von `lisa` für Präsentationen verfassen kann.
+Präsentation über den Einsatz von `lisi` für Präsentationen verfassen kann.
 
 Vorraussetzungen
 ^^^^^^^^^^^^^^^^
@@ -1418,7 +1418,7 @@ kann...
 Einen Issue-Tracker aus TODO.adoc und Changes.adoc Dokumenten erstellen
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 TODO Alles in dieser Sektion sollte später in eine eigene Datei ausgelagert
-werden. Es zeigt, wie man `asciidoctor` und `lisa` dazu nutzen kann ein
+werden. Es zeigt, wie man `asciidoctor` und `lisi` dazu nutzen kann ein
 verteiltes Issue-Tracker Programm (samt Webinterface) zu erstellen.
 
 Ähnlich wie Programme Dokumentation sind, so sind auch die Tickets in
@@ -1553,7 +1553,7 @@ pub fn extract(&mut self, mut snippets: SnippetDB, input: &ElementSpan) -> Resul
     Element::TypedBlock {
       kind: BlockType::Listing,
     } => { // <1>
-      <<check_is_lisa_code_block>>
+      <<check_is_lisi_code_block>>
       <<extract_attributes|join="\n\n">>
       <<find_references>>
       <<store_snippet_in_internal_db>>
@@ -1584,12 +1584,12 @@ pub fn extract(&mut self, mut snippets: SnippetDB, input: &ElementSpan) -> Resul
 <2> Falls ein Element zwar kein Snippet ist aber Unterknoten hat, wird rekursiv
     weiter nach Quellcode-Snippets gesucht.
 
-===== Nur Codeschipsel verarbeiten, die auch von Lisa verwendet werden
+===== Nur Codeschipsel verarbeiten, die auch von Lisi verwendet werden
 Es gibt die verschiedensten Codeschnipsel. Nicht alle werden auch verwendet um
 Programme zu generieren. In Asciidoc haben Blocks mit Quellcode als ersten
-Parameter `source`. `lisa` verarbeitet nur diese Blocks.
+Parameter `source`. `lisi` verarbeitet nur diese Blocks.
 
-[[check_is_lisa_code_block]]
+[[check_is_lisi_code_block]]
 [source, rust]
 ----
 let args = &mut input.positional_attributes.iter();
@@ -1630,7 +1630,7 @@ if let Some(value) = args.next()  {
 
 ===== Dem Snippet alle wichtigen Attribute übergeben
 Es gibt einige Attribute der Codeschnipsel im AST, die für die
-Weiterverarbeitung durch `lisa` wichtig sind.
+Weiterverarbeitung durch `lisi` wichtig sind.
 
 Das Pfad Attribut ist wichtig für alle `save` Snippets (TODO link). Falls es nicht explizit definiert wurde, gehen wir davon aus, das der Titel des Codeblocks den Pfad enthällt.
 
@@ -1682,7 +1682,7 @@ for argument in args {
     AttributeValue::Ref("pipe") => {
       kind = SnippetType::Pipe;
     }
-    AttributeValue::Ref("lisa-raw") => {
+    AttributeValue::Ref("lisi-raw") => {
       raw = true;
     }
     _ => (),
@@ -1880,7 +1880,7 @@ merge_dependencies:: Fügt an den Stellen der Referenzen die tatsächlichen
 Zu Beginn bindet das Modul die Parserdatei ein. Ein Codeblock besteht aus ein
 paar wesentlichen Elementen.
 
-Code:: Dieser wird später vom Compilier oder Interpreter verarbeitet und `lisa`
+Code:: Dieser wird später vom Compilier oder Interpreter verarbeitet und `lisi`
   muss ihn nicht verändern.
 Referenzen:: Enthalten Verweise auf andere Snippets.
 Eingerückte Referenzen:: Ist eine Referenz eingerückt, so wollen wir, dass jede
@@ -2429,7 +2429,7 @@ fn get_raw_content(&self, join_str: &str) -> String {
 
 [[snippet_topo_sort]]
 === Die Verarbeitungsreihenfolge der Snippets festlegen
-Eines der wichtigsten Features von `lisa` (und das, welches, wie ich glaube, es am stärksten von vergleichbaren Tools unterscheidet), ist, dass man den <<usage_control_flow,Kontrollfluss bestimmen kann>>. Dadurch wird es in gewissem Sinne zu einer https://en.wikipedia.org/wiki/Dataflow_programming[Dataflow Sprache].
+Eines der wichtigsten Features von `lisi` (und das, welches, wie ich glaube, es am stärksten von vergleichbaren Tools unterscheidet), ist, dass man den <<usage_control_flow,Kontrollfluss bestimmen kann>>. Dadurch wird es in gewissem Sinne zu einer https://en.wikipedia.org/wiki/Dataflow_programming[Dataflow Sprache].
 
 Damit das möglich wird muss herausgefunden werden, welches Snippet verarbeitet werden kann, und welches von anderen abhängt, die vorher verarbeitet werden müssen. Dazu verwenden wir die https://en.wikipedia.org/wiki/Topological_sorting[Topoligical Sorting] Methode. Wir implementieren sie nicht selbst, sondern benutzen den `topological-sort` (TODO link) crate.
 
@@ -2448,15 +2448,15 @@ use topological_sort::TopologicalSort;
 Die entsprechende Klasse (Trait, wieauchimmer) nehmen wir in die internen
 Variablen auf, denn es ergänzt unsere Snippet Datenbank (TODO link).
 
-[[lisa_internal_variables]]
+[[lisi_internal_variables]]
 [source, rust]
 ----
 dependencies: TopologicalSort<String>,
 ----
 
-Und initialisieren sie bei der Initialisierung der Lisa Struktur.
+Und initialisieren sie bei der Initialisierung der Lisi Struktur.
 
-[[lisa_init_variables]]
+[[lisi_init_variables]]
 [source, rust]
 ----
 dependencies: TopologicalSort::new(),
@@ -2645,7 +2645,7 @@ pub fn save(&mut self, path: &str, content: &str) -> Result<(), Error> {
   <<strip_all_lines_in_content>>
 
   // TODO Allow directory prefix from options
-  <<check_path_not_allready_used_by_lisa>>
+  <<check_path_not_allready_used_by_lisi>>
 
   self.env.write(path, &content)?;
 
@@ -2749,7 +2749,7 @@ let mut scope = rhai::Scope::new();
 let wrapper = LisaWrapper {
   snippets: Rc::clone(&db)
 };
-scope.push_constant("lisa", wrapper);
+scope.push_constant("lisi", wrapper);
 
 engine.register_type_with_name::<LisaWrapper>("LisaType");
 engine.register_fn("store", LisaWrapper::store);
@@ -2847,24 +2847,24 @@ TODO
 
 [[side-effects]]
 === Seiteneffekte (Zugriff auf die Betriebsystem-Umgebung)
-Lisa kann Seiteneffekte nutzen (Das ist sogar eine der Hauptaufgaben von `lisa`). Das bedeutet es erzeugt und nutzt Ein- und Ausgaben welche nicht direkt als Parameter übergeben wurden.
+Lisi kann Seiteneffekte nutzen (Das ist sogar eine der Hauptaufgaben von `lisi`). Das bedeutet es erzeugt und nutzt Ein- und Ausgaben welche nicht direkt als Parameter übergeben wurden.
 
 Das Schreiben von Dateien im Dateisystem, das Ausführen von Scripten durch externe Interpreter, usw sind alles Seiteneffekte.
 
-Das ist sehr schön und einer der Gründe, warum Lisa so mächtig ist, doch in manchen Situationen kann es auch zu Problemen führen:
+Das ist sehr schön und einer der Gründe, warum Lisi so mächtig ist, doch in manchen Situationen kann es auch zu Problemen führen:
 
 * Beim Testen (TODO link) müssen wir wissen welche Seiteneffekte genutzt werden (und auf welche Art).
-* Wollen wir `lisa` in eingeschränkten Umgebungen nutzen (embedded Kontext, WASM) stehen uns viele dieser betriebssystemabhängigen Seiteneffekte nicht zur Verfügung und wir müssen Alternative Wege finden sie zu implementieren.
+* Wollen wir `lisi` in eingeschränkten Umgebungen nutzen (embedded Kontext, WASM) stehen uns viele dieser betriebssystemabhängigen Seiteneffekte nicht zur Verfügung und wir müssen Alternative Wege finden sie zu implementieren.
 
 TODO Die Seiteneffekt API beschreiben sowie dependency injektion. Eventuell auch in asciidoctrine nutzen (z.B. für import)
 
-[[lisa_internal_variables]]
+[[lisi_internal_variables]]
 [source, rust]
 ----
 env: asciidoctrine::util::Env,
 ----
 
-[[lisa_init_variables]]
+[[lisi_init_variables]]
 [source, rust]
 ----
 env: util::Env::Io(util::Io::new()),
@@ -2882,7 +2882,7 @@ Manchmal (insbesondere bei Tests TODO link) müssen wir auf die Seiteneffekte zu
 [source, rust]
 ----
 pub fn from_env(env: util::Env) -> Self {
-  let mut base = Lisa::new();
+  let mut base = Lisi::new();
   base.env = env;
 
   base
@@ -2931,7 +2931,7 @@ simple_logger = "4"
 extern crate log;
 ----
 
-Das resultierende `lisa` executable soll allerdings alle Arten von Fehlern abfangen, deshalb verwenden wir hier den `anyhow` crate.
+Das resultierende `lisi` executable soll allerdings alle Arten von Fehlern abfangen, deshalb verwenden wir hier den `anyhow` crate.
 
 [[cargo_dependencies]]
 [source, toml]
@@ -2941,7 +2941,7 @@ anyhow = "1.0"
 
 [[unit-tests]]
 === Tests
-Um `lisa` zu testen verwenden wir die in diesem Dokument beschriebenen Beispiele aus der <<usage, Bedienungsanleitung>> und überprüfen, ob die Ergebnisse wirklich generiert werden.
+Um `lisi` zu testen verwenden wir die in diesem Dokument beschriebenen Beispiele aus der <<usage, Bedienungsanleitung>> und überprüfen, ob die Ergebnisse wirklich generiert werden.
 
 Ein Test hat dabei grundsätzlich folgenden Aufbau:
 
@@ -2957,12 +2957,12 @@ fn {test_name}() -> Result<()> {
   let mut env = util::Env::Cache(util::Cache::new());
   let ast = reader.parse(content, &opts, &mut env)?;
 
-  let mut lisa = Lisa::from_env(env);
-  let _ast = lisa.transform(ast)?;
+  let mut lisi = Lisi::from_env(env);
+  let _ast = lisi.transform(ast)?;
 
   // TODO ast vergleichen
 
-  let mut outputs = lisa.into_cache().unwrap();
+  let mut outputs = lisi.into_cache().unwrap();
 
   {compare_outputs}
 
@@ -2988,25 +2988,25 @@ assert_eq!(
 Unsere Tests packen wir in eine Test Umgebung, welche alle wichtigen crates bereits importiert.
 
 [source, rust, save]
-.tests/lisa_test.rs
+.tests/lisi_test.rs
 ----
 use anyhow::Result;
 use asciidoctrine::{self, *};
 use clap::Parser;
-use lisa::*;
+use lisi::*;
 use pretty_assertions::assert_eq;
 
-<<lisa-unit-tests>>
+<<lisi-unit-tests>>
 ----
 
 Um nun die eigentlichen Tests zu erzeugen müssen wir nur noch alle Beschreibungen (Snippets) aus der Benutzerdokumentation extrahrieren und überprüfen, ob die dort versprochenen AUsgaben auch wirklich erzeugt wurden. Um die entsprechenden Snippets zu finden haben wir sie im Asciidoc Text mit Attributen gekennzeichnet.
 
-[[lisa-unit-tests]]
+[[lisi-unit-tests]]
 [source, js, pipe]
 ----
-let template = lisa.get_snippet("unit-test-template").content;
+let template = lisi.get_snippet("unit-test-template").content;
 template.replace(" // <1>", "");
-let compare_template = lisa.get_snippet("unit-test-compare_outputs-template").content;
+let compare_template = lisi.get_snippet("unit-test-compare_outputs-template").content;
 let tests = "";
 
 fn split(input, seperator) {
@@ -3024,12 +3024,12 @@ fn split(input, seperator) {
   return out;
 }
 
-for name in lisa.get_snippet_names() {
+for name in lisi.get_snippet_names() {
   if name.contains("unittest_") && name.contains("_input") {
     let out_template = template;
     let compare_out = "";
 
-    let snippet = lisa.get_snippet(name);
+    let snippet = lisi.get_snippet(name);
     out_template.replace("{test_name}", snippet.attrs.name);
     let asciidoc_content = "\n" + snippet.content + "\n";
     asciidoc_content.replace(" -- <1>", "");
@@ -3039,7 +3039,7 @@ for name in lisa.get_snippet_names() {
 
     for output_name in split(outputs_names, ",") {
       let compare_out_template = compare_template;
-      let output_snippet = lisa.get_snippet(output_name);
+      let output_snippet = lisi.get_snippet(output_name);
       compare_out_template.replace("{expected_content}", output_snippet.content + "\n");
       compare_out_template.replace("{filepath}", output_snippet.attrs.title);
       compare_out += compare_out_template + "\n";
@@ -3051,7 +3051,7 @@ for name in lisa.get_snippet_names() {
   }
 }
 
-lisa.store("lisa-unit-tests", tests);
+lisi.store("lisi-unit-tests", tests);
 ----
 
 Um schönere diffs angezeigt zu bekommen sobald ein Fehler auftritt verwenden wir den https://github.com/colin-kiegel/rust-pretty-assertions[pretty_assertions] crate.
@@ -3083,10 +3083,10 @@ das Programm (und die Bibliothek) kompiliert werden können.
 .Cargo.toml
 ----
 [package]
-name = "lisa"
+name = "lisi"
 version = "0.2.0"
 description = "literate programming with asciidoc"
-homepage = "https://kober-systems.github.io/literate_programming_toolsuite/lisa/lisa.html"
+homepage = "https://kober-systems.github.io/literate_programming_toolsuite/lisi/lisi.html"
 repository = "https://github.com/kober-systems/literate_programming_toolsuite"
 authors = ["Benjamin Kober <benko@kober-systems.com>"]
 edition = "2018"

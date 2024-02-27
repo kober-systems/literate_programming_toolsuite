@@ -1,8 +1,8 @@
 [package]
-name = "lisa"
+name = "lisi"
 version = "0.2.0"
 description = "literate programming with asciidoc"
-homepage = "https://kober-systems.github.io/literate_programming_toolsuite/lisa/lisa.html"
+homepage = "https://kober-systems.github.io/literate_programming_toolsuite/lisi/lisi.html"
 repository = "https://github.com/kober-systems/literate_programming_toolsuite"
 authors = ["Benjamin Kober <benko@kober-systems.com>"]
 edition = "2018"
