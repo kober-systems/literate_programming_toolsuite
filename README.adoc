@@ -33,12 +33,14 @@ input format.
 == Build from source
 If you want to modify how the programs work to suit your usecase you
 will need build and compile the code.
+
 There are a few steps to build the toolsuite.
 
 [source, sh, save]
 .build.sh
 ----
 set -e # <4>
+
 <<check_generated_sources_are_vcs_clean>> # <1>
 
 <<generate_sources>>
@@ -58,6 +60,20 @@ set -e # <4>
     toolsuite locally.
 <4> When a step fails we want the script to end
 
+=== Prerequisites
+There must be some programms installed on your computer to release a version of
+the `literate programming toolsuite`.
+
+git:: It is currently published on github so we need git.
+rust, cargo, etc:: These porgramms are written in rust therefore we need the
+  rust toolchain.
+asciidoctor:: Right now we need `asciidcotor` to build the docs. In future
+  versions it is planned to use our own `asciidoctrine` programm. There are some
+  additional dependencies for our doc generation process.
+asciidcotor-diagram::: For our diagrams.
+ditaa::: For our diagrams.
+pygments::: For source code highlighting.
+
 === Check if generated files are untouched in VCS
 Maybe we have edited some of our generated source files by hand. In that
 case we would like to be warned before generating the files. This way we
@@ -67,7 +83,23 @@ don't care if they are overwritten.
 We assume that all changed files that are not asciidoc files are
 potentially in danger to be overwritten.
 
-TODO
+[[check_generated_sources_are_vcs_clean]]
+[source, sh]
+----
+changed_files=`git diff --name-only | grep --invert-match '\.adoc$'`
+if [[ ! -z "$changed_files" ]]; then
+  while true; do
+      echo "some files are modified"
+      echo "$changed_files"
+      read -p "Do you wish continue anyway? [yes|no] " yn
+      case $yn in
+          [Yy]* ) break;;
+          [Nn]* ) exit;;
+          * ) echo "Please answer yes or no.";;
+      esac
+  done
+fi
+----
 
 === Generate source files
 

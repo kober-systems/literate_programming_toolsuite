@@ -1,5 +1,19 @@
 set -e
 
+changed_files=`git diff --name-only | grep --invert-match '\.adoc$'`
+if [[ ! -z "$changed_files" ]]; then
+  while true; do
+      echo "some files are modified"
+      echo "$changed_files"
+      read -p "Do you wish continue anyway? [yes|no] " yn
+      case $yn in
+          [Yy]* ) break;;
+          [Nn]* ) exit;;
+          * ) echo "Please answer yes or no.";;
+      esac
+  done
+fi
+
 echo "Start generating source files ..."
 
 cd asciidoctrine/
