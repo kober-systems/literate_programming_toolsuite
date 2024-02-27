@@ -34,7 +34,6 @@ input format.
 To install and use this software there are some different options:
 
 //Install from your distro package manager::
-//NixOS::: `nix-env -i -f lisi.nix` TODO Put this in build: `nix-build lisi.nix`
 Download precompiled binaries:: For windows you can download
   https://nightly.link/kober-systems/literate_programming_toolsuite/actions/runs/8063422942/lisi-Windows.zip[latest
   Windows binaries] built through github actions
@@ -42,9 +41,14 @@ Use the docker image:: You can use the precompiled image
   https://hub.docker.com/r/lammermann/lisi[lammermann/lisi] from
   Dockerhub. If you want to modify the code for the Dockerfile itself
   you can find the code in a <<dockerfile, seperate section>>.
+Install from cargo:: run [[install_with_cargo]]`cargo install --force --path lisi`
 Build from source:: This makes most sense if you want to contribute to
   the project or otherwise modify the code for personal use. You can
   the find instructions <<build_instructions, later in this document>>.
+NixOS/nix::
+install::: [[install_with_nix]]`nix-env -i -f lisi.nix`
+build locally::: `nix-build lisi.nix`
+
 
 [[build_instructions]]
 == Build from source
@@ -267,7 +271,9 @@ done
 while true; do
     read -p "Do you wish to install this program? [yes|no] " yn
     case $yn in
-        [Yy]* ) cargo install --force --path lisi; break;;
+        [Yy]* )
+          <<install_with_nix>>;
+          break;;
         [Nn]* ) exit;;
         * ) echo "Please answer yes or no.";;
     esac

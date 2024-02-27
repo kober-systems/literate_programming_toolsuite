@@ -104,7 +104,9 @@ done
 while true; do
     read -p "Do you wish to install this program? [yes|no] " yn
     case $yn in
-        [Yy]* ) cargo install --force --path lisi; break;;
+        [Yy]* )
+          nix-env -i -f lisi.nix;
+          break;;
         [Nn]* ) exit;;
         * ) echo "Please answer yes or no.";;
     esac
