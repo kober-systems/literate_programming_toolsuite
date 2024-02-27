@@ -364,7 +364,7 @@ impl Lisi {
     let mut scope = rhai::Scope::new();
 
     let wrapper = LisiWrapper {
-      snippets: Rc::clone(&db),
+      snippets: Rc::clone(&db)
     };
     scope.push_constant("lisi", wrapper);
 
