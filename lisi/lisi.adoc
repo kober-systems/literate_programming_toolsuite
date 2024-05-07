@@ -3086,6 +3086,7 @@ das Programm (und die Bibliothek) kompiliert werden können.
 name = "lisi"
 version = "0.2.0"
 description = "literate programming with asciidoc"
+readme = "lisi.adoc"
 homepage = "https://kober-systems.github.io/literate_programming_toolsuite/lisi/lisi.html"
 repository = "https://github.com/kober-systems/literate_programming_toolsuite"
 authors = ["Benjamin Kober <benko@kober-systems.com>"]
