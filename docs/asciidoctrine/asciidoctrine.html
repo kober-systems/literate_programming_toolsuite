@@ -3578,7 +3578,9 @@ Unresolved directive in asciidoctrine.adoc - include::src/output/json-ast.adoc[]
 <span class="normal">64</span>
 <span class="normal">65</span>
 <span class="normal">66</span>
-<span class="normal">67</span></pre></div></td><td class="code"><div><pre><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">clap</span>::<span class="tok-p">{</span><span class="tok-n">Parser</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">ValueEnum</span><span class="tok-p">};</span>
+<span class="normal">67</span>
+<span class="normal">68</span>
+<span class="normal">69</span></pre></div></td><td class="code"><div><pre><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">clap</span>::<span class="tok-p">{</span><span class="tok-n">Parser</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">ValueEnum</span><span class="tok-p">};</span>
 <span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">std</span>::<span class="tok-n">path</span>::<span class="tok-n">PathBuf</span><span class="tok-p">;</span>
 
 <span class="tok-sd">/// Parse a single key-value pair</span>
@@ -3627,6 +3629,8 @@ Unresolved directive in asciidoctrine.adoc - include::src/output/json-ast.adoc[]
 <span class="tok-w">  </span><span class="tok-cp">#[clap(short = &#39;w&#39;, long = </span><span class="tok-s">&quot;writer-format&quot;</span><span class="tok-cp">, default_value_t = Writer::Html5)]</span>
 <span class="tok-w">  </span><span class="tok-cp">#[clap(value_enum)]</span>
 <span class="tok-w">  </span><span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-n">writerfmt</span>: <span class="tok-nc">Writer</span><span class="tok-p">,</span>
+<span class="tok-w">  </span><span class="tok-cp">#[clap(long)]</span>
+<span class="tok-w">  </span><span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-n">dry_run</span>: <span class="tok-kt">bool</span><span class="tok-p">,</span>
 <span class="tok-w">  </span><span class="tok-cp">#[clap(short = &#39;e&#39;, long = </span><span class="tok-s">&quot;extension&quot;</span><span class="tok-cp">)]</span>
 <span class="tok-w">  </span><span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-n">extensions</span>: <span class="tok-nb">Vec</span><span class="tok-o">&lt;</span><span class="tok-nb">String</span><span class="tok-o">&gt;</span><span class="tok-p">,</span>
 <span class="tok-w">  </span><span class="tok-cp">#[clap(long)]</span>
@@ -4150,7 +4154,49 @@ Unresolved directive in asciidoctrine.adoc - include::src/output/json-ast.adoc[]
 <span class="normal">170</span>
 <span class="normal">171</span>
 <span class="normal">172</span>
-<span class="normal">173</span></pre></div></td><td class="code"><div><pre><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">std</span>::<span class="tok-n">collections</span>::<span class="tok-n">HashMap</span><span class="tok-p">;</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span></pre></div></td><td class="code"><div><pre><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">std</span>::<span class="tok-n">collections</span>::<span class="tok-n">HashMap</span><span class="tok-p">;</span>
 <span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">std</span>::<span class="tok-n">fs</span><span class="tok-p">;</span>
 <span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">std</span>::<span class="tok-n">io</span>::<span class="tok-p">{</span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">ErrorKind</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">Write</span><span class="tok-p">};</span>
 <span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">std</span>::<span class="tok-n">path</span>::<span class="tok-n">Path</span><span class="tok-p">;</span>
@@ -4170,9 +4216,13 @@ Unresolved directive in asciidoctrine.adoc - include::src/output/json-ast.adoc[]
 <span class="tok-w">  </span><span class="tok-p">}</span>
 <span class="tok-p">}</span>
 
+<span class="tok-k">fn</span> <span class="tok-nf">fs_read_to_string</span><span class="tok-p">(</span><span class="tok-n">path</span>: <span class="tok-kp">&amp;</span><span class="tok-kt">str</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nc">crate</span>::<span class="tok-nb">Result</span><span class="tok-o">&lt;</span><span class="tok-nb">String</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">  </span><span class="tok-nb">Ok</span><span class="tok-p">(</span><span class="tok-n">fs</span>::<span class="tok-n">read_to_string</span><span class="tok-p">(</span><span class="tok-n">path</span><span class="tok-p">)</span><span class="tok-o">?</span><span class="tok-p">)</span>
+<span class="tok-p">}</span>
+
 <span class="tok-k">impl</span><span class="tok-w"> </span><span class="tok-n">Environment</span><span class="tok-w"> </span><span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-n">Io</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">  </span><span class="tok-k">fn</span> <span class="tok-nf">read_to_string</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">path</span>: <span class="tok-kp">&amp;</span><span class="tok-kt">str</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nc">crate</span>::<span class="tok-nb">Result</span><span class="tok-o">&lt;</span><span class="tok-nb">String</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span>
-<span class="tok-w">    </span><span class="tok-nb">Ok</span><span class="tok-p">(</span><span class="tok-n">fs</span>::<span class="tok-n">read_to_string</span><span class="tok-p">(</span><span class="tok-n">path</span><span class="tok-p">)</span><span class="tok-o">?</span><span class="tok-p">)</span>
+<span class="tok-w">    </span><span class="tok-n">fs_read_to_string</span><span class="tok-p">(</span><span class="tok-n">path</span><span class="tok-p">)</span>
 <span class="tok-w">  </span><span class="tok-p">}</span>
 
 <span class="tok-w">  </span><span class="tok-k">fn</span> <span class="tok-nf">write</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">path</span>: <span class="tok-kp">&amp;</span><span class="tok-kt">str</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">content</span>: <span class="tok-kp">&amp;</span><span class="tok-kt">str</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nc">crate</span>::<span class="tok-nb">Result</span><span class="tok-o">&lt;</span><span class="tok-p">()</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span>
@@ -4287,9 +4337,43 @@ Unresolved directive in asciidoctrine.adoc - include::src/output/json-ast.adoc[]
 <span class="tok-w">  </span><span class="tok-p">}</span>
 <span class="tok-p">}</span>
 
+<span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">struct</span> <span class="tok-nc">FakeOutput</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">  </span><span class="tok-n">files</span>: <span class="tok-nc">HashMap</span><span class="tok-o">&lt;</span><span class="tok-nb">String</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-nb">String</span><span class="tok-o">&gt;</span><span class="tok-p">,</span>
+<span class="tok-p">}</span>
+
+<span class="tok-k">impl</span><span class="tok-w"> </span><span class="tok-n">FakeOutput</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">  </span><span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">fn</span> <span class="tok-nf">new</span><span class="tok-p">()</span><span class="tok-w"> </span>-&gt; <span class="tok-nc">Self</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">    </span><span class="tok-bp">Self</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">      </span><span class="tok-n">files</span>: <span class="tok-nc">HashMap</span>::<span class="tok-n">default</span><span class="tok-p">(),</span>
+<span class="tok-w">    </span><span class="tok-p">}</span>
+<span class="tok-w">  </span><span class="tok-p">}</span>
+
+<span class="tok-w">  </span><span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">fn</span> <span class="tok-nf">get_files</span><span class="tok-p">(</span><span class="tok-bp">self</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nc">HashMap</span><span class="tok-o">&lt;</span><span class="tok-nb">String</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-nb">String</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">    </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">files</span>
+<span class="tok-w">  </span><span class="tok-p">}</span>
+<span class="tok-p">}</span>
+
+<span class="tok-k">impl</span><span class="tok-w"> </span><span class="tok-n">Environment</span><span class="tok-w"> </span><span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-n">FakeOutput</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">  </span><span class="tok-k">fn</span> <span class="tok-nf">read_to_string</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">path</span>: <span class="tok-kp">&amp;</span><span class="tok-kt">str</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nc">crate</span>::<span class="tok-nb">Result</span><span class="tok-o">&lt;</span><span class="tok-nb">String</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">    </span><span class="tok-n">fs_read_to_string</span><span class="tok-p">(</span><span class="tok-n">path</span><span class="tok-p">)</span>
+<span class="tok-w">  </span><span class="tok-p">}</span>
+
+<span class="tok-w">  </span><span class="tok-k">fn</span> <span class="tok-nf">write</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">path</span>: <span class="tok-kp">&amp;</span><span class="tok-kt">str</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">content</span>: <span class="tok-kp">&amp;</span><span class="tok-kt">str</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nc">crate</span>::<span class="tok-nb">Result</span><span class="tok-o">&lt;</span><span class="tok-p">()</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">    </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">files</span><span class="tok-p">.</span><span class="tok-n">insert</span><span class="tok-p">(</span><span class="tok-n">path</span><span class="tok-p">.</span><span class="tok-n">to_string</span><span class="tok-p">(),</span><span class="tok-w"> </span><span class="tok-n">content</span><span class="tok-p">.</span><span class="tok-n">to_string</span><span class="tok-p">());</span>
+
+<span class="tok-w">    </span><span class="tok-nb">Ok</span><span class="tok-p">(())</span>
+<span class="tok-w">  </span><span class="tok-p">}</span>
+
+<span class="tok-w">  </span><span class="tok-k">fn</span> <span class="tok-nf">eval</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">_interpreter</span>: <span class="tok-kp">&amp;</span><span class="tok-kt">str</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">_content</span>: <span class="tok-kp">&amp;</span><span class="tok-kt">str</span><span class="tok-p">)</span><span class="tok-w"> </span>-&gt; <span class="tok-nc">crate</span>::<span class="tok-nb">Result</span><span class="tok-o">&lt;</span><span class="tok-p">(</span><span class="tok-kt">bool</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-nb">String</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-nb">String</span><span class="tok-p">)</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">    </span><span class="tok-n">error</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-s">&quot;eval not supported in fake output&quot;</span><span class="tok-p">);</span>
+<span class="tok-w">    </span><span class="tok-nb">Err</span><span class="tok-p">(</span><span class="tok-k">crate</span>::<span class="tok-n">AsciidoctrineError</span>::<span class="tok-n">Childprocess</span><span class="tok-p">)</span>
+<span class="tok-w">  </span><span class="tok-p">}</span>
+<span class="tok-p">}</span>
+
 <span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">enum</span> <span class="tok-nc">Env</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">  </span><span class="tok-n">Io</span><span class="tok-p">(</span><span class="tok-n">Io</span><span class="tok-p">),</span>
 <span class="tok-w">  </span><span class="tok-n">Cache</span><span class="tok-p">(</span><span class="tok-n">Cache</span><span class="tok-p">),</span>
+<span class="tok-w">  </span><span class="tok-n">FakeOutput</span><span class="tok-p">(</span><span class="tok-n">FakeOutput</span><span class="tok-p">),</span>
 <span class="tok-p">}</span>
 
 <span class="tok-k">impl</span><span class="tok-w"> </span><span class="tok-n">Env</span><span class="tok-w"> </span><span class="tok-p">{</span>
@@ -4297,6 +4381,7 @@ Unresolved directive in asciidoctrine.adoc - include::src/output/json-ast.adoc[]
 <span class="tok-w">    </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">      </span><span class="tok-n">Env</span>::<span class="tok-n">Io</span><span class="tok-p">(</span><span class="tok-n">_</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-nb">None</span><span class="tok-p">,</span>
 <span class="tok-w">      </span><span class="tok-n">Env</span>::<span class="tok-n">Cache</span><span class="tok-p">(</span><span class="tok-n">env</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">env</span><span class="tok-p">.</span><span class="tok-n">get_files</span><span class="tok-p">()),</span>
+<span class="tok-w">      </span><span class="tok-n">Env</span>::<span class="tok-n">FakeOutput</span><span class="tok-p">(</span><span class="tok-n">env</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">env</span><span class="tok-p">.</span><span class="tok-n">get_files</span><span class="tok-p">()),</span>
 <span class="tok-w">    </span><span class="tok-p">}</span>
 <span class="tok-w">  </span><span class="tok-p">}</span>
 <span class="tok-p">}</span>
@@ -4306,6 +4391,7 @@ Unresolved directive in asciidoctrine.adoc - include::src/output/json-ast.adoc[]
 <span class="tok-w">    </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">      </span><span class="tok-n">Env</span>::<span class="tok-n">Io</span><span class="tok-p">(</span><span class="tok-n">env</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">env</span><span class="tok-p">.</span><span class="tok-n">read_to_string</span><span class="tok-p">(</span><span class="tok-n">path</span><span class="tok-p">),</span>
 <span class="tok-w">      </span><span class="tok-n">Env</span>::<span class="tok-n">Cache</span><span class="tok-p">(</span><span class="tok-n">env</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">env</span><span class="tok-p">.</span><span class="tok-n">read_to_string</span><span class="tok-p">(</span><span class="tok-n">path</span><span class="tok-p">),</span>
+<span class="tok-w">      </span><span class="tok-n">Env</span>::<span class="tok-n">FakeOutput</span><span class="tok-p">(</span><span class="tok-n">env</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">env</span><span class="tok-p">.</span><span class="tok-n">read_to_string</span><span class="tok-p">(</span><span class="tok-n">path</span><span class="tok-p">),</span>
 <span class="tok-w">    </span><span class="tok-p">}</span>
 <span class="tok-w">  </span><span class="tok-p">}</span>
 
@@ -4313,6 +4399,7 @@ Unresolved directive in asciidoctrine.adoc - include::src/output/json-ast.adoc[]
 <span class="tok-w">    </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">      </span><span class="tok-n">Env</span>::<span class="tok-n">Io</span><span class="tok-p">(</span><span class="tok-n">env</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">env</span><span class="tok-p">.</span><span class="tok-n">write</span><span class="tok-p">(</span><span class="tok-n">path</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">content</span><span class="tok-p">),</span>
 <span class="tok-w">      </span><span class="tok-n">Env</span>::<span class="tok-n">Cache</span><span class="tok-p">(</span><span class="tok-n">env</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">env</span><span class="tok-p">.</span><span class="tok-n">write</span><span class="tok-p">(</span><span class="tok-n">path</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">content</span><span class="tok-p">),</span>
+<span class="tok-w">      </span><span class="tok-n">Env</span>::<span class="tok-n">FakeOutput</span><span class="tok-p">(</span><span class="tok-n">env</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">env</span><span class="tok-p">.</span><span class="tok-n">write</span><span class="tok-p">(</span><span class="tok-n">path</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">content</span><span class="tok-p">),</span>
 <span class="tok-w">    </span><span class="tok-p">}</span>
 <span class="tok-w">  </span><span class="tok-p">}</span>
 
@@ -4320,6 +4407,7 @@ Unresolved directive in asciidoctrine.adoc - include::src/output/json-ast.adoc[]
 <span class="tok-w">    </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">      </span><span class="tok-n">Env</span>::<span class="tok-n">Io</span><span class="tok-p">(</span><span class="tok-n">env</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">env</span><span class="tok-p">.</span><span class="tok-n">eval</span><span class="tok-p">(</span><span class="tok-n">interpreter</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">content</span><span class="tok-p">),</span>
 <span class="tok-w">      </span><span class="tok-n">Env</span>::<span class="tok-n">Cache</span><span class="tok-p">(</span><span class="tok-n">env</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">env</span><span class="tok-p">.</span><span class="tok-n">eval</span><span class="tok-p">(</span><span class="tok-n">interpreter</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">content</span><span class="tok-p">),</span>
+<span class="tok-w">      </span><span class="tok-n">Env</span>::<span class="tok-n">FakeOutput</span><span class="tok-p">(</span><span class="tok-n">env</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">env</span><span class="tok-p">.</span><span class="tok-n">eval</span><span class="tok-p">(</span><span class="tok-n">interpreter</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">content</span><span class="tok-p">),</span>
 <span class="tok-w">    </span><span class="tok-p">}</span>
 <span class="tok-w">  </span><span class="tok-p">}</span>
 <span class="tok-p">}</span>
