@@ -47,6 +47,8 @@ pub struct Opts {
   #[clap(short = 'w', long = "writer-format", default_value_t = Writer::Html5)]
   #[clap(value_enum)]
   pub writerfmt: Writer,
+  #[clap(long)]
+  pub dry_run: bool,
   #[clap(short = 'e', long = "extension")]
   pub extensions: Vec<String>,
   #[clap(long)]

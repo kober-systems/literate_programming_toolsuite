@@ -26,7 +26,11 @@ pub fn cli_template(
     }
   };
 
-  let mut env = util::Env::Io(util::Io::new());
+  let mut env = if opts.dry_run {
+    util::Env::FakeOutput(util::FakeOutput::new())
+  } else {
+    util::Env::Io(util::Io::new())
+  };
   let ast = reader.parse(&input, &opts, &mut env)?;
 
   let ast = handle_extensions(&opts, ast)?;
@@ -51,6 +55,10 @@ pub fn cli_template(
     },
     _ => bail!("not yet supported"),
   };
+
+  if opts.dry_run {
+    io::stdout().write_all(format!("{:?}", env.get_cache()).as_bytes())?;
+  }
 
   Ok(())
 }
