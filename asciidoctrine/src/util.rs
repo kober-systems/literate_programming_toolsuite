@@ -18,9 +18,13 @@ impl Io {
   }
 }
 
+fn fs_read_to_string(path: &str) -> crate::Result<String> {
+  Ok(fs::read_to_string(path)?)
+}
+
 impl Environment for Io {
   fn read_to_string(&mut self, path: &str) -> crate::Result<String> {
-    Ok(fs::read_to_string(path)?)
+    fs_read_to_string(path)
   }
 
   fn write(&mut self, path: &str, content: &str) -> crate::Result<()> {
@@ -135,9 +139,43 @@ impl Environment for Cache {
   }
 }
 
+pub struct FakeOutput {
+  files: HashMap<String, String>,
+}
+
+impl FakeOutput {
+  pub fn new() -> Self {
+    Self {
+      files: HashMap::default(),
+    }
+  }
+
+  pub fn get_files(self) -> HashMap<String, String> {
+    self.files
+  }
+}
+
+impl Environment for FakeOutput {
+  fn read_to_string(&mut self, path: &str) -> crate::Result<String> {
+    fs_read_to_string(path)
+  }
+
+  fn write(&mut self, path: &str, content: &str) -> crate::Result<()> {
+    self.files.insert(path.to_string(), content.to_string());
+
+    Ok(())
+  }
+
+  fn eval(&mut self, _interpreter: &str, _content: &str) -> crate::Result<(bool, String, String)> {
+    error!("eval not supported in fake output");
+    Err(crate::AsciidoctrineError::Childprocess)
+  }
+}
+
 pub enum Env {
   Io(Io),
   Cache(Cache),
+  FakeOutput(FakeOutput),
 }
 
 impl Env {
@@ -145,6 +183,7 @@ impl Env {
     match self {
       Env::Io(_) => None,
       Env::Cache(env) => Some(env.get_files()),
+      Env::FakeOutput(env) => Some(env.get_files()),
     }
   }
 }
@@ -154,6 +193,7 @@ impl Environment for Env {
     match self {
       Env::Io(env) => env.read_to_string(path),
       Env::Cache(env) => env.read_to_string(path),
+      Env::FakeOutput(env) => env.read_to_string(path),
     }
   }
 
@@ -161,6 +201,7 @@ impl Environment for Env {
     match self {
       Env::Io(env) => env.write(path, content),
       Env::Cache(env) => env.write(path, content),
+      Env::FakeOutput(env) => env.write(path, content),
     }
   }
 
@@ -168,6 +209,7 @@ impl Environment for Env {
     match self {
       Env::Io(env) => env.eval(interpreter, content),
       Env::Cache(env) => env.eval(interpreter, content),
+      Env::FakeOutput(env) => env.eval(interpreter, content),
     }
   }
 }
