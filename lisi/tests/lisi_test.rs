@@ -42,12 +42,12 @@ referenced param text
   let mut env = util::Env::Cache(util::Cache::new());
   let ast = reader.parse(content, &opts, &mut env)?;
 
-  let mut lisi = Lisi::from_env(env);
+  let mut lisi = Lisi::from_env(&mut env);
   let _ast = lisi.transform(ast)?;
 
   // TODO ast vergleichen
 
-  let mut outputs = lisi.into_cache().unwrap();
+  let mut outputs = env.get_cache().unwrap();
 
   assert_eq!(
   outputs.remove("sample.yaml").unwrap(),
@@ -118,12 +118,12 @@ The default text is [[echo_text]]`untouched`.
   let mut env = util::Env::Cache(util::Cache::new());
   let ast = reader.parse(content, &opts, &mut env)?;
 
-  let mut lisi = Lisi::from_env(env);
+  let mut lisi = Lisi::from_env(&mut env);
   let _ast = lisi.transform(ast)?;
 
   // TODO ast vergleichen
 
-  let mut outputs = lisi.into_cache().unwrap();
+  let mut outputs = env.get_cache().unwrap();
 
   assert_eq!(
   outputs.remove("nested.py").unwrap(),
@@ -202,12 +202,12 @@ normal way and once with a substtuted inner snippet.
   let mut env = util::Env::Cache(util::Cache::new());
   let ast = reader.parse(content, &opts, &mut env)?;
 
-  let mut lisi = Lisi::from_env(env);
+  let mut lisi = Lisi::from_env(&mut env);
   let _ast = lisi.transform(ast)?;
 
   // TODO ast vergleichen
 
-  let mut outputs = lisi.into_cache().unwrap();
+  let mut outputs = env.get_cache().unwrap();
 
   assert_eq!(
   outputs.remove("sample.yaml").unwrap(),
@@ -257,12 +257,12 @@ print(testmodule.version)
   let mut env = util::Env::Cache(util::Cache::new());
   let ast = reader.parse(content, &opts, &mut env)?;
 
-  let mut lisi = Lisi::from_env(env);
+  let mut lisi = Lisi::from_env(&mut env);
   let _ast = lisi.transform(ast)?;
 
   // TODO ast vergleichen
 
-  let mut outputs = lisi.into_cache().unwrap();
+  let mut outputs = env.get_cache().unwrap();
 
   assert_eq!(
   outputs.remove("sample1.lua").unwrap(),
@@ -305,12 +305,12 @@ require "testmodule"
   let mut env = util::Env::Cache(util::Cache::new());
   let ast = reader.parse(content, &opts, &mut env)?;
 
-  let mut lisi = Lisi::from_env(env);
+  let mut lisi = Lisi::from_env(&mut env);
   let _ast = lisi.transform(ast)?;
 
   // TODO ast vergleichen
 
-  let mut outputs = lisi.into_cache().unwrap();
+  let mut outputs = env.get_cache().unwrap();
 
   assert_eq!(
   outputs.remove("sample2.lua").unwrap(),
@@ -365,12 +365,12 @@ print(testmodule.version .. "my other snippet")
   let mut env = util::Env::Cache(util::Cache::new());
   let ast = reader.parse(content, &opts, &mut env)?;
 
-  let mut lisi = Lisi::from_env(env);
+  let mut lisi = Lisi::from_env(&mut env);
   let _ast = lisi.transform(ast)?;
 
   // TODO ast vergleichen
 
-  let mut outputs = lisi.into_cache().unwrap();
+  let mut outputs = env.get_cache().unwrap();
 
   assert_eq!(
   outputs.remove("sample3-1.lua").unwrap(),
@@ -433,12 +433,12 @@ Now lets go on to another thing ...
   let mut env = util::Env::Cache(util::Cache::new());
   let ast = reader.parse(content, &opts, &mut env)?;
 
-  let mut lisi = Lisi::from_env(env);
+  let mut lisi = Lisi::from_env(&mut env);
   let _ast = lisi.transform(ast)?;
 
   // TODO ast vergleichen
 
-  let mut outputs = lisi.into_cache().unwrap();
+  let mut outputs = env.get_cache().unwrap();
 
   assert_eq!(
   outputs.remove("sample4.lua").unwrap(),
@@ -524,12 +524,12 @@ And so on ...
   let mut env = util::Env::Cache(util::Cache::new());
   let ast = reader.parse(content, &opts, &mut env)?;
 
-  let mut lisi = Lisi::from_env(env);
+  let mut lisi = Lisi::from_env(&mut env);
   let _ast = lisi.transform(ast)?;
 
   // TODO ast vergleichen
 
-  let mut outputs = lisi.into_cache().unwrap();
+  let mut outputs = env.get_cache().unwrap();
 
   assert_eq!(
   outputs.remove("sample5.rs").unwrap(),
@@ -607,12 +607,12 @@ And so on ...
   let mut env = util::Env::Cache(util::Cache::new());
   let ast = reader.parse(content, &opts, &mut env)?;
 
-  let mut lisi = Lisi::from_env(env);
+  let mut lisi = Lisi::from_env(&mut env);
   let _ast = lisi.transform(ast)?;
 
   // TODO ast vergleichen
 
-  let mut outputs = lisi.into_cache().unwrap();
+  let mut outputs = env.get_cache().unwrap();
 
   assert_eq!(
   outputs.remove("sample5.rs").unwrap(),
@@ -676,12 +676,12 @@ print("My emphasized text!!\n"
   let mut env = util::Env::Cache(util::Cache::new());
   let ast = reader.parse(content, &opts, &mut env)?;
 
-  let mut lisi = Lisi::from_env(env);
+  let mut lisi = Lisi::from_env(&mut env);
   let _ast = lisi.transform(ast)?;
 
   // TODO ast vergleichen
 
-  let mut outputs = lisi.into_cache().unwrap();
+  let mut outputs = env.get_cache().unwrap();
 
   assert_eq!(
   outputs.remove("sample7.c").unwrap(),
@@ -820,12 +820,12 @@ echo "you passed all checks"
   let mut env = util::Env::Cache(util::Cache::new());
   let ast = reader.parse(content, &opts, &mut env)?;
 
-  let mut lisi = Lisi::from_env(env);
+  let mut lisi = Lisi::from_env(&mut env);
   let _ast = lisi.transform(ast)?;
 
   // TODO ast vergleichen
 
-  let mut outputs = lisi.into_cache().unwrap();
+  let mut outputs = env.get_cache().unwrap();
 
   assert_eq!(
   outputs.remove("sample8.sh").unwrap(),

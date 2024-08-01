@@ -172,19 +172,12 @@ pub enum Error {
   Io(#[from] std::io::Error),
 }
 
-pub struct Lisi {
+pub struct Lisi<'a> {
   dependencies: TopologicalSort<String>,
-  env: asciidoctrine::util::Env,
+  env: &'a mut asciidoctrine::util::Env,
 }
 
-impl Lisi {
-  pub fn new() -> Self {
-    Lisi {
-      dependencies: TopologicalSort::new(),
-      env: util::Env::Io(util::Io::new()),
-    }
-  }
-
+impl<'a> Lisi<'a> {
   /// Gets recursively all snippets from an element
   pub fn extract(&mut self, mut snippets: SnippetDB, input: &ElementSpan) -> Result<SnippetDB, Error> {
     match &input.element {
@@ -381,15 +374,11 @@ impl Lisi {
     Ok(())
   }
 
-  pub fn from_env(env: util::Env) -> Self {
-    let mut base = Lisi::new();
-    base.env = env;
-
-    base
-  }
-
-  pub fn into_cache(self) -> Option<HashMap<String, String>> {
-    self.env.get_cache()
+  pub fn from_env(env: &'a mut util::Env) -> Self {
+    Lisi {
+      dependencies: TopologicalSort::new(),
+      env: env,
+    }
   }
 
   /// Gets all snippets from the ast
@@ -476,7 +465,7 @@ impl Lisi {
   }
 }
 
-impl Extension for Lisi {
+impl Extension for Lisi<'_> {
   fn transform<'a>(&mut self, input: AST<'a>) -> anyhow::Result<AST<'a>> {
     let snippets = self.extract_ast(&input)?;
 

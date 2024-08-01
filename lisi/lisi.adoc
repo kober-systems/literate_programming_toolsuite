@@ -88,17 +88,11 @@ Die Hauptdatei hat dabei folgendes Gerüst:
 
 <<internal_structs|join="\n\n">>
 
-pub struct Lisi {
+pub struct Lisi<'a> {
   <<lisi_internal_variables>>
 }
 
-impl Lisi {
-  pub fn new() -> Self {
-    Lisi {
-      <<lisi_init_variables>>
-    }
-  }
-
+impl<'a> Lisi<'a> {
   <<internal_functions|join="\n\n">>
 
   /// Gets all snippets from the ast
@@ -119,7 +113,7 @@ impl Lisi {
   }
 }
 
-impl Extension for Lisi { // <1>
+impl Extension for Lisi<'_> { // <1>
   fn transform<'a>(&mut self, input: AST<'a>) -> anyhow::Result<AST<'a>> { // <2>
     let snippets = self.extract_ast(&input)?; // <3>
 
@@ -2861,13 +2855,13 @@ TODO Die Seiteneffekt API beschreiben sowie dependency injektion. Eventuell auch
 [[lisi_internal_variables]]
 [source, rust]
 ----
-env: asciidoctrine::util::Env,
+env: &'a mut asciidoctrine::util::Env,
 ----
 
 [[lisi_init_variables]]
 [source, rust]
 ----
-env: util::Env::Io(util::Io::new()),
+env: env,
 ----
 
 [[crate_usages]]
@@ -2881,19 +2875,10 @@ Manchmal (insbesondere bei Tests TODO link) müssen wir auf die Seiteneffekte zu
 [[internal_functions]]
 [source, rust]
 ----
-pub fn from_env(env: util::Env) -> Self {
-  let mut base = Lisi::new();
-  base.env = env;
-
-  base
-}
-----
-
-[[internal_functions]]
-[source, rust]
-----
-pub fn into_cache(self) -> Option<HashMap<String, String>> {
-  self.env.get_cache()
+pub fn from_env(env: &'a mut util::Env) -> Self {
+  Lisi {
+    <<lisi_init_variables>>
+  }
 }
 ----
 
@@ -2957,12 +2942,12 @@ fn {test_name}() -> Result<()> {
   let mut env = util::Env::Cache(util::Cache::new());
   let ast = reader.parse(content, &opts, &mut env)?;
 
-  let mut lisi = Lisi::from_env(env);
+  let mut lisi = Lisi::from_env(&mut env);
   let _ast = lisi.transform(ast)?;
 
   // TODO ast vergleichen
 
-  let mut outputs = lisi.into_cache().unwrap();
+  let mut outputs = env.get_cache().unwrap();
 
   {compare_outputs}
 

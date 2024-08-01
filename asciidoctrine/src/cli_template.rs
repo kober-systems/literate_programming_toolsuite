@@ -4,7 +4,11 @@ use std::fs;
 use std::io::{self, Read, Write};
 
 pub fn cli_template(
-  handle_extensions: for<'a> fn(opts: &'a options::Opts, ast: AST<'a>) -> Result<AST<'a>>,
+  handle_extensions: for<'a> fn(
+    opts: &'a options::Opts,
+    env: &mut util::Env,
+    ast: AST<'a>,
+  ) -> Result<AST<'a>>,
 ) -> Result<()> {
   simple_logger::init()?;
   let opts = options::from_args();
@@ -33,7 +37,7 @@ pub fn cli_template(
   };
   let ast = reader.parse(&input, &opts, &mut env)?;
 
-  let ast = handle_extensions(&opts, ast)?;
+  let ast = handle_extensions(&opts, &mut env, ast)?;
 
   let output: Box<dyn Write> = match &opts.output {
     Some(output) => Box::new(fs::File::create(output).context("Could not open output file")?),
@@ -67,6 +71,10 @@ pub fn cli_no_extensions() -> Result<()> {
   cli_template(no_extensions)
 }
 
-fn no_extensions<'a>(_opts: &'a options::Opts, ast: AST<'a>) -> Result<AST<'a>> {
+fn no_extensions<'a>(
+  _opts: &'a options::Opts,
+  _env: &mut util::Env,
+  ast: AST<'a>,
+) -> Result<AST<'a>> {
   Ok(ast)
 }
