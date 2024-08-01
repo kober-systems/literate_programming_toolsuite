@@ -2904,6 +2904,14 @@ impl Environment for FakeOutput {
   }
 
   fn write(&mut self, path: &str, content: &str) -> crate::Result<()> {
+    let real_path = Path::new(path);
+    if real_path.exists() {
+      let old_content = fs::read_to_string(real_path)?;
+      if old_content == content {
+        return Ok(());
+      }
+    }
+
     self.files.insert(path.to_string(), content.to_string());
 
     Ok(())
