@@ -39,9 +39,13 @@ pub fn cli_template(
 
   let ast = handle_extensions(&opts, &mut env, ast)?;
 
-  let output: Box<dyn Write> = match &opts.output {
-    Some(output) => Box::new(fs::File::create(output).context("Could not open output file")?),
-    None => Box::new(io::stdout()),
+  let output: Box<dyn Write> = if opts.dry_run {
+    Box::new(io::sink())
+  } else {
+    match &opts.output {
+      Some(output) => Box::new(fs::File::create(output).context("Could not open output file")?),
+      None => Box::new(io::stdout()),
+    }
   };
 
   match opts.writerfmt {
@@ -61,7 +65,7 @@ pub fn cli_template(
   };
 
   if opts.dry_run {
-    io::stdout().write_all(format!("{:?}", env.get_cache()).as_bytes())?;
+    io::stdout().write_all(serde_json::to_string_pretty(&env.get_cache())?.as_bytes())?;
   }
 
   Ok(())
