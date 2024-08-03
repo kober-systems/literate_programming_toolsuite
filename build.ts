@@ -62,6 +62,10 @@ async function run_cmd(cmd: string, args?: [string], cwd?: string): string {
 
   // create subprocess and collect output
   const { code, stdout, stderr } = await command.output();
+  const errlog = await new TextDecoder().decode(stderr);
+  if (errlog.length > 0) {
+    await console.log(errlog);
+  }
 
   return new TextDecoder().decode(stdout);
 }
