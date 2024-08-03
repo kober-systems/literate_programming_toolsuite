@@ -625,7 +625,6 @@ dependencies = [
  "pest_derive",
  "pretty_assertions",
  "rhai",
- "simple_logger",
  "thiserror",
  "topological-sort",
 ]
