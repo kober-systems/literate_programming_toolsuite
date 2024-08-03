@@ -6,6 +6,7 @@ in
 pkgs.mkShell {
   nativeBuildInputs = [
     pkgs.rust-bin.stable.latest.${profile}
+    pkgs.deno
 
     # keep this line if you use bash
     pkgs.bashInteractive
