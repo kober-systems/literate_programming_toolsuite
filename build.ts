@@ -21,6 +21,24 @@ if (files_in_conflict.length > 0) {
   Deno.exit(ERR_CONFLICTING_MODIFICATIONS);
 }
 
+console.log("Start generating source files ...");
+
+await sh("lisi -o ../docs/asciidoctrine/asciidoctrine.lisi.html asciidoctrine.adoc", "asciidoctrine");
+//  || echo "lisi is currenty not installed"
+
+await sh("lisi lisi.adoc", "lisi");
+// || echo "lisi is currenty not installed"
+
+//# The new generated source must be able to
+//# generate itself
+//cargo run --manifest-path ../Cargo.toml --bin lisi -- -o lisi.html lisi.adoc
+//cd ..
+//
+//cargo run --bin lisi -- -o /dev/null README.adoc
+
+console.log("Generating source files done!");
+console.log(await sh("cargo test --color=always"));
+
 ///////////////////////////////////////////////////////////
 // constants
 ///////////////////////////////////////////////////////////
