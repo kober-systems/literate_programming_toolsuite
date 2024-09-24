@@ -1,4 +1,29 @@
-#!/usr/bin/env -S deno run --allow-run --ext=ts
+#!/usr/bin/env -S deno run --allow-run --allow-read --allow-write=.litstate --ext=ts
+
+const LITERATE_SOURCES = {
+  "README.adoc": "",
+  "asciidoctrine/asciidoctrine.adoc": "",
+  "lisi/lisi.adoc": "",
+};
+
+///////////////////////////////////////////////////////////
+// constants
+///////////////////////////////////////////////////////////
+
+const ERR_CONFLICTING_MODIFICATIONS = 1;
+
+///////////////////////////////////////////////////////////
+// main code
+///////////////////////////////////////////////////////////
+
+let state;
+try {
+  state = await Deno.readTextFile(".litstate");
+} catch(e) {
+  // if the state is unknown we assume manual changes to
+  // the code
+  state = "manual code changes";
+}
 
 const files_modified_before = (await sh("git diff --name-only")).trim().split("\n");
 
@@ -8,17 +33,37 @@ const files_modified_by_lisi = {
   ...await json_sh("lisi --dry-run lisi.adoc", "lisi"),
 };
 
+var literate_sources_unchanged = true;
 var files_in_conflict = [];
 for (let path of files_modified_before) {
   if (path in files_modified_by_lisi) {
     files_in_conflict.push(path);
   }
+  if (path in LITERATE_SOURCES) {
+    console.log("found", path);
+    literate_sources_unchanged = false;
+  }
 }
+
 if (files_in_conflict.length > 0) {
-  console.log("could not build because some changes would be overwritten");
-  console.log(files_in_conflict);
-  // TODO show a diff?
-  Deno.exit(ERR_CONFLICTING_MODIFICATIONS);
+  if (state != "literate source changes") {
+    console.log("could not build because some changes would be overwritten");
+    console.log(files_in_conflict);
+    // TODO show a diff?
+    await Deno.writeTextFile(".litstate", "manual code changes");
+    Deno.exit(ERR_CONFLICTING_MODIFICATIONS);
+  } else {
+    console.log("changing files: ", files_modified_by_lisi);
+    await Deno.writeTextFile(".litstate", "literate source changes");
+  }
+} else {
+  if (files_modified_before.length == 0 || literate_sources_unchanged) {
+    console.log("everything is in sync");
+    await Deno.writeTextFile(".litstate", "sync");
+  } else {
+    console.log("changing files: ", files_modified_by_lisi);
+    await Deno.writeTextFile(".litstate", "literate source changes");
+  }
 }
 
 console.log("Start generating source files ...");
@@ -38,12 +83,6 @@ await sh("lisi lisi.adoc", "lisi");
 
 console.log("Generating source files done!");
 console.log(await sh("cargo test --color=always"));
-
-///////////////////////////////////////////////////////////
-// constants
-///////////////////////////////////////////////////////////
-
-const ERR_CONFLICTING_MODIFICATIONS = 1;
 
 ///////////////////////////////////////////////////////////
 // helper functions
