@@ -2888,7 +2888,7 @@ Um Fehler abfangen zu können benutzen wir das `thiserror` crate.
 [[cargo_dependencies]]
 [source, toml]
 ----
-thiserror = "1.0"
+thiserror = "2.0"
 ----
 
 [[internal_structs]]
