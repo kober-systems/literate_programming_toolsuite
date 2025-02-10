@@ -1,0 +1,221 @@
+State-Maschines
+===============
+
+State-Maschines sind ein sehr nützliches Werkzeug um das dynamische
+Verhalten eines Programmes bzw. einer Komponente zu beschreiben.
+
+== Unterschiedliche Möglichkeiten State Maschines zu generieren
+Aus der gleichen State-Maschine kann man auf verschiedene Weise
+Quellcode generieren. Nehmen wir als Beispiel ein vereinfachtes Modell
+von einem Auto
+
+[ditaa]
+----
+
+      leave car
+     +------+                      *
+     |      |                      |
+     |      v                      v
+ +---+----------+         +---------------+
+ |              |  close  |               |
+ |              +-------->|               |
+ |  Door open   |         |   Standing    |
+ |              |<--------+               |
+ |              |   open  |               |
+ +----------+---+         +---+-----------+
+     ^      |            start|      ^
+     |      |                 v      |stop
+     +------+             +----------+----+
+       enter car          |               |
+                          |               |
+                          |    Driving    |
+                          |               |
+                          |               |
+                          +---------------+
+
+----
+
+Aus diesem Modell lassen sich in der gleichen Programmiersprache
+verschiedene Quelltexte generieren, die sich in ihrer Benutzung stark
+unterscheiden.
+
+=== Die Übergänge werden als Enum codiert
+Das ist die Form, welche einem sofort in den Sinn kommt, wenn man eine
+Statemaschine generieren will.
+
+[source, cpp]
+----
+enum class event {
+  leave_car,
+  enter_car,
+  close,
+  open,
+  start,
+  stop
+};
+
+enum class state {
+  door_open,
+  standing,
+  driving
+};
+
+class CarStateMachine {
+   CarStateMachine() {
+     this->st = state::standing;
+   }
+
+   void receive_event(event ev) {
+     switch(ev) {
+     case leave_car:
+       ...
+       break;
+     case enter_car:
+       ...
+       break;
+     case close:
+       ...
+       break;
+     case open:
+       if (this->st == state::standing) {
+         // user code
+
+          this->st = state::door_open;
+       } else {
+         // extra leer gelassen
+       }
+       break;
+     case start:
+       ...
+       break;
+     case stop:
+       ...
+       break;
+     }
+   }
+
+private:
+  state st;
+}
+----
+
+Vorteile::
+Nachteile::
+* Eine einzige Funktion/Methode implementiert den gesamten Ablauf.
+  Dadurch wird diese gross und schwer lesbar.
+* Die Parameterübergabe ist unübersichtlich. Entweder hat man gar keinen
+  Parameter oder für alle Übergänge den Gleichen.
+* Die States sind nicht voneinander isoliert. Durch globale Variablen
+  kann ein State den anderen verändern, ohne dass das modelliert wurde.
+* Überprüfungen finden zur Laufzeit statt und sind daher langsamer
+
+=== Die Übergänge werden als Methoden codiert
+
+[source, cpp]
+----
+enum class result {
+  ok,
+  wrong_state,
+  ...
+};
+
+enum class state {
+  door_open,
+  standing,
+  driving
+};
+
+class CarStateMachine {
+   CarStateMachine() {
+     this->st = state::standing;
+   }
+
+  result leave_car() {
+    if (this->st != state::door_open) { return result::wrong_state; }
+
+    // user code
+
+    return result::ok;
+  }
+
+  result enter_car() {
+    if (this->st != state::door_open) { return result::wrong_state; }
+
+    // user code
+
+    return result::ok;
+  }
+
+  result close(key k) {
+    if (this->st != state::door_open) { return result::wrong_state; }
+    check_key(k);
+
+    // user code
+
+    this->st = state::standing;
+    return result::ok;
+  }
+
+  result open(key k) {
+    if (this->st != state::standing) { return result::wrong_state; }
+    check_key(k);
+
+    // user code
+
+    this->st = state::door_open;
+    return result::ok;
+  }
+
+  result start(key k) {
+    if (this->st != state::standing) { return result::wrong_state; }
+    check_key(k);
+
+    // user code
+
+    this->st = state::driving;
+    return result::ok;
+  }
+
+  result stop() {
+    if (this->st != state::driving) { return result::wrong_state; }
+
+    // user code
+
+    this->st = state::standing;
+    return result::ok;
+  }
+
+private:
+  state st;
+}
+----
+
+Vorteile::
+* Die einzelnen Übergänge haben eigene Funktionen und sind dadurch
+  leichter lesbar
+* Parameter können individuell für jeden Übergang festgelegt werden.
+  Das erhöht die Lesbarkeit und verringert die Fehleranfälligkeit
+  (da der Compiler bereits verhindert, dass man falsche Parameter an
+  Übergänge übergibt, wo dies nicht gestattet wurde).
+Nachteile::
+* Die States sind nicht voneinander isoliert. Durch globale Variablen
+  kann ein State den anderen verändern, ohne dass das modelliert wurde.
+* Überprüfungen finden zur Laufzeit statt und sind daher langsamer
+
+=== Die Stati werden als Typen codiert
+TODO
+
+Vorteile::
+* Parameter können individuell für jeden Übergang festgelegt werden.
+  Das erhöht die Lesbarkeit und verringert die Fehleranfälligkeit
+  (da der Compiler bereits verhindert, dass man falsche Parameter an
+  Übergänge übergibt, wo dies nicht gestattet wurde).
+** Das trifft auch auf Übergänge zu, welche von mehreren Stati definiert
+   werden.
+* Es wird so viel wie möglich zur compile Zeit definiert. Dadurch ist
+  die Implementierung sehr effizient.
+* Die States können voneinander isoliert werden. Das verhindert Fehler
+  durch globale Variablen.
+Nachteile::
+* Es erfordert anders über States zu denken
+

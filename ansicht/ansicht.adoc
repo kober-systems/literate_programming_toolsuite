@@ -161,6 +161,43 @@ TODO Aus dem handgeschriebenen Entwurf für Ansicht übernehmen.
 === Das Format vom internen AST
 TODO
 
+=== Unterstüzte Diagrammtypen
+
+==== Dataflow Diagramme
+Eines der nützlichsten Diagramme für mich sind Dataflow Diagramme. Sie
+zeigen den Fluss der Daten durch ein Programm. Dabei definieren sie
+
+* die Eingangsdaten
+* die Ausgangsdaten
+* die verarbeitenden Funktionsblöcke
+
+Beispiele sind:
+
+* Callgraphen
+* Bild- und Audioverarbeitung wie die Node-Diagramme bei Blender, etc
+* Workflow Diagramme wie bei concourse, n8n etc (auf diese Art liessen sich auch z.B. Makefiles visualisieren)
+
+Die Ein- und Ausgangsdaten können z.B. Links auf Dateiformate oder
+Strukturbeschreibungen der jeweiligen Sprache sein.
+
+Die verarbeitenden Funktionsblöcke sind zumeist nur die Namen der
+verarbeitenden Funktion footnote:[Funktion ist hier ein breiter Begriff
+und kann beispielsweise auch cmd-line Programmaufrufe in einem bash
+Programm umfassen].
+
+TODO
+
+==== Komponenten Diagramme
+TODO
+
+==== Zustandsmaschinen
+
+include::state-maschines.adoc[]
+
+==== Sequenz-Diagramme
+
+include::sequence-diagrams.adoc[]
+
 === Einlesen von Dateinen
 Das Programm kann verschiedene Datenströme (Datentypen) einlesen:
 
@@ -208,6 +245,8 @@ muss nicht für jedes Eingabeformat auch ein Ausgabeformat implementiert werden
 
 ==== ASCII Art
 TODO
+
+TODO plantuml kann ASCII-Art generieren. Vielleicht können wir von ihnen etwas lernen
 
 ==== Graphml
 TODO

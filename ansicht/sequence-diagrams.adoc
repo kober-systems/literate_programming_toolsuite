@@ -1,0 +1,49 @@
+Sequenz Diagramme
+=================
+
+Sequenz Diagramme kann man hervorragend einsetzen um Unit-Tests zu
+beschreiben. Das trifft im besonderen auf interaktive Programme
+zu, bei denen die Reaktion eines Teilnehmers von den vorigen
+Kommunikationsabläufen abhängt.
+
+== Ein und Ausgabeformate
+
+=== PlantUML
+TODO
+
+=== ASCII-Art
+TODO Übernehmen von korrigierter PlantUML Ausgabe. Wir wollen es sowohl
+     als Ein- als auch als Ausgabeformat.
+     Zudem soll es eine Möglichkeit geben von und zu Ditaa artigen
+     Diagrammen zu konvertieren (diese sind im Grunde gleich wie die von
+     PlantUML, verwenden aber Zeichen, welche bei allen Fonts verfügbar
+     sind).
+
+=== SVG
+TODO Nur als Ausgabeformat
+
+== Sequenz Diagramme filtern
+Oftmals ist es gut ein Sequenz-Diagramm zu haben, welches die
+Kommunikation zwischen allen Teilnehmern zeigt. Dadurch kann man sich
+einen guten Überblick über die Gesammtsituation verschaffen.
+
+Auf der anderen Seite ist für die konkrete Implementierung eines
+einzelnen Teilnehmers nur die Kommunikation interessant, an der
+er selbst beteiligt ist. Das macht es ebenfalls leichter mögliche
+unterschiedliche Szenarien abzubilden ohne den jeweiligen Teilnehmer
+anpassen zu müssen (Denn oft ändert sich nur etwas in der Kommunikation
+zwischen den anderen Teilnehmern).
+
+TODO Befehl definieren, bei dem man einen AST auf die Kommunikation mit einem einzelnen Teilnehmer filtern kann.
+
+== Arbeiten mit Quellcode
+
+=== Erzeugen
+TODO
+
+==== Cpp
+TODO Bei Cpp konzentrieren wir uns zunächst auf das `doctest` Framework
+
+=== Validieren
+TODO
+
