@@ -77,6 +77,7 @@ fn parse_tokens(input: &str) -> Vec<Token> {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use pretty_assertions::assert_eq;
 
   // string to tokens
 
@@ -92,5 +93,58 @@ mod tests {
     );
     assert_eq!(tokens, vec![]);
   }
+
+  #[test]
+  fn single_box_to_tokens() {
+    use Token::*;
+    let tokens = parse_tokens(single_box);
+    assert_eq!(
+      tokens,
+      vec![
+        ConnectionSign { line: 2, column: 4 },
+        HLine {
+          line: 2,
+          column_start: 5,
+          column_end: 9
+        },
+        ConnectionSign {
+          line: 2,
+          column: 10
+        },
+        VLine {
+          column: 4,
+          line_start: 3,
+          line_end: 3
+        },
+        Text {
+          line: 3,
+          column_start: 6,
+          column_end: 8
+        },
+        VLine {
+          column: 10,
+          line_start: 3,
+          line_end: 3
+        },
+        ConnectionSign { line: 4, column: 4 },
+        HLine {
+          line: 4,
+          column_start: 5,
+          column_end: 9
+        },
+        ConnectionSign {
+          line: 4,
+          column: 10
+        },
+      ]
+    );
+  }
+
+  const single_box: &str = r"
+
+    +-----+
+    | Box |
+    +-----+
+  ";
 }
 
