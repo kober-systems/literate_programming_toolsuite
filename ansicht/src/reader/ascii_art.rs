@@ -185,7 +185,7 @@ mod tests {
   #[test]
   fn single_box_to_tokens() {
     use Token::*;
-    let tokens = parse_tokens(single_box);
+    let tokens = parse_tokens(SINGLE_BOX);
     assert_eq!(
       tokens,
       vec![
@@ -228,7 +228,7 @@ mod tests {
     );
   }
 
-  const single_box: &str = r"
+  const SINGLE_BOX: &str = r"
 
     +-----+
     | Box |

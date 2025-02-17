@@ -5,7 +5,7 @@ use pretty_assertions::assert_eq;
 #[ignore]
 #[test]
 fn oauth_happy_path() -> Result<()> {
-  let content = oauth_happy_path_ascii;
+  let content = OAUTH_HAPPY_PATH_ASCII;
   let reader = reader::AsciiArtReader::new();
   let ast = reader.parse(content);
 
@@ -40,5 +40,5 @@ fn sequence_diagram_elements(input: Vec<ElementSpan>) -> Vec<SequenceDiagramElem
     .collect()
 }
 
-const oauth_happy_path_ascii: &str =
+const OAUTH_HAPPY_PATH_ASCII: &str =
   include_str!("examples/sequence-diagram/oauth.happy_path.ascii");
