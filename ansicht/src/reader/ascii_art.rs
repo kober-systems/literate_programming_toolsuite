@@ -71,7 +71,95 @@ pub enum Token {
 }
 
 fn parse_tokens(input: &str) -> Vec<Token> {
-  vec![]
+  use Token::*;
+
+  input
+    .lines()
+    .enumerate()
+    .flat_map(|(line_number, line)| {
+      line
+        .chars()
+        .enumerate()
+        .filter_map(move |(col, sign)| match sign {
+          ' ' => None,
+          '+' => Some(ConnectionSign {
+            line: line_number,
+            column: col,
+          }),
+          '-' => Some(HLine {
+            line: line_number,
+            column_start: col,
+            column_end: col,
+          }),
+          '|' => Some(VLine {
+            column: col,
+            line_start: line_number,
+            line_end: line_number,
+          }),
+          _ => Some(Text {
+            line: line_number,
+            column_start: col,
+            column_end: col,
+          }),
+        })
+    })
+    .fold(vec![], |mut out, token| {
+      if let Some(last_token) = out.pop() {
+        match token {
+          HLine {
+            line,
+            column_start,
+            column_end,
+          } => {
+            let column_start = match last_token {
+              HLine {
+                line,
+                column_start: start,
+                column_end: _,
+              } => start,
+              _ => {
+                out.push(last_token);
+                column_start
+              }
+            };
+            out.push(HLine {
+              line,
+              column_start,
+              column_end,
+            })
+          }
+          Text {
+            line,
+            column_start,
+            column_end,
+          } => {
+            let column_start = match last_token {
+              Text {
+                line,
+                column_start: start,
+                column_end: _,
+              } => start,
+              _ => {
+                out.push(last_token);
+                column_start
+              }
+            };
+            out.push(Text {
+              line,
+              column_start,
+              column_end,
+            })
+          }
+          token => {
+            out.push(last_token);
+            out.push(token)
+          }
+        }
+      } else {
+        out.push(token)
+      }
+      out
+    })
 }
 
 #[cfg(test)]
