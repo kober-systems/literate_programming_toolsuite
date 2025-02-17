@@ -48,7 +48,7 @@ pub struct BoundingBox {
 }
 
 #[derive(Debug, PartialEq)]
-enum Token {
+pub enum Token {
   HLine {
     line: usize,
     column_start: usize,
