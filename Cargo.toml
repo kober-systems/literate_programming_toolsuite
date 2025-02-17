@@ -2,4 +2,5 @@
 members = [
   "asciidoctrine",
   "lisi",
+  "ansicht",
 ]
