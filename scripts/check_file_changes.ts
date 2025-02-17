@@ -2,8 +2,8 @@
 
 const LITERATE_SOURCES = {
   "README.adoc": "",
-  "asciidoctrine/asciidoctrine.adoc": "",
-  "lisi/lisi.adoc": "",
+  "asciidoctrine/asciidoctrine.adoc": "asciidoctrine",
+  "lisi/lisi.adoc": "lisi",
 };
 
 ///////////////////////////////////////////////////////////
@@ -66,51 +66,40 @@ if (files_in_conflict.length > 0) {
   }
 }
 
-console.log("Start generating source files ...");
-
-await sh("lisi -o ../docs/asciidoctrine/asciidoctrine.lisi.html asciidoctrine.adoc", "asciidoctrine");
-//  || echo "lisi is currenty not installed"
-
-await sh("lisi lisi.adoc", "lisi");
-// || echo "lisi is currenty not installed"
-
-//# The new generated source must be able to
-//# generate itself
-//cargo run --manifest-path ../Cargo.toml --bin lisi -- -o lisi.html lisi.adoc
-//cd ..
-//
-//cargo run --bin lisi -- -o /dev/null README.adoc
-
-console.log("Generating source files done!");
-console.log(await sh("cargo test --color=always"));
+console.log("checking done");
 
 ///////////////////////////////////////////////////////////
 // helper functions
 ///////////////////////////////////////////////////////////
 
-async function sh(cmd: string, cwd?: string): string {
+async function sh(cmd: string, cwd?: string, print_stderr?: boolean): string {
   const [command, ...args] = cmd.split(" ");
-  return await run_cmd(command, args, cwd);
+  return await run_cmd(command, args, cwd, print_stderr);
 }
 
-async function run_cmd(cmd: string, args?: [string], cwd?: string): string {
+async function run_cmd(cmd: string, args?: [string], cwd?: string, print_stderr?: boolean): string {
   const command = new Deno.Command(cmd, {
     args: args,
     cwd: cwd,
   });
+  if (typeof print_stderr === 'undefined') {
+    print_stderr = true;
+  }
 
   // create subprocess and collect output
   const { code, stdout, stderr } = await command.output();
-  const errlog = await new TextDecoder().decode(stderr);
-  if (errlog.length > 0) {
-    await console.log(errlog);
+  if (print_stderr) {
+    const errlog = await new TextDecoder().decode(stderr);
+    if (errlog.length > 0) {
+      await console.log(errlog);
+    }
   }
 
   return new TextDecoder().decode(stdout);
 }
 
-async function json_sh(cmd: string, cwd?: string) {
-  const json = JSON.parse(await sh(cmd, cwd));
+async function json_sh(cmd: string, cwd?: string, print_stderr?: boolean) {
+  const json = JSON.parse(await sh(cmd, cwd, print_stderr));
   if (typeof cwd !== 'undefined') {
     const prefix = cwd.endsWith("/") ? cwd : cwd + "/";
     var out = {};

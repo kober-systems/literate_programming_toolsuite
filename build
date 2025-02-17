@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+set -e
+
+echo "==========================="
+echo "check for modifications"
+./scripts/check_file_changes.ts || should_generate_sources=$?
+
+if [[ $should_generate_sources -eq 0 ]]; then
+  echo "==========================="
+  echo "generate sources"
+
+  cd asciidoctrine/
+  lisi -o ../docs/asciidoctrine/asciidoctrine.lisi.html asciidoctrine.adoc \
+    || echo "lisi is currenty not installed"
+  cd ..
+
+  cd lisi
+  lisi -o /dev/null lisi.adoc || echo "lisi is currenty not installed"
+  # The new generated source must be able to
+  # generate itself
+  cargo run --manifest-path ../Cargo.toml --bin lisi -- -o lisi.html lisi.adoc
+  cd ..
+
+  cargo run --bin lisi -- -o /dev/null README.adoc
+fi
+
+echo "==========================="
+echo "build and test"
+cargo test
+
+echo "==========================="
+echo "generate documentation"
+asciidoctor \
+            -r asciidoctor-diagram \
+            -a source-highlighter=pygments \
+            -a toc=left \
+            -a icons=font \
+            -a toclevels=4 \
+            -a data-uri \
+            -a reproducible \
+            -D docs \
+            README.adoc -o index.html
+asciidoctor \
+            -r asciidoctor-diagram \
+            -a source-highlighter=pygments \
+            -a toc=left \
+            -a icons=font \
+            -a toclevels=4 \
+            -a data-uri \
+            -a reproducible \
+            -D docs/lisi \
+            lisi/lisi.adoc
+asciidoctor \
+            -r asciidoctor-diagram \
+            -a source-highlighter=pygments \
+            -a toc=left \
+            -a icons=font \
+            -a toclevels=4 \
+            -a data-uri \
+            -a reproducible \
+            -D docs/asciidoctrine \
+            asciidoctrine/asciidoctrine.adoc
+asciidoctor \
+            -r asciidoctor-diagram \
+            -a source-highlighter=pygments \
+            -a toc=left \
+            -a icons=font \
+            -a toclevels=4 \
+            -a data-uri \
+            -a reproducible \
+            -D docs/ansicht \
+            ansicht/ansicht.adoc
+asciidoctor \
+            -r asciidoctor-diagram \
+            -a source-highlighter=pygments \
+            -a toc=left \
+            -a icons=font \
+            -a toclevels=4 \
+            -a data-uri \
+            -a reproducible \
+            -D docs/dolmetscher \
+            dolmetscher/dolmetscher.adoc
+
