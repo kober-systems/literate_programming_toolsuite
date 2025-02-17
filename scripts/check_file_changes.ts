@@ -82,12 +82,12 @@ async function run_cmd(cmd: string, args?: [string], cwd?: string, print_stderr?
     args: args,
     cwd: cwd,
   });
-  if (typeof print_stderr === 'undefined') {
-    print_stderr = true;
-  }
 
   // create subprocess and collect output
   const { code, stdout, stderr } = await command.output();
+  if (typeof print_stderr === 'undefined' && code) {
+    print_stderr = true;
+  }
   if (print_stderr) {
     const errlog = await new TextDecoder().decode(stderr);
     if (errlog.length > 0) {
