@@ -190,14 +190,41 @@ fn condense_vertical(input: Vec<Token>) -> Vec<Token> {
             line_end,
           } => {
             if let Some(vlines_on_column) = vlines.get_mut(&column) {
-              vlines_on_column.insert(
-                0,
-                VLine {
+              let (old_column, old_line_start, old_line_end) = match vlines_on_column.pop() {
+                Some(VLine {
                   column,
                   line_start,
                   line_end,
-                },
-              );
+                }) => (column, line_start, line_end),
+                _ => unreachable!(),
+              };
+              if old_column == column && line_start <= old_line_end + 1 && line_end > old_line_end {
+                vlines_on_column.insert(
+                  0,
+                  VLine {
+                    column,
+                    line_start: old_line_start,
+                    line_end,
+                  },
+                );
+              } else {
+                vlines_on_column.insert(
+                  0,
+                  VLine {
+                    column: old_column,
+                    line_start: old_line_start,
+                    line_end: old_line_end,
+                  },
+                );
+                vlines_on_column.insert(
+                  0,
+                  VLine {
+                    column,
+                    line_start,
+                    line_end,
+                  },
+                );
+              }
             } else {
               vlines.insert(
                 column,
@@ -334,11 +361,75 @@ mod tests {
     );
   }
 
+  #[test]
+  fn single_multiline_box_to_tokens() {
+    use Token::*;
+    let tokens = parse_tokens(BOX_WITH_MULTILINE_TEXT);
+    assert_eq!(
+      tokens,
+      vec![
+        ConnectionSign { line: 1, column: 4 },
+        HLine {
+          line: 1,
+          column_start: 5,
+          column_end: 19
+        },
+        ConnectionSign {
+          line: 1,
+          column: 20
+        },
+        VLine {
+          column: 4,
+          line_start: 2,
+          line_end: 4
+        },
+        Text {
+          line: 2,
+          column_start: 6,
+          column_end: 14
+        },
+        VLine {
+          column: 20,
+          line_start: 2,
+          line_end: 4
+        },
+        Text {
+          line: 3,
+          column_start: 6,
+          column_end: 19
+        },
+        Text {
+          line: 4,
+          column_start: 6,
+          column_end: 11
+        },
+        ConnectionSign { line: 5, column: 4 },
+        HLine {
+          line: 5,
+          column_start: 5,
+          column_end: 19
+        },
+        ConnectionSign {
+          line: 5,
+          column: 20
+        },
+      ]
+    );
+  }
+
   const SINGLE_BOX: &str = r"
 
     +-----+
     | Box |
     +-----+
+  ";
+
+  const BOX_WITH_MULTILINE_TEXT: &str = r"
+    +---------------+
+    | This text     |
+    | spans multiple|
+    | lines.        |
+    +---------------+
   ";
 }
 
