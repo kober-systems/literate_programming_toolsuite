@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::AST;
 
 pub struct AsciiArtReader {}
@@ -73,7 +75,7 @@ pub enum Token {
 fn parse_tokens(input: &str) -> Vec<Token> {
   use Token::*;
 
-  input
+  let tokens: Vec<_> = input
     .lines()
     .enumerate()
     .flat_map(|(line_number, line)| {
@@ -103,63 +105,167 @@ fn parse_tokens(input: &str) -> Vec<Token> {
           }),
         })
     })
-    .fold(vec![], |mut out, token| {
-      if let Some(last_token) = out.pop() {
+    .collect();
+
+  let tokens = condense_horizontal(tokens);
+  condense_vertical(tokens)
+}
+
+fn condense_horizontal(input: Vec<Token>) -> Vec<Token> {
+  use Token::*;
+
+  input.into_iter().fold(vec![], |mut out, token| {
+    if let Some(last_token) = out.pop() {
+      match token {
+        HLine {
+          line,
+          column_start,
+          column_end,
+        } => {
+          let column_start = match last_token {
+            HLine {
+              line,
+              column_start: start,
+              column_end: _,
+            } => start,
+            _ => {
+              out.push(last_token);
+              column_start
+            }
+          };
+          out.push(HLine {
+            line,
+            column_start,
+            column_end,
+          })
+        }
+        Text {
+          line,
+          column_start,
+          column_end,
+        } => {
+          let column_start = match last_token {
+            Text {
+              line,
+              column_start: start,
+              column_end: _,
+            } => start,
+            _ => {
+              out.push(last_token);
+              column_start
+            }
+          };
+          out.push(Text {
+            line,
+            column_start,
+            column_end,
+          })
+        }
+        token => {
+          out.push(last_token);
+          out.push(token)
+        }
+      }
+    } else {
+      out.push(token)
+    }
+    out
+  })
+}
+
+fn condense_vertical(input: Vec<Token>) -> Vec<Token> {
+  let vlines: HashMap<usize, Vec<Token>> = HashMap::default();
+  let tokens: Vec<Token> = vec![];
+
+  let (vlines, tokens) =
+    input
+      .into_iter()
+      .fold((vlines, tokens), |(mut vlines, mut tokens), token| {
+        use Token::*;
+
         match token {
+          VLine {
+            column,
+            line_start,
+            line_end,
+          } => {
+            if let Some(vlines_on_column) = vlines.get_mut(&column) {
+              vlines_on_column.insert(
+                0,
+                VLine {
+                  column,
+                  line_start,
+                  line_end,
+                },
+              );
+            } else {
+              vlines.insert(
+                column,
+                vec![VLine {
+                  column,
+                  line_start,
+                  line_end,
+                }],
+              );
+            }
+          }
+          token => tokens.push(token),
+        }
+
+        (vlines, tokens)
+      });
+
+  let vlines = vlines.into_iter().fold(vec![], |mut out, (_, mut vlines)| {
+    out.append(&mut vlines);
+    out
+  });
+
+  let (mut out, mut after) =
+    tokens
+      .into_iter()
+      .fold((vec![], vlines), |(mut out, vlines), token| {
+        use Token::*;
+
+        let (line, column_start) = match token {
+          ConnectionSign { line, column } => (line, column),
           HLine {
             line,
             column_start,
-            column_end,
-          } => {
-            let column_start = match last_token {
-              HLine {
-                line,
-                column_start: start,
-                column_end: _,
-              } => start,
-              _ => {
-                out.push(last_token);
-                column_start
-              }
-            };
-            out.push(HLine {
-              line,
-              column_start,
-              column_end,
-            })
-          }
+            column_end: _,
+          } => (line, column_start),
           Text {
             line,
             column_start,
-            column_end,
-          } => {
-            let column_start = match last_token {
-              Text {
-                line,
-                column_start: start,
-                column_end: _,
-              } => start,
-              _ => {
-                out.push(last_token);
-                column_start
+            column_end: _,
+          } => (line, column_start),
+          VLine {
+            column: _,
+            line_start: _,
+            line_end: _,
+          } => unreachable!(),
+        };
+
+        let (mut before, after): (Vec<_>, Vec<_>) =
+          vlines.into_iter().partition(|token| match token {
+            VLine {
+              column,
+              line_start,
+              line_end: _,
+            } => {
+              if *line_start < line || (*line_start == line && *column <= column_start) {
+                true
+              } else {
+                false
               }
-            };
-            out.push(Text {
-              line,
-              column_start,
-              column_end,
-            })
-          }
-          token => {
-            out.push(last_token);
-            out.push(token)
-          }
-        }
-      } else {
-        out.push(token)
-      }
-      out
-    })
+            }
+            _ => unreachable!(),
+          });
+        out.append(&mut before);
+        out.push(token);
+        (out, after)
+      });
+  out.append(&mut after);
+  out
 }
 
 #[cfg(test)]
