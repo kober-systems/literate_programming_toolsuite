@@ -70,6 +70,10 @@ pub enum Token {
     line: usize,
     column: usize,
   },
+  Arrow {
+    line: usize,
+    column: usize,
+  },
 }
 
 impl Token {
@@ -78,6 +82,7 @@ impl Token {
 
     match self {
       ConnectionSign { line, column } => (*line, *column, *line, *column),
+      Arrow { line, column } => (*line, *column, *line, *column),
       HLine {
         line,
         column_start,
@@ -110,6 +115,10 @@ fn parse_tokens(input: &str) -> Vec<Token> {
         .filter_map(move |(col, sign)| match sign {
           ' ' => None,
           '+' => Some(ConnectionSign {
+            line: line_number,
+            column: col,
+          }),
+          '>' | '<' | 'v' | '^' => Some(Arrow {
             line: line_number,
             column: col,
           }),
@@ -295,6 +304,7 @@ fn condense_vertical(input: Vec<Token>) -> Vec<Token> {
 
         let (line, column_start) = match token {
           ConnectionSign { line, column } => (line, column),
+          Arrow { line, column } => (line, column),
           HLine {
             line,
             column_start,
@@ -625,6 +635,120 @@ mod tests {
     );
   }
 
+  #[test]
+  fn two_connected_boxes_to_tokens() {
+    use Token::*;
+    let tokens = parse_tokens(TWO_CONNECTED_BOXES);
+    assert_eq!(
+      tokens,
+      vec![
+        ConnectionSign { line: 1, column: 4 },
+        HLine {
+          line: 1,
+          column_start: 5,
+          column_end: 9
+        },
+        ConnectionSign {
+          line: 1,
+          column: 10
+        },
+        VLine {
+          column: 4,
+          line_start: 2,
+          line_end: 2
+        },
+        Text {
+          line: 2,
+          column_start: 6,
+          column_end: 8
+        },
+        VLine {
+          column: 10,
+          line_start: 2,
+          line_end: 2
+        },
+        HLine {
+          line: 2,
+          column_start: 11,
+          column_end: 12
+        },
+        ConnectionSign {
+          line: 2,
+          column: 13
+        },
+        ConnectionSign { line: 3, column: 4 },
+        HLine {
+          line: 3,
+          column_start: 5,
+          column_end: 9
+        },
+        ConnectionSign {
+          line: 3,
+          column: 10
+        },
+        VLine {
+          column: 13,
+          line_start: 3,
+          line_end: 5
+        },
+        ConnectionSign {
+          line: 5,
+          column: 17
+        },
+        HLine {
+          line: 5,
+          column_start: 18,
+          column_end: 22
+        },
+        ConnectionSign {
+          line: 5,
+          column: 23
+        },
+        ConnectionSign {
+          line: 6,
+          column: 13
+        },
+        HLine {
+          line: 6,
+          column_start: 14,
+          column_end: 15
+        },
+        Arrow {
+          line: 6,
+          column: 16,
+        },
+        VLine {
+          column: 17,
+          line_start: 6,
+          line_end: 6
+        },
+        Text {
+          line: 6,
+          column_start: 19,
+          column_end: 21
+        },
+        VLine {
+          column: 23,
+          line_start: 6,
+          line_end: 6
+        },
+        ConnectionSign {
+          line: 7,
+          column: 17
+        },
+        HLine {
+          line: 7,
+          column_start: 18,
+          column_end: 22
+        },
+        ConnectionSign {
+          line: 7,
+          column: 23
+        },
+      ]
+    );
+  }
+
   const SINGLE_BOX: &str = r"
 
     +-----+
@@ -654,6 +778,16 @@ mod tests {
     +-----+
     | Box |
     +-----+
+  ";
+
+  const TWO_CONNECTED_BOXES: &str = r"
+    +-----+
+    | Box |--+
+    +-----+  |
+             |
+             |   +-----+
+             +-->| Box |
+                 +-----+
   ";
 }
 
