@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{cmp::Ordering, collections::HashMap};
 
 use crate::AST;
 
@@ -72,6 +72,31 @@ pub enum Token {
   },
 }
 
+impl Token {
+  fn get_bounds(&self) -> (usize, usize, usize, usize) {
+    use Token::*;
+
+    match self {
+      ConnectionSign { line, column } => (*line, *column, *line, *column),
+      HLine {
+        line,
+        column_start,
+        column_end,
+      } => (*line, *column_start, *line, *column_end),
+      Text {
+        line,
+        column_start,
+        column_end,
+      } => (*line, *column_start, *line, *column_end),
+      VLine {
+        column,
+        line_start,
+        line_end,
+      } => (*line_start, *column, *line_end, *column),
+    }
+  }
+}
+
 fn parse_tokens(input: &str) -> Vec<Token> {
   use Token::*;
 
@@ -108,7 +133,22 @@ fn parse_tokens(input: &str) -> Vec<Token> {
     .collect();
 
   let tokens = condense_horizontal(tokens);
-  condense_vertical(tokens)
+  let mut tokens = condense_vertical(tokens);
+  tokens.sort_by(|a, b| {
+    let (al_start, ac_start, _, _) = a.get_bounds();
+    let (bl_start, bc_start, _, _) = b.get_bounds();
+    if al_start > bl_start {
+      return Ordering::Greater;
+    }
+    if al_start == bl_start {
+      if ac_start > bc_start {
+        return Ordering::Greater;
+      }
+      return Ordering::Less;
+    }
+    Ordering::Less
+  });
+  tokens
 }
 
 fn condense_horizontal(input: Vec<Token>) -> Vec<Token> {
