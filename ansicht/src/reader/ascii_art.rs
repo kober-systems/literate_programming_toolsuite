@@ -544,6 +544,87 @@ mod tests {
     );
   }
 
+  #[test]
+  fn multiple_boxes_in_the_same_column_to_tokens() {
+    use Token::*;
+    let tokens = parse_tokens(TWO_BOXES_IN_THE_SAME_COLUMNS);
+    assert_eq!(
+      tokens,
+      vec![
+        ConnectionSign { line: 1, column: 4 },
+        HLine {
+          line: 1,
+          column_start: 5,
+          column_end: 9
+        },
+        ConnectionSign {
+          line: 1,
+          column: 10
+        },
+        VLine {
+          column: 4,
+          line_start: 2,
+          line_end: 2
+        },
+        Text {
+          line: 2,
+          column_start: 6,
+          column_end: 8
+        },
+        VLine {
+          column: 10,
+          line_start: 2,
+          line_end: 2
+        },
+        ConnectionSign { line: 3, column: 4 },
+        HLine {
+          line: 3,
+          column_start: 5,
+          column_end: 9
+        },
+        ConnectionSign {
+          line: 3,
+          column: 10
+        },
+        ConnectionSign { line: 5, column: 4 },
+        HLine {
+          line: 5,
+          column_start: 5,
+          column_end: 9
+        },
+        ConnectionSign {
+          line: 5,
+          column: 10
+        },
+        VLine {
+          column: 4,
+          line_start: 6,
+          line_end: 6
+        },
+        Text {
+          line: 6,
+          column_start: 6,
+          column_end: 8
+        },
+        VLine {
+          column: 10,
+          line_start: 6,
+          line_end: 6
+        },
+        ConnectionSign { line: 7, column: 4 },
+        HLine {
+          line: 7,
+          column_start: 5,
+          column_end: 9
+        },
+        ConnectionSign {
+          line: 7,
+          column: 10
+        },
+      ]
+    );
+  }
+
   const SINGLE_BOX: &str = r"
 
     +-----+
@@ -565,5 +646,14 @@ mod tests {
     +-----+        +-----+
   ";
 
+  const TWO_BOXES_IN_THE_SAME_COLUMNS: &str = r"
+    +-----+
+    | Box |
+    +-----+
+
+    +-----+
+    | Box |
+    +-----+
+  ";
 }
 
