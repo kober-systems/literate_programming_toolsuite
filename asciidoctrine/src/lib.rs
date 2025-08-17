@@ -12,6 +12,7 @@ pub use ast::*;
 pub mod cli_template;
 pub mod options;
 pub mod util;
+pub mod extract_toc;
 pub mod reader;
 pub use reader::asciidoc::AsciidocReader;
 pub use reader::json::JsonReader;

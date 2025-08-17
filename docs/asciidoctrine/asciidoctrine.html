@@ -833,6 +833,7 @@ Modulen zu:</p>
 <span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">mod</span><span class="tok-w"> </span><span class="tok-nn">cli_template</span><span class="tok-p">;</span>
 <span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">mod</span><span class="tok-w"> </span><span class="tok-nn">options</span><span class="tok-p">;</span>
 <span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">mod</span><span class="tok-w"> </span><span class="tok-nn">util</span><span class="tok-p">;</span>
+<span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">mod</span><span class="tok-w"> </span><span class="tok-nn">extract_toc</span><span class="tok-p">;</span>
 <span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">mod</span><span class="tok-w"> </span><span class="tok-nn">reader</span><span class="tok-p">;</span>
 <span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">reader</span><span class="tok-p">::</span><span class="tok-n">asciidoc</span><span class="tok-p">::</span><span class="tok-n">AsciidocReader</span><span class="tok-p">;</span>
 <span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">reader</span><span class="tok-p">::</span><span class="tok-n">json</span><span class="tok-p">::</span><span class="tok-n">JsonReader</span><span class="tok-p">;</span>
@@ -3767,6 +3768,16 @@ Unresolved directive in asciidoctrine.adoc - include::src/output/json-ast.adoc[]
 <span class="tok-w">    </span><span class="tok-p">}</span>
 
 <span class="tok-w">    </span><span class="tok-nb">None</span>
+<span class="tok-w">  </span><span class="tok-p">}</span>
+<span class="tok-p">}</span>
+
+<span class="tok-k">impl</span><span class="tok-w"> </span><span class="tok-nb">Default</span><span class="tok-w"> </span><span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-n">AST</span><span class="tok-o">&lt;&#39;</span><span class="tok-nb">_</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">  </span><span class="tok-k">fn</span><span class="tok-w"> </span><span class="tok-nf">default</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">-&gt;</span><span class="tok-w"> </span><span class="tok-nc">Self</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">    </span><span class="tok-bp">Self</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">      </span><span class="tok-n">content</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-s">&quot;&quot;</span><span class="tok-p">,</span>
+<span class="tok-w">      </span><span class="tok-n">elements</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">vec</span><span class="tok-o">!</span><span class="tok-p">[],</span>
+<span class="tok-w">      </span><span class="tok-n">attributes</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">vec</span><span class="tok-o">!</span><span class="tok-p">[],</span>
+<span class="tok-w">    </span><span class="tok-p">}</span>
 <span class="tok-w">  </span><span class="tok-p">}</span>
 <span class="tok-p">}</span>
 

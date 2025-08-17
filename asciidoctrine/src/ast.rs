@@ -22,6 +22,16 @@ impl AST<'_> {
   }
 }
 
+impl Default for AST<'_> {
+  fn default() -> Self {
+    Self {
+      content: "",
+      elements: vec![],
+      attributes: vec![],
+    }
+  }
+}
+
 /// The basic element of a document
 ///
 /// This is meant to form a tree of document element.
