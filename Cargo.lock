@@ -54,7 +54,7 @@ dependencies = [
  "clap",
  "log",
  "pretty_assertions",
- "thiserror 2.0.10",
+ "thiserror 2.0.17",
 ]
 
 [[package]]
@@ -127,7 +127,7 @@ dependencies = [
  "serde_json",
  "simple_logger",
  "tera",
- "thiserror 2.0.10",
+ "thiserror 2.0.17",
 ]
 
 [[package]]
@@ -644,7 +644,7 @@ dependencies = [
  "pest_derive",
  "pretty_assertions",
  "rhai",
- "thiserror 2.0.10",
+ "thiserror 2.0.17",
  "topological-sort",
 ]
 
@@ -1135,11 +1135,11 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "2.0.10"
+version = "2.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a3ac7f54ca534db81081ef1c1e7f6ea8a3ef428d2fc069097c079443d24124d3"
+checksum = "f63587ca0f12b72a0600bcba1d40081f830876000bb46dd2337a3051618f4fc8"
 dependencies = [
- "thiserror-impl 2.0.10",
+ "thiserror-impl 2.0.17",
 ]
 
 [[package]]
@@ -1155,9 +1155,9 @@ dependencies = [
 
 [[package]]
 name = "thiserror-impl"
-version = "2.0.10"
+version = "2.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9e9465d30713b56a37ede7185763c3492a91be2f5fa68d958c44e41ab9248beb"
+checksum = "3ff15c8ecd7de3849db632e14d18d2571fa09dfc5ed93479bc4485c7a517c913"
 dependencies = [
  "proc-macro2",
  "quote",
