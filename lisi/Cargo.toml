@@ -22,9 +22,9 @@ pest = "2.1.0"
 pest_derive = "2.1.0"
 topological-sort = "0.2"
 rhai = "1.3"
-thiserror = "2.0"
-log = "0.4"
-anyhow = "1.0"
+thiserror = { workspace = true }
+log = { workspace = true }
+anyhow = { workspace = true }
 clap = { version = "4", features = ["derive"] }
 
 [dev-dependencies]

@@ -6,9 +6,9 @@ edition = "2018"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
-anyhow = "1.0"
-thiserror = "2.0"
-log = "0.4.8"
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+log = { workspace = true }
 
 [dev-dependencies]
 pretty_assertions = "1"
