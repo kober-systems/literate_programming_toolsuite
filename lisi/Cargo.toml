@@ -18,8 +18,8 @@ include = [
 
 [dependencies]
 asciidoctrine = { path = "../asciidoctrine", version = "0.1" }
-pest = "2.1.0"
-pest_derive = "2.1.0"
+pest = { workspace = true }
+pest_derive = { workspace = true }
 topological-sort = "0.2"
 rhai = "1.3"
 thiserror = { workspace = true }

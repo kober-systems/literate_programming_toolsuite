@@ -19,8 +19,8 @@ include = [
 ]
 
 [dependencies]
-pest = "2.1.0"
-pest_derive = "2.1.0"
+pest = { workspace = true }
+pest_derive = { workspace = true }
 clap = { workspace = true }
 anyhow = { workspace = true }
 thiserror = { workspace = true }
