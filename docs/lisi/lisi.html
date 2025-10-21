@@ -670,11 +670,6 @@ entschlossen <code>lisi</code> als asciidoctrine-extension zu implementieren.</p
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">asciidoctrine</span><span class="tok-p">::</span><span class="tok-o">*</span><span class="tok-p">;</span></code></pre>
 </div>
 </div>
-<div id="cargo_dependencies" class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="toml"><span></span><span class="tok-n">asciidoctrine</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><span class="tok-n">path</span><span class="tok-w"> </span><span class="tok-p">=</span><span class="tok-w"> </span><span class="tok-s2">&quot;../asciidoctrine&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">version</span><span class="tok-w"> </span><span class="tok-p">=</span><span class="tok-w"> </span><span class="tok-s2">&quot;0.1&quot;</span><span class="tok-w"> </span><span class="tok-p">}</span></code></pre>
-</div>
-</div>
 <div id="lisi-overview" class="imageblock">
 <div class="content">
 <img src="data:image/png;base64,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" alt="Diagram" width="530" height="224">
@@ -3203,12 +3198,6 @@ Art von Parsern ist (für mich) sehr leicht zu lesen und zu schreiben.</p>
 <span class="tok-k">extern</span><span class="tok-w"> </span><span class="tok-k">crate</span><span class="tok-w"> </span><span class="tok-n">pest_derive</span><span class="tok-p">;</span></code></pre>
 </div>
 </div>
-<div id="cargo_dependencies" class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="toml"><span></span><span class="tok-n">pest</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s2">&quot;2.1.0&quot;</span>
-<span class="tok-n">pest_derive</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s2">&quot;2.1.0&quot;</span></code></pre>
-</div>
-</div>
 <div class="paragraph">
 <p>Wir lagern sie in ein eigenes Modul aus.</p>
 </div>
@@ -3904,11 +3893,6 @@ eventuell übergeben wurden, herausfiltern und abspeichern.</p>
 <div class="paragraph">
 <p>Damit das möglich wird muss herausgefunden werden, welches Snippet verarbeitet werden kann, und welches von anderen abhängt, die vorher verarbeitet werden müssen. Dazu verwenden wir die <a href="https://en.wikipedia.org/wiki/Topological_sorting">Topoligical Sorting</a> Methode. Wir implementieren sie nicht selbst, sondern benutzen den <code>topological-sort</code> (TODO link) crate.</p>
 </div>
-<div id="cargo_dependencies" class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="toml"><span></span><span class="tok-n">topological-sort</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s2">&quot;0.2&quot;</span></code></pre>
-</div>
-</div>
 <div id="crate_usages" class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">topological_sort</span><span class="tok-p">::</span><span class="tok-n">TopologicalSort</span><span class="tok-p">;</span></code></pre>
@@ -4225,11 +4209,6 @@ unmittelbar vor dem schreiben in eine Datei "aufräumen".</p>
 <p>Beim <code>pipe</code> Befehl werden snippets als interne Scripte ausgeführt. Wir
 verwenden <a href="https://github.com/jonathandturner/rhai">rhai</a> als Interpreter.</p>
 </div>
-<div id="cargo_dependencies" class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="toml"><span></span><span class="tok-n">rhai</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s2">&quot;1.3&quot;</span></code></pre>
-</div>
-</div>
 <div id="internal_functions" class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-sd">/// Use a snippet to manipulate the db instead of using it directly</span>
@@ -4417,11 +4396,6 @@ verwenden <a href="https://github.com/jonathandturner/rhai">rhai</a> als Interpr
 <div class="paragraph">
 <p>Um Fehler abfangen zu können benutzen wir das <code>thiserror</code> crate.</p>
 </div>
-<div id="cargo_dependencies" class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="toml"><span></span><span class="tok-n">thiserror</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s2">&quot;2.0&quot;</span></code></pre>
-</div>
-</div>
 <div id="internal_structs" class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-cp">#[derive(thiserror::Error, Debug)]</span>
@@ -4433,11 +4407,6 @@ verwenden <a href="https://github.com/jonathandturner/rhai">rhai</a> als Interpr
 <div class="paragraph">
 <p>Das betrifft alles Fehler, welche so von der Bibliothek nicht abgefangen werden. Es gibt allerdings auch Fehler, welche erst zur Laufzeit vom Programm abgefangen werden. Für diese benötigen wir einen Logging Mechanismus.</p>
 </div>
-<div id="cargo_dependencies" class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="toml"><span></span><span class="tok-n">log</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s2">&quot;0.4&quot;</span></code></pre>
-</div>
-</div>
 <div id="crate_usages" class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-cp">#[macro_use]</span>
@@ -4446,11 +4415,6 @@ verwenden <a href="https://github.com/jonathandturner/rhai">rhai</a> als Interpr
 </div>
 <div class="paragraph">
 <p>Das resultierende <code>lisi</code> executable soll allerdings alle Arten von Fehlern abfangen, deshalb verwenden wir hier den <code>anyhow</code> crate.</p>
-</div>
-<div id="cargo_dependencies" class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="toml"><span></span><span class="tok-n">anyhow</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s2">&quot;1.0&quot;</span></code></pre>
-</div>
 </div>
 </div>
 <div class="sect2">
@@ -4509,6 +4473,13 @@ verwenden <a href="https://github.com/jonathandturner/rhai">rhai</a> als Interpr
 </div>
 <div class="paragraph">
 <p>Unsere Tests packen wir in eine Test Umgebung, welche alle wichtigen crates bereits importiert.</p>
+</div>
+<div class="paragraph">
+<p>Um schönere diffs angezeigt zu bekommen sobald ein Fehler auftritt verwenden wir den <a href="https://github.com/colin-kiegel/rust-pretty-assertions">pretty_assertions</a> crate.</p>
+</div>
+<div class="paragraph">
+<p>Zudem brauchen wir die <code>clap</code> Bibliothek um die Kommandozeilenparameter
+zu parsen.</p>
 </div>
 <div class="listingblock">
 <div class="title">tests/lisi_test.rs</div>
@@ -4632,23 +4603,6 @@ verwenden <a href="https://github.com/jonathandturner/rhai">rhai</a> als Interpr
 </pre></div></td></tr></table></div></code></pre>
 </div>
 </div>
-<div class="paragraph">
-<p>Um schönere diffs angezeigt zu bekommen sobald ein Fehler auftritt verwenden wir den <a href="https://github.com/colin-kiegel/rust-pretty-assertions">pretty_assertions</a> crate.</p>
-</div>
-<div id="cargo_dev_dependencies" class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="toml"><span></span><span class="tok-n">pretty_assertions</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s2">&quot;1&quot;</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Zudem brauchen wir die <code>clap</code> Bibliothek um die Kommandozeilenparameter
-zu parsen.</p>
-</div>
-<div id="cargo_dependencies" class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="toml"><span></span><span class="tok-n">clap</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><span class="tok-n">version</span><span class="tok-w"> </span><span class="tok-p">=</span><span class="tok-w"> </span><span class="tok-s2">&quot;4&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">features</span><span class="tok-w"> </span><span class="tok-p">=</span><span class="tok-w"> </span><span class="tok-p">[</span><span class="tok-s2">&quot;derive&quot;</span><span class="tok-p">]</span><span class="tok-w"> </span><span class="tok-p">}</span></code></pre>
-</div>
-</div>
 </div>
 </div>
 </div>
@@ -4661,59 +4615,9 @@ zu parsen.</p>
 <div class="sect1">
 <h2 id="_build">Build</h2>
 <div class="sectionbody">
-<div class="paragraph">
-<p>Da das ganze eine rust Bibliothek ist brauchen wir eine <code>Cargo.toml</code> Datei damit
-das Programm (und die Bibliothek) kompiliert werden können.</p>
-</div>
 <div class="listingblock">
-<div class="title">Cargo.toml</div>
 <div class="content">
-<pre class="pygments highlight"><code data-lang="toml"><div class="lineno"><table class="linenotable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span>
-<span class="normal">20</span>
-<span class="normal">21</span>
-<span class="normal">22</span>
-<span class="normal">23</span></pre></div></td><td class="code"><div><pre><span></span><span class="tok-k">[package]</span>
-<span class="tok-n">name</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s2">&quot;lisi&quot;</span>
-<span class="tok-n">version</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s2">&quot;0.2.0&quot;</span>
-<span class="tok-n">description</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s2">&quot;literate programming with asciidoc&quot;</span>
-<span class="tok-n">readme</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s2">&quot;lisi.adoc&quot;</span>
-<span class="tok-n">homepage</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s2">&quot;https://kober-systems.github.io/literate_programming_toolsuite/lisi/lisi.html&quot;</span>
-<span class="tok-n">repository</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s2">&quot;https://github.com/kober-systems/literate_programming_toolsuite&quot;</span>
-<span class="tok-n">authors</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-p">[</span><span class="tok-s2">&quot;Benjamin Kober &lt;benko@kober-systems.com&gt;&quot;</span><span class="tok-p">]</span>
-<span class="tok-n">edition</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s2">&quot;2018&quot;</span>
-<span class="tok-n">license</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s2">&quot;MIT&quot;</span>
-<span class="tok-n">keywords</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-p">[</span><span class="tok-s2">&quot;literate-programming&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-s2">&quot;asciidoc&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-s2">&quot;cli&quot;</span><span class="tok-p">]</span>
-<span class="tok-n">categories</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-p">[</span><span class="tok-s2">&quot;command-line-utilities&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-s2">&quot;development-tools&quot;</span><span class="tok-p">]</span>
-<span class="tok-n">include</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-p">[</span>
-<span class="tok-w">  </span><span class="tok-s2">&quot;**/*.rs&quot;</span><span class="tok-p">,</span>
-<span class="tok-w">  </span><span class="tok-s2">&quot;**/*.pest&quot;</span><span class="tok-p">,</span>
-<span class="tok-w">  </span><span class="tok-s2">&quot;Cargo.toml&quot;</span><span class="tok-p">,</span>
-<span class="tok-p">]</span>
-
-<span class="tok-k">[dependencies]</span>
-<span class="tok-err">&lt;&lt;</span><span class="tok-n">cargo_dependencies</span><span class="tok-err">&gt;&gt;</span>
-
-<span class="tok-k">[dev-dependencies]</span>
-<span class="tok-err">&lt;&lt;</span><span class="tok-n">cargo_dev_dependencies</span><span class="tok-err">&gt;&gt;</span>
-</pre></div></td></tr></table></div></code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>cargo<span class="tok-w"> </span>build</code></pre>
 </div>
 </div>
 </div>
