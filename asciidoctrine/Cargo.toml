@@ -21,7 +21,7 @@ include = [
 [dependencies]
 pest = "2.1.0"
 pest_derive = "2.1.0"
-clap = { version = "4", features = ["derive"] }
+clap = { workspace = true }
 anyhow = { workspace = true }
 thiserror = { workspace = true }
 serde = { workspace = true }

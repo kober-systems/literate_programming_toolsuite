@@ -5,7 +5,6 @@ authors = ["Benjamin Kober <benko@kober-systems.com>"]
 edition = "2018"
 
 [dependencies]
-clap = { version = "4", features = ["derive"] }
 anyhow = { workspace = true }
 thiserror = { workspace = true }
 log = { workspace = true }

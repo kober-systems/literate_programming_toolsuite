@@ -45,7 +45,6 @@ name = "ansicht"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "clap",
  "log",
  "pretty_assertions",
  "thiserror 2.0.17",
