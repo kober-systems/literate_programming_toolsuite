@@ -4,5 +4,12 @@
     "config:recommended"
   ],
   "ignorePaths": [ "/docs/**" ],
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "matchDepTypes": ["devDependencies"],
+      "automerge": true
+    },
+  ],
   "lockFileMaintenance": { "enabled": true }
 }
