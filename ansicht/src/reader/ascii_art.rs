@@ -137,6 +137,26 @@ fn elements_from_tokens(input: Vec<Token>) -> Vec<Element> {
   out
 }
 
+fn can_continue_block(current_tokens: &Vec<Token>, next_token: &Token, text: &str) -> bool {
+  use Token::*;
+
+  let (start_line, start_col, end_line, end_col) = current_tokens.last().unwrap().get_bounds();
+  match next_token {
+    HLine {
+      line,
+      column_start,
+      column_end,
+    } => {
+      if end_line == *line && end_col + 1 == *column_start {
+        true
+      } else {
+        false
+      }
+    }
+    _ => false,
+  }
+}
+
 fn parse_tokens(input: &str) -> Vec<Token> {
   use Token::*;
 
@@ -832,6 +852,20 @@ mod tests {
         }]
       }]
     );
+  }
+
+  #[test]
+  fn check_if_box_can_be_continued() {
+    let mut tokens = parse_tokens(SINGLE_BOX);
+    tokens.reverse();
+
+    let mut start_tokens = vec![tokens.pop().unwrap()];
+    let next_token = tokens.pop().unwrap();
+    assert_eq!(
+      can_continue_block(&start_tokens, &next_token, SINGLE_BOX),
+      true
+    );
+    start_tokens.push(next_token);
   }
 
   const SINGLE_BOX: &str = r"
