@@ -153,6 +153,13 @@ fn can_continue_block(current_tokens: &Vec<Token>, next_token: &Token, text: &st
         false
       }
     }
+    ConnectionSign { line, column } => {
+      if end_line == *line && end_col + 1 == *column {
+        true
+      } else {
+        false
+      }
+    }
     _ => false,
   }
 }
@@ -860,6 +867,13 @@ mod tests {
     tokens.reverse();
 
     let mut start_tokens = vec![tokens.pop().unwrap()];
+    let next_token = tokens.pop().unwrap();
+    assert_eq!(
+      can_continue_block(&start_tokens, &next_token, SINGLE_BOX),
+      true
+    );
+    start_tokens.push(next_token);
+
     let next_token = tokens.pop().unwrap();
     assert_eq!(
       can_continue_block(&start_tokens, &next_token, SINGLE_BOX),
