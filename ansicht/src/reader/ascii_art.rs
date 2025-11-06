@@ -17,6 +17,7 @@ impl AsciiArtReader {
   }
 }
 
+#[derive(Debug, PartialEq)]
 pub enum Element {
   Block {
     id: usize,
@@ -100,6 +101,14 @@ impl Token {
       } => (*line_start, *column, *line_end, *column),
     }
   }
+}
+
+pub fn parse_elements(input: &str) -> Vec<Element> {
+  elements_from_tokens(parse_tokens(input))
+}
+
+fn elements_from_tokens(input: Vec<Token>) -> Vec<Element> {
+  vec![]
 }
 
 fn parse_tokens(input: &str) -> Vec<Token> {
@@ -747,6 +756,21 @@ mod tests {
         },
       ]
     );
+  }
+
+  // parse elements
+
+  #[test]
+  fn empty_string_to_elements() {
+    let elements = parse_elements("");
+    assert_eq!(elements, vec![]);
+
+    let elements = parse_elements(
+      r"
+
+        ",
+    );
+    assert_eq!(elements, vec![]);
   }
 
   const SINGLE_BOX: &str = r"
