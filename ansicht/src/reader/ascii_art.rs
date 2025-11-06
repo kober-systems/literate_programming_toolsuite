@@ -108,7 +108,33 @@ pub fn parse_elements(input: &str) -> Vec<Element> {
 }
 
 fn elements_from_tokens(input: Vec<Token>) -> Vec<Element> {
-  vec![]
+  use Element::*;
+
+  let mut texts = vec![];
+  for token in input.into_iter() {
+    match token {
+      Token::Text {
+        line: _,
+        column_start: _,
+        column_end: _,
+      } => {
+        texts.push(token);
+      }
+      _ => {}
+    }
+  }
+
+  let mut next_id = 0;
+  let mut out = vec![];
+  for text in texts.into_iter() {
+    out.push(Text {
+      id: next_id,
+      tokens: vec![text],
+    });
+    next_id += 1;
+  }
+
+  out
 }
 
 fn parse_tokens(input: &str) -> Vec<Token> {
@@ -771,6 +797,41 @@ mod tests {
         ",
     );
     assert_eq!(elements, vec![]);
+  }
+
+  #[test]
+  fn simple_text_to_elements() {
+    use Token::*;
+    let elements = parse_elements("Some simple Text");
+    assert_eq!(
+      elements,
+      vec![Element::Text {
+        id: 0,
+        tokens: vec![Text {
+          line: 0,
+          column_start: 0,
+          column_end: 15,
+        }]
+      }]
+    );
+
+    let elements = parse_elements(
+      r"
+        Some Text on another line
+
+        ",
+    );
+    assert_eq!(
+      elements,
+      vec![Element::Text {
+        id: 0,
+        tokens: vec![Text {
+          line: 1,
+          column_start: 8,
+          column_end: 32,
+        }]
+      }]
+    );
   }
 
   const SINGLE_BOX: &str = r"
