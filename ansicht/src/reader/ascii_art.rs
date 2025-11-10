@@ -214,6 +214,8 @@ impl PartialElement {
       ConnectionSign { line, column } => {
         if self.clock_cycle_end.line == *line && self.clock_cycle_end.column + 1 == *column {
           true
+        } else if self.clock_cycle_end.line + 1 == *line && self.clock_cycle_end.column == *column {
+          true
         } else if self.counter_clock_cycle_end.line + 1 == *line
           && self.counter_clock_cycle_end.column == *column
         {
@@ -1032,6 +1034,18 @@ mod tests {
     );
     started_block.add_token(next_token);
     assert_eq!(started_block.clock_cycle_end.line, 3);
+    assert_eq!(started_block.clock_cycle_end.column, 10);
+    assert_eq!(started_block.counter_clock_cycle_end.line, 4);
+    assert_eq!(started_block.counter_clock_cycle_end.column, 9);
+
+    // ConnectionSign
+    let next_token = tokens.pop().unwrap();
+    assert_eq!(
+      started_block.can_continue_block(&next_token, SINGLE_BOX),
+      true
+    );
+    started_block.add_token(next_token);
+    assert_eq!(started_block.clock_cycle_end.line, 4);
     assert_eq!(started_block.clock_cycle_end.column, 10);
     assert_eq!(started_block.counter_clock_cycle_end.line, 4);
     assert_eq!(started_block.counter_clock_cycle_end.column, 9);
