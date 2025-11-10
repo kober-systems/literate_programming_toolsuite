@@ -43,6 +43,92 @@ pub enum Element {
   },
 }
 
+impl Element {
+  pub fn get_bounds(&self) -> BoundingBox {
+    use Element::*;
+
+    match self {
+      Block {
+        id: _,
+        inner_elements: _,
+        border,
+      } => {
+        let first = border.first().unwrap().get_bounds();
+        let last = border.last().unwrap().get_bounds();
+        BoundingBox {
+          start: first.start,
+          end: last.end,
+        }
+      }
+      Connection {
+        id: _,
+        from: _,
+        to: _,
+        inner_elements: _,
+        tokens,
+      } => {
+        let first = tokens.first().unwrap().get_bounds();
+        let last = tokens.last().unwrap().get_bounds();
+        BoundingBox {
+          start: first.start,
+          end: last.end,
+        }
+      }
+      Text { id: _, tokens } => {
+        let first = tokens.first().unwrap().get_bounds();
+        let last = tokens.last().unwrap().get_bounds();
+        BoundingBox {
+          start: first.start,
+          end: last.end,
+        }
+      }
+      Unknown { id: _, tokens } => {
+        let first = tokens.first().unwrap().get_bounds();
+        let last = tokens.last().unwrap().get_bounds();
+        BoundingBox {
+          start: first.start,
+          end: last.end,
+        }
+      }
+    }
+  }
+
+  pub fn is_inside_bounds_of(&self, element: &Element) -> bool {
+    let outer_bounds = element.get_bounds();
+    let inner_bounds = self.get_bounds();
+
+    outer_bounds.start.line <= inner_bounds.start.line
+      && outer_bounds.start.column <= inner_bounds.start.column
+      && outer_bounds.end.line >= inner_bounds.end.line
+      && outer_bounds.end.column >= inner_bounds.end.column
+  }
+
+  pub fn add_inner_element(&mut self, element: Element) {
+    use Element::*;
+
+    match self {
+      Block {
+        id: _,
+        inner_elements,
+        border: _,
+      } => {
+        inner_elements.push(element);
+      }
+      Connection {
+        id: _,
+        from: _,
+        to: _,
+        inner_elements,
+        tokens: _,
+      } => {
+        inner_elements.push(element);
+      }
+      Text { id: _, tokens: _ } => {}    // TODO
+      Unknown { id: _, tokens: _ } => {} // TODO
+    }
+  }
+}
+
 pub struct BoundingBox {
   pub start: Coordinate,
   pub end: Coordinate,
@@ -53,7 +139,7 @@ pub struct Coordinate {
   pub column: usize,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum Token {
   HLine {
     line: usize,
@@ -152,13 +238,16 @@ impl Token {
 }
 
 pub fn parse_elements(input: &str) -> Vec<Element> {
-  elements_from_tokens(parse_tokens(input))
+  elements_from_tokens(parse_tokens(input), input)
 }
 
-fn elements_from_tokens(input: Vec<Token>) -> Vec<Element> {
+fn elements_from_tokens(input: Vec<Token>, text: &str) -> Vec<Element> {
   use Element::*;
 
+  let mut possible_blocks: Vec<PartialElement> = vec![];
   let mut texts = vec![];
+  let mut blocks = vec![];
+  let mut next_id = 0;
   for token in input.into_iter() {
     match token {
       Token::Text {
@@ -168,19 +257,57 @@ fn elements_from_tokens(input: Vec<Token>) -> Vec<Element> {
       } => {
         texts.push(token);
       }
-      _ => {}
+      token => {
+        if possible_blocks.is_empty() {
+          possible_blocks.push(PartialElement::new(token));
+        } else {
+          possible_blocks = possible_blocks
+            .into_iter()
+            .filter_map(|mut started_block| {
+              if started_block.can_continue_block(&token, text) {
+                if started_block.add_token(token) {
+                  blocks.push(Block {
+                    id: next_id,
+                    inner_elements: vec![],
+                    border: started_block.tokens,
+                  });
+                  next_id += 1;
+                  return None;
+                }
+              }
+              Some(started_block)
+            })
+            .collect();
+        }
+      }
     }
   }
 
-  let mut next_id = 0;
   let mut out = vec![];
   for text in texts.into_iter() {
-    out.push(Text {
+    let text = Text {
       id: next_id,
       tokens: vec![text],
-    });
+    };
     next_id += 1;
+
+    let mut owning_block = None;
+    for block in blocks.iter_mut() {
+      if text.is_inside_bounds_of(block) {
+        owning_block = Some(block);
+        break;
+      }
+    }
+    match owning_block {
+      Some(block) => {
+        block.add_inner_element(text);
+      }
+      None => {
+        out.push(text);
+      }
+    }
   }
+  out.append(&mut blocks);
 
   out
 }
@@ -963,6 +1090,58 @@ mod tests {
           column_end: 32,
         }]
       }]
+    );
+  }
+
+  #[test]
+  fn single_box_to_elements() {
+    use Token::*;
+    let elements = parse_elements(SINGLE_BOX);
+    assert_eq!(
+      elements,
+      vec![Element::Block {
+        id: 0,
+        inner_elements: vec![Element::Text {
+          id: 1,
+          tokens: vec![Text {
+            line: 3,
+            column_start: 6,
+            column_end: 8
+          },],
+        }],
+        border: vec![
+          ConnectionSign { line: 2, column: 4 },
+          HLine {
+            line: 2,
+            column_start: 5,
+            column_end: 9
+          },
+          ConnectionSign {
+            line: 2,
+            column: 10
+          },
+          VLine {
+            column: 4,
+            line_start: 3,
+            line_end: 3
+          },
+          VLine {
+            column: 10,
+            line_start: 3,
+            line_end: 3
+          },
+          ConnectionSign { line: 4, column: 4 },
+          HLine {
+            line: 4,
+            column_start: 5,
+            column_end: 9
+          },
+          ConnectionSign {
+            line: 4,
+            column: 10
+          },
+        ],
+      },]
     );
   }
 
