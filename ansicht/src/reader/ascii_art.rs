@@ -929,6 +929,14 @@ mod tests {
       true
     );
     start_tokens.push(next_token);
+
+    // Text
+    let next_token = tokens.pop().unwrap();
+    assert_eq!(
+      can_continue_block(&start_tokens, &next_token, SINGLE_BOX),
+      false
+    );
+    start_tokens.push(next_token);
   }
 
   const SINGLE_BOX: &str = r"
