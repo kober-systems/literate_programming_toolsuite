@@ -962,6 +962,10 @@ mod tests {
       true
     );
     started_block.add_token(next_token);
+    assert_eq!(started_block.clock_cycle_end.line, 2);
+    assert_eq!(started_block.clock_cycle_end.column, 10);
+    assert_eq!(started_block.counter_clock_cycle_end.line, 2);
+    assert_eq!(started_block.counter_clock_cycle_end.column, 4);
 
     // VLine
     let next_token = tokens.pop().unwrap();
@@ -977,7 +981,6 @@ mod tests {
       started_block.can_continue_block(&next_token, SINGLE_BOX),
       false
     );
-    start_tokens.push(next_token);
   }
 
   const SINGLE_BOX: &str = r"
