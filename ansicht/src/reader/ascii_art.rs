@@ -44,10 +44,13 @@ pub enum Element {
 }
 
 pub struct BoundingBox {
-  pub line_start: usize,
-  pub column_start: usize,
-  pub line_end: usize,
-  pub column_end: usize,
+  pub start: Coordinate,
+  pub end: Coordinate,
+}
+
+pub struct Coordinate {
+  pub line: usize,
+  pub column: usize,
 }
 
 #[derive(Debug, PartialEq)]
@@ -83,46 +86,66 @@ impl Token {
 
     match self {
       ConnectionSign { line, column } => BoundingBox {
-        line_start: *line,
-        column_start: *column,
-        line_end: *line,
-        column_end: *column,
+        start: Coordinate {
+          line: *line,
+          column: *column,
+        },
+        end: Coordinate {
+          line: *line,
+          column: *column,
+        },
       },
       Arrow { line, column } => BoundingBox {
-        line_start: *line,
-        column_start: *column,
-        line_end: *line,
-        column_end: *column,
+        start: Coordinate {
+          line: *line,
+          column: *column,
+        },
+        end: Coordinate {
+          line: *line,
+          column: *column,
+        },
       },
       HLine {
         line,
         column_start,
         column_end,
       } => BoundingBox {
-        line_start: *line,
-        column_start: *column_start,
-        line_end: *line,
-        column_end: *column_end,
+        start: Coordinate {
+          line: *line,
+          column: *column_start,
+        },
+        end: Coordinate {
+          line: *line,
+          column: *column_end,
+        },
       },
       Text {
         line,
         column_start,
         column_end,
       } => BoundingBox {
-        line_start: *line,
-        column_start: *column_start,
-        line_end: *line,
-        column_end: *column_end,
+        start: Coordinate {
+          line: *line,
+          column: *column_start,
+        },
+        end: Coordinate {
+          line: *line,
+          column: *column_end,
+        },
       },
       VLine {
         column,
         line_start,
         line_end,
       } => BoundingBox {
-        line_start: *line_start,
-        column_start: *column,
-        line_end: *line_end,
-        column_end: *column,
+        start: Coordinate {
+          line: *line_start,
+          column: *column,
+        },
+        end: Coordinate {
+          line: *line_end,
+          column: *column,
+        },
       },
     }
   }
@@ -173,14 +196,14 @@ fn can_continue_block(current_tokens: &Vec<Token>, next_token: &Token, text: &st
       column_start,
       column_end,
     } => {
-      if last_token.line_end == *line && last_token.column_end + 1 == *column_start {
+      if last_token.end.line == *line && last_token.end.column + 1 == *column_start {
         true
       } else {
         false
       }
     }
     ConnectionSign { line, column } => {
-      if last_token.line_end == *line && last_token.column_end + 1 == *column {
+      if last_token.end.line == *line && last_token.end.column + 1 == *column {
         true
       } else {
         false
@@ -191,8 +214,8 @@ fn can_continue_block(current_tokens: &Vec<Token>, next_token: &Token, text: &st
       line_start,
       line_end,
     } => {
-      if upper_right_corner.column_start == *column
-        && upper_right_corner.line_start + 1 == *line_start
+      if upper_right_corner.start.column == *column
+        && upper_right_corner.start.line + 1 == *line_start
       {
         true
       } else {
@@ -247,11 +270,11 @@ fn parse_tokens(input: &str) -> Vec<Token> {
   tokens.sort_by(|a, b| {
     let a = a.get_bounds();
     let b = b.get_bounds();
-    if a.line_start > b.line_start {
+    if a.start.line > b.start.line {
       return Ordering::Greater;
     }
-    if a.line_start == b.line_start {
-      if a.column_start > b.column_start {
+    if a.start.line == b.start.line {
+      if a.start.column > b.start.column {
         return Ordering::Greater;
       }
       return Ordering::Less;
