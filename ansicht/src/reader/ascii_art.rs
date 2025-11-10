@@ -165,6 +165,7 @@ fn elements_from_tokens(input: Vec<Token>) -> Vec<Element> {
 fn can_continue_block(current_tokens: &Vec<Token>, next_token: &Token, text: &str) -> bool {
   use Token::*;
 
+  let upper_right_corner = current_tokens.first().unwrap().get_bounds();
   let last_token = current_tokens.last().unwrap().get_bounds();
   match next_token {
     HLine {
@@ -180,6 +181,19 @@ fn can_continue_block(current_tokens: &Vec<Token>, next_token: &Token, text: &st
     }
     ConnectionSign { line, column } => {
       if last_token.line_end == *line && last_token.column_end + 1 == *column {
+        true
+      } else {
+        false
+      }
+    }
+    VLine {
+      column,
+      line_start,
+      line_end,
+    } => {
+      if upper_right_corner.column_start == *column
+        && upper_right_corner.line_start + 1 == *line_start
+      {
         true
       } else {
         false
@@ -891,6 +905,7 @@ mod tests {
     let mut tokens = parse_tokens(SINGLE_BOX);
     tokens.reverse();
 
+    // HLine
     let mut start_tokens = vec![tokens.pop().unwrap()];
     let next_token = tokens.pop().unwrap();
     assert_eq!(
@@ -899,6 +914,15 @@ mod tests {
     );
     start_tokens.push(next_token);
 
+    // ConnectionSign
+    let next_token = tokens.pop().unwrap();
+    assert_eq!(
+      can_continue_block(&start_tokens, &next_token, SINGLE_BOX),
+      true
+    );
+    start_tokens.push(next_token);
+
+    // VLine
     let next_token = tokens.pop().unwrap();
     assert_eq!(
       can_continue_block(&start_tokens, &next_token, SINGLE_BOX),
