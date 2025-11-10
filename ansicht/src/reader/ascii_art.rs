@@ -78,27 +78,52 @@ pub enum Token {
 }
 
 impl Token {
-  fn get_bounds(&self) -> (usize, usize, usize, usize) {
+  fn get_bounds(&self) -> BoundingBox {
     use Token::*;
 
     match self {
-      ConnectionSign { line, column } => (*line, *column, *line, *column),
-      Arrow { line, column } => (*line, *column, *line, *column),
+      ConnectionSign { line, column } => BoundingBox {
+        line_start: *line,
+        column_start: *column,
+        line_end: *line,
+        column_end: *column,
+      },
+      Arrow { line, column } => BoundingBox {
+        line_start: *line,
+        column_start: *column,
+        line_end: *line,
+        column_end: *column,
+      },
       HLine {
         line,
         column_start,
         column_end,
-      } => (*line, *column_start, *line, *column_end),
+      } => BoundingBox {
+        line_start: *line,
+        column_start: *column_start,
+        line_end: *line,
+        column_end: *column_end,
+      },
       Text {
         line,
         column_start,
         column_end,
-      } => (*line, *column_start, *line, *column_end),
+      } => BoundingBox {
+        line_start: *line,
+        column_start: *column_start,
+        line_end: *line,
+        column_end: *column_end,
+      },
       VLine {
         column,
         line_start,
         line_end,
-      } => (*line_start, *column, *line_end, *column),
+      } => BoundingBox {
+        line_start: *line_start,
+        column_start: *column,
+        line_end: *line_end,
+        column_end: *column,
+      },
     }
   }
 }
@@ -140,21 +165,21 @@ fn elements_from_tokens(input: Vec<Token>) -> Vec<Element> {
 fn can_continue_block(current_tokens: &Vec<Token>, next_token: &Token, text: &str) -> bool {
   use Token::*;
 
-  let (start_line, start_col, end_line, end_col) = current_tokens.last().unwrap().get_bounds();
+  let last_token = current_tokens.last().unwrap().get_bounds();
   match next_token {
     HLine {
       line,
       column_start,
       column_end,
     } => {
-      if end_line == *line && end_col + 1 == *column_start {
+      if last_token.line_end == *line && last_token.column_end + 1 == *column_start {
         true
       } else {
         false
       }
     }
     ConnectionSign { line, column } => {
-      if end_line == *line && end_col + 1 == *column {
+      if last_token.line_end == *line && last_token.column_end + 1 == *column {
         true
       } else {
         false
@@ -206,13 +231,13 @@ fn parse_tokens(input: &str) -> Vec<Token> {
   let tokens = condense_horizontal(tokens);
   let mut tokens = condense_vertical(tokens);
   tokens.sort_by(|a, b| {
-    let (al_start, ac_start, _, _) = a.get_bounds();
-    let (bl_start, bc_start, _, _) = b.get_bounds();
-    if al_start > bl_start {
+    let a = a.get_bounds();
+    let b = b.get_bounds();
+    if a.line_start > b.line_start {
       return Ordering::Greater;
     }
-    if al_start == bl_start {
-      if ac_start > bc_start {
+    if a.line_start == b.line_start {
+      if a.column_start > b.column_start {
         return Ordering::Greater;
       }
       return Ordering::Less;
