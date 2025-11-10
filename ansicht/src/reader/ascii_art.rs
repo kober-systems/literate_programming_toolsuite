@@ -234,7 +234,11 @@ impl PartialElement {
   fn add_token(&mut self, token: Token) {
     let BoundingBox { start: _, end } = token.get_bounds();
     self.tokens.push(token);
-    self.clock_cycle_end = end;
+    if end.line >= self.clock_cycle_end.line && end.column >= self.clock_cycle_end.column {
+      self.clock_cycle_end = end;
+    } else {
+      self.counter_clock_cycle_end = end;
+    }
   }
 }
 
@@ -974,6 +978,10 @@ mod tests {
       true
     );
     started_block.add_token(next_token);
+    assert_eq!(started_block.clock_cycle_end.line, 2);
+    assert_eq!(started_block.clock_cycle_end.column, 10);
+    assert_eq!(started_block.counter_clock_cycle_end.line, 3);
+    assert_eq!(started_block.counter_clock_cycle_end.column, 4);
 
     // Text
     let next_token = tokens.pop().unwrap();
