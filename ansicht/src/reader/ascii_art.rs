@@ -192,6 +192,15 @@ struct PartialElement {
 }
 
 impl PartialElement {
+  fn new(token: Token) -> Self {
+    let BoundingBox { start, end } = token.get_bounds();
+    Self {
+      tokens: vec![token],
+      counter_clock_cycle_end: start,
+      clock_cycle_end: end,
+    }
+  }
+
   fn can_continue_block(&self, next_token: &Token, text: &str) -> bool {
     use Token::*;
 
@@ -957,12 +966,7 @@ mod tests {
     tokens.reverse();
 
     let next_token = tokens.pop().unwrap();
-    let BoundingBox { start, end } = next_token.get_bounds();
-    let mut started_block = PartialElement {
-      tokens: vec![next_token],
-      counter_clock_cycle_end: start,
-      clock_cycle_end: end,
-    };
+    let mut started_block = PartialElement::new(next_token);
     // HLine
     let next_token = tokens.pop().unwrap();
     assert_eq!(
