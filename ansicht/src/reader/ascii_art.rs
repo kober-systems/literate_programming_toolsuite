@@ -260,7 +260,7 @@ fn condense_horizontal(input: Vec<Token>) -> Vec<Token> {
         } => {
           let column_start = match last_token {
             HLine {
-              line,
+              line: _,
               column_start: start,
               column_end: _,
             } => start,
@@ -282,7 +282,7 @@ fn condense_horizontal(input: Vec<Token>) -> Vec<Token> {
         } => {
           let column_start = match last_token {
             Text {
-              line,
+              line: _,
               column_start: start,
               column_end: _,
             } => start,
