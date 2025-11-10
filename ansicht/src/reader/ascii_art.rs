@@ -185,44 +185,56 @@ fn elements_from_tokens(input: Vec<Token>) -> Vec<Element> {
   out
 }
 
-fn can_continue_block(current_tokens: &Vec<Token>, next_token: &Token, text: &str) -> bool {
-  use Token::*;
+struct PartialElement {
+  clock_cycle_end: Coordinate,
+  counter_clock_cycle_end: Coordinate,
+  tokens: Vec<Token>,
+}
 
-  let upper_right_corner = current_tokens.first().unwrap().get_bounds();
-  let last_token = current_tokens.last().unwrap().get_bounds();
-  match next_token {
-    HLine {
-      line,
-      column_start,
-      column_end,
-    } => {
-      if last_token.end.line == *line && last_token.end.column + 1 == *column_start {
-        true
-      } else {
-        false
+impl PartialElement {
+  fn can_continue_block(&self, next_token: &Token, text: &str) -> bool {
+    use Token::*;
+
+    match next_token {
+      HLine {
+        line,
+        column_start,
+        column_end,
+      } => {
+        if self.clock_cycle_end.line == *line && self.clock_cycle_end.column + 1 == *column_start {
+          true
+        } else {
+          false
+        }
       }
-    }
-    ConnectionSign { line, column } => {
-      if last_token.end.line == *line && last_token.end.column + 1 == *column {
-        true
-      } else {
-        false
+      ConnectionSign { line, column } => {
+        if self.clock_cycle_end.line == *line && self.clock_cycle_end.column + 1 == *column {
+          true
+        } else {
+          false
+        }
       }
-    }
-    VLine {
-      column,
-      line_start,
-      line_end,
-    } => {
-      if upper_right_corner.start.column == *column
-        && upper_right_corner.start.line + 1 == *line_start
-      {
-        true
-      } else {
-        false
+      VLine {
+        column,
+        line_start,
+        line_end,
+      } => {
+        if self.counter_clock_cycle_end.column == *column
+          && self.counter_clock_cycle_end.line + 1 == *line_start
+        {
+          true
+        } else {
+          false
+        }
       }
+      _ => false,
     }
-    _ => false,
+  }
+
+  fn add_token(&mut self, token: Token) {
+    let BoundingBox { start: _, end } = token.get_bounds();
+    self.tokens.push(token);
+    self.clock_cycle_end = end;
   }
 }
 
@@ -928,35 +940,41 @@ mod tests {
     let mut tokens = parse_tokens(SINGLE_BOX);
     tokens.reverse();
 
+    let next_token = tokens.pop().unwrap();
+    let BoundingBox { start, end } = next_token.get_bounds();
+    let mut started_block = PartialElement {
+      tokens: vec![next_token],
+      counter_clock_cycle_end: start,
+      clock_cycle_end: end,
+    };
     // HLine
-    let mut start_tokens = vec![tokens.pop().unwrap()];
     let next_token = tokens.pop().unwrap();
     assert_eq!(
-      can_continue_block(&start_tokens, &next_token, SINGLE_BOX),
+      started_block.can_continue_block(&next_token, SINGLE_BOX),
       true
     );
-    start_tokens.push(next_token);
+    started_block.add_token(next_token);
 
     // ConnectionSign
     let next_token = tokens.pop().unwrap();
     assert_eq!(
-      can_continue_block(&start_tokens, &next_token, SINGLE_BOX),
+      started_block.can_continue_block(&next_token, SINGLE_BOX),
       true
     );
-    start_tokens.push(next_token);
+    started_block.add_token(next_token);
 
     // VLine
     let next_token = tokens.pop().unwrap();
     assert_eq!(
-      can_continue_block(&start_tokens, &next_token, SINGLE_BOX),
+      started_block.can_continue_block(&next_token, SINGLE_BOX),
       true
     );
-    start_tokens.push(next_token);
+    started_block.add_token(next_token);
 
     // Text
     let next_token = tokens.pop().unwrap();
     assert_eq!(
-      can_continue_block(&start_tokens, &next_token, SINGLE_BOX),
+      started_block.can_continue_block(&next_token, SINGLE_BOX),
       false
     );
     start_tokens.push(next_token);
