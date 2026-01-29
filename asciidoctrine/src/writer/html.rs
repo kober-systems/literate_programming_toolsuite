@@ -45,7 +45,7 @@ impl<T: io::Write> crate::Writer<T> for HtmlWriter {
     tera.autoescape_on(vec![]);
     match &args.template {
       Some(path) => {
-        let path = path.to_str().expect("path to stylesheet unreadable");
+        let path = path.to_str().expect("path to template unreadable");
         let template = if path == "-" {
           "{{body}}".to_string()
         } else {
