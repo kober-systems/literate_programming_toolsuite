@@ -2261,6 +2261,88 @@ TODO
 include_macro = { "include::" ~ path ~ inline_attribute_list }
 ----
 
+[%collapsible]
+====
+
+[[asciidoc_element_rules]]
+[source, rust]
+----
+Rule::include_macro => Some(process_include(element, env)),
+----
+
+[[asciidoc_parser_functions]]
+[source, rust]
+----
+fn process_include<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> ElementSpan<'a> {
+  let base = set_span(&element);
+
+  let base = element
+    .clone()
+    .into_inner()
+    .flatten()
+    .fold(base, |base, element| match element.as_rule() {
+      Rule::path => base.add_attribute(Attribute {
+        key: "path".to_string(),
+        value: AttributeValue::Ref(element.as_str()),
+      }),
+      Rule::inline_attribute_list => process_inline_attribute_list(element, base),
+      _ => base,
+    });
+
+  let path = match base.get_attribute("path") {
+    Some(path) => path,
+    None => {
+      return base.error("include macro without path");
+    }
+  };
+
+  let content = match env.read_to_string(path) {
+    Ok(content) => content,
+    Err(e) => {
+      return base
+        .clone()
+        .error(&format!("couldn't read included file {} ({})", path, e));
+    }
+  };
+
+  let include_el =
+    match IncludeElement::from_parser(
+      content,
+      env,
+      &|content_ref, env| match AsciidocParser::parse(Rule::asciidoc, content_ref) {
+        Ok(ast) => {
+          let mut elements = Vec::new();
+          for element in ast {
+            if let Some(element) = process_element(element, env) {
+              elements.push(element);
+            }
+          }
+          Ok(AST {
+            content: content_ref,
+            elements,
+            attributes: vec![Attribute {
+              key: "source".to_string(),
+              value: AttributeValue::String(path.to_string()),
+            }],
+          })
+        }
+        Err(e) => Err(format!("couldn't parse included file {} ({})", path, e)),
+      },
+    ) {
+      Ok(inner_ast) => inner_ast,
+      Err(e) => {
+        return base
+          .clone()
+          .error(&format!("couldn't parse included file {} ({})", path, e));
+      }
+    };
+
+  base.element(Element::IncludeElement(include_el))
+}
+----
+
+====
+
 [[generic_pegs]]
 [source, pest]
 ----
@@ -2503,7 +2585,9 @@ Alle Schnittstellen basieren auf der gleichen Datenstrucktur. Diese bildet ein D
 [source, rust, save]
 .src/ast.rs
 ----
-use serde::{Deserialize, Serialize};
+use std::{fmt::Debug, marker::PhantomPinned, pin::Pin, ptr::NonNull};
+use serde::{Deserialize, Deserializer, Serialize};
+use crate::util::Env;
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct AST<'a> {
@@ -2657,7 +2741,7 @@ pub enum Element<'a> {
   TypedBlock {
     kind: BlockType,
   },
-  /// Holds content which is not przessed direktly by
+  /// Holds content which is not prozessed direktly by
   /// asciidoctrine. It can be anything. Outputs or
   /// postprocessors could use or ignore it at their
   /// will (e.g. videos)
@@ -2726,10 +2810,96 @@ pub struct Attribute<'a> {
   pub value: AttributeValue<'a>,
 }
 
+#[derive(Clone)]
+struct UnmovableString {
+  pub content: String,
+  pub content_ref: NonNull<str>,
+  _pin: PhantomPinned,
+}
+
+impl PartialEq for UnmovableString {
+  fn eq(&self, other: &Self) -> bool {
+    self.content == other.content
+  }
+}
+
+impl Debug for UnmovableString {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "UnmovableString(\"{}\")", self.content)
+  }
+}
+
+impl UnmovableString {
+  fn new(content: String) -> Pin<Box<Self>> {
+    let res = Self {
+      content,
+      content_ref: "".into(),
+      _pin: PhantomPinned,
+    };
+    let mut boxed = Box::new(res);
+    boxed.content_ref = NonNull::from(boxed.content.as_str());
+    let pin = Box::into_pin(boxed);
+    pin
+  }
+}
+
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct IncludeElement<'a> {
+  #[serde(
+    serialize_with = "serialize_unmovable_string",
+    deserialize_with = "deserialize_unmovable_string"
+  )]
+  content: Pin<Box<UnmovableString>>,
   #[serde(borrow)]
   pub inner: AST<'a>,
+  #[serde(skip)]
+  _pin: PhantomPinned,
+}
+
+impl IncludeElement<'_> {
+  pub fn from_parser(
+    content: String,
+    env: &mut Env,
+    parser: &dyn for<'a> Fn(&'a str, &mut Env) -> Result<AST<'a>, String>,
+  ) -> Result<Self, String> {
+    let content = UnmovableString::new(content);
+    let content_ref = unsafe { content.content_ref.as_ref() };
+    let inner_ast = parser(content_ref, env)?;
+
+    Ok(IncludeElement {
+      content,
+      inner: inner_ast,
+      _pin: PhantomPinned,
+    })
+  }
+
+  pub fn from_data(content: String, inner: AST<'static>) -> Self {
+    IncludeElement {
+      content: UnmovableString::new(content),
+      inner,
+      _pin: PhantomPinned,
+    }
+  }
+}
+
+fn serialize_unmovable_string<S>(
+  string: &Pin<Box<UnmovableString>>,
+  serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+  S: serde::Serializer,
+{
+  serializer.serialize_str(&string.content)
+}
+
+fn deserialize_unmovable_string<'de, D>(
+  deserializer: D,
+) -> Result<Pin<Box<UnmovableString>>, D::Error>
+where
+  D: Deserializer<'de>,
+{
+  let string = String::deserialize(deserializer)?;
+  Ok(UnmovableString::new(string))
 }
 ----
 

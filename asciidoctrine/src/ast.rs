@@ -1,7 +1,5 @@
-use std::{fmt::Debug, marker::PhantomPinned, ops::Deref, pin::Pin, ptr::NonNull};
-
+use std::{fmt::Debug, marker::PhantomPinned, pin::Pin, ptr::NonNull};
 use serde::{Deserialize, Deserializer, Serialize};
-
 use crate::util::Env;
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
