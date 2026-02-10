@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Asciidoctor 2.0.23">
+<meta name="generator" content="Asciidoctor 2.0.26">
 <meta name="author" content="Benjamin Kober">
 <title>ASCIIdoctrine</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
@@ -117,7 +117,6 @@ h1 strong,h2 strong,h3 strong,#toctitle strong,.sidebarblock>.content>.title str
 :not(pre):not([class^=L])>code{font-size:.9375em;font-style:normal!important;letter-spacing:0;padding:.1em .5ex;word-spacing:-.15em;background:#f7f7f8;border-radius:4px;line-height:1.45;text-rendering:optimizeSpeed}
 pre{color:rgba(0,0,0,.9);font-family:"Droid Sans Mono","DejaVu Sans Mono",monospace;line-height:1.45;text-rendering:optimizeSpeed}
 pre code,pre pre{color:inherit;font-size:inherit;line-height:inherit}
-pre>code{display:block}
 pre.nowrap,pre.nowrap pre{white-space:pre;word-wrap:normal}
 em em{font-style:normal}
 strong strong{font-weight:400}
@@ -220,6 +219,7 @@ table.tableblock.fit-content>caption.title{white-space:nowrap;width:0}
 .literalblock pre,.listingblock>.content>pre:not(.highlight),.listingblock>.content>pre[class=highlight],.listingblock>.content>pre[class^="highlight "]{background:#f7f7f8}
 .literalblock.output pre{color:#f7f7f8;background:rgba(0,0,0,.9)}
 .listingblock>.content{position:relative}
+.listingblock pre>code{display:block}
 .listingblock code[data-lang]::before{display:none;content:attr(data-lang);position:absolute;font-size:.75em;top:.425rem;right:.5rem;line-height:1;text-transform:uppercase;color:inherit;opacity:.5}
 .listingblock:hover code[data-lang]::before{display:block}
 .listingblock.terminal pre .command::before{content:attr(data-prompt);padding-right:.5em;color:inherit;opacity:.5}
@@ -439,9 +439,9 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 pre.pygments .hll { background-color: #ffffcc }
 pre.pygments { background: #f8f8f8; }
 pre.pygments .tok-c { color: #3D7B7B; font-style: italic } /* Comment */
-pre.pygments .tok-err { border: 1px solid #FF0000 } /* Error */
+pre.pygments .tok-err { border: 1px solid #F00 } /* Error */
 pre.pygments .tok-k { color: #008000; font-weight: bold } /* Keyword */
-pre.pygments .tok-o { color: #666666 } /* Operator */
+pre.pygments .tok-o { color: #666 } /* Operator */
 pre.pygments .tok-ch { color: #3D7B7B; font-style: italic } /* Comment.Hashbang */
 pre.pygments .tok-cm { color: #3D7B7B; font-style: italic } /* Comment.Multiline */
 pre.pygments .tok-cp { color: #9C6500 } /* Comment.Preproc */
@@ -458,34 +458,34 @@ pre.pygments .tok-go { color: #717171 } /* Generic.Output */
 pre.pygments .tok-gp { color: #000080; font-weight: bold } /* Generic.Prompt */
 pre.pygments .tok-gs { font-weight: bold } /* Generic.Strong */
 pre.pygments .tok-gu { color: #800080; font-weight: bold } /* Generic.Subheading */
-pre.pygments .tok-gt { color: #0044DD } /* Generic.Traceback */
+pre.pygments .tok-gt { color: #04D } /* Generic.Traceback */
 pre.pygments .tok-kc { color: #008000; font-weight: bold } /* Keyword.Constant */
 pre.pygments .tok-kd { color: #008000; font-weight: bold } /* Keyword.Declaration */
 pre.pygments .tok-kn { color: #008000; font-weight: bold } /* Keyword.Namespace */
 pre.pygments .tok-kp { color: #008000 } /* Keyword.Pseudo */
 pre.pygments .tok-kr { color: #008000; font-weight: bold } /* Keyword.Reserved */
 pre.pygments .tok-kt { color: #B00040 } /* Keyword.Type */
-pre.pygments .tok-m { color: #666666 } /* Literal.Number */
+pre.pygments .tok-m { color: #666 } /* Literal.Number */
 pre.pygments .tok-s { color: #BA2121 } /* Literal.String */
 pre.pygments .tok-na { color: #687822 } /* Name.Attribute */
 pre.pygments .tok-nb { color: #008000 } /* Name.Builtin */
-pre.pygments .tok-nc { color: #0000FF; font-weight: bold } /* Name.Class */
-pre.pygments .tok-no { color: #880000 } /* Name.Constant */
-pre.pygments .tok-nd { color: #AA22FF } /* Name.Decorator */
+pre.pygments .tok-nc { color: #00F; font-weight: bold } /* Name.Class */
+pre.pygments .tok-no { color: #800 } /* Name.Constant */
+pre.pygments .tok-nd { color: #A2F } /* Name.Decorator */
 pre.pygments .tok-ni { color: #717171; font-weight: bold } /* Name.Entity */
 pre.pygments .tok-ne { color: #CB3F38; font-weight: bold } /* Name.Exception */
-pre.pygments .tok-nf { color: #0000FF } /* Name.Function */
+pre.pygments .tok-nf { color: #00F } /* Name.Function */
 pre.pygments .tok-nl { color: #767600 } /* Name.Label */
-pre.pygments .tok-nn { color: #0000FF; font-weight: bold } /* Name.Namespace */
+pre.pygments .tok-nn { color: #00F; font-weight: bold } /* Name.Namespace */
 pre.pygments .tok-nt { color: #008000; font-weight: bold } /* Name.Tag */
 pre.pygments .tok-nv { color: #19177C } /* Name.Variable */
-pre.pygments .tok-ow { color: #AA22FF; font-weight: bold } /* Operator.Word */
-pre.pygments .tok-w { color: #bbbbbb } /* Text.Whitespace */
-pre.pygments .tok-mb { color: #666666 } /* Literal.Number.Bin */
-pre.pygments .tok-mf { color: #666666 } /* Literal.Number.Float */
-pre.pygments .tok-mh { color: #666666 } /* Literal.Number.Hex */
-pre.pygments .tok-mi { color: #666666 } /* Literal.Number.Integer */
-pre.pygments .tok-mo { color: #666666 } /* Literal.Number.Oct */
+pre.pygments .tok-ow { color: #A2F; font-weight: bold } /* Operator.Word */
+pre.pygments .tok-w { color: #BBB } /* Text.Whitespace */
+pre.pygments .tok-mb { color: #666 } /* Literal.Number.Bin */
+pre.pygments .tok-mf { color: #666 } /* Literal.Number.Float */
+pre.pygments .tok-mh { color: #666 } /* Literal.Number.Hex */
+pre.pygments .tok-mi { color: #666 } /* Literal.Number.Integer */
+pre.pygments .tok-mo { color: #666 } /* Literal.Number.Oct */
 pre.pygments .tok-sa { color: #BA2121 } /* Literal.String.Affix */
 pre.pygments .tok-sb { color: #BA2121 } /* Literal.String.Backtick */
 pre.pygments .tok-sc { color: #BA2121 } /* Literal.String.Char */
@@ -500,12 +500,12 @@ pre.pygments .tok-sr { color: #A45A77 } /* Literal.String.Regex */
 pre.pygments .tok-s1 { color: #BA2121 } /* Literal.String.Single */
 pre.pygments .tok-ss { color: #19177C } /* Literal.String.Symbol */
 pre.pygments .tok-bp { color: #008000 } /* Name.Builtin.Pseudo */
-pre.pygments .tok-fm { color: #0000FF } /* Name.Function.Magic */
+pre.pygments .tok-fm { color: #00F } /* Name.Function.Magic */
 pre.pygments .tok-vc { color: #19177C } /* Name.Variable.Class */
 pre.pygments .tok-vg { color: #19177C } /* Name.Variable.Global */
 pre.pygments .tok-vi { color: #19177C } /* Name.Variable.Instance */
 pre.pygments .tok-vm { color: #19177C } /* Name.Variable.Magic */
-pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
+pre.pygments .tok-il { color: #666 } /* Literal.Number.Integer.Long */
 </style>
 </head>
 <body class="article toc2 toc-left">
@@ -3346,6 +3346,86 @@ This Information is visible by default.
 <pre class="pygments highlight"><code data-lang="pest"><span></span>include_macro = { &quot;include::&quot; ~ path ~ inline_attribute_list }</code></pre>
 </div>
 </div>
+<details>
+<summary class="title">Details</summary>
+<div class="content">
+<div id="asciidoc_element_rules" class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-n">Rule</span><span class="tok-p">::</span><span class="tok-n">include_macro</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">process_include</span><span class="tok-p">(</span><span class="tok-n">element</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">env</span><span class="tok-p">)),</span></code></pre>
+</div>
+</div>
+<div id="asciidoc_parser_functions" class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span><span class="tok-w"> </span><span class="tok-nf">process_include</span><span class="tok-o">&lt;&#39;</span><span class="tok-na">a</span><span class="tok-o">&gt;</span><span class="tok-p">(</span><span class="tok-n">element</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">Pair</span><span class="tok-o">&lt;&#39;</span><span class="tok-na">a</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">asciidoc</span><span class="tok-p">::</span><span class="tok-n">Rule</span><span class="tok-o">&gt;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">env</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Env</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">-&gt;</span><span class="tok-w"> </span><span class="tok-nc">ElementSpan</span><span class="tok-o">&lt;&#39;</span><span class="tok-na">a</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">  </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">set_span</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">element</span><span class="tok-p">);</span>
+
+<span class="tok-w">  </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">element</span>
+<span class="tok-w">    </span><span class="tok-p">.</span><span class="tok-n">clone</span><span class="tok-p">()</span>
+<span class="tok-w">    </span><span class="tok-p">.</span><span class="tok-n">into_inner</span><span class="tok-p">()</span>
+<span class="tok-w">    </span><span class="tok-p">.</span><span class="tok-n">flatten</span><span class="tok-p">()</span>
+<span class="tok-w">    </span><span class="tok-p">.</span><span class="tok-n">fold</span><span class="tok-p">(</span><span class="tok-n">base</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">|</span><span class="tok-n">base</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">element</span><span class="tok-o">|</span><span class="tok-w"> </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">element</span><span class="tok-p">.</span><span class="tok-n">as_rule</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">      </span><span class="tok-n">Rule</span><span class="tok-p">::</span><span class="tok-n">path</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-p">.</span><span class="tok-n">add_attribute</span><span class="tok-p">(</span><span class="tok-n">Attribute</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">        </span><span class="tok-n">key</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-s">&quot;path&quot;</span><span class="tok-p">.</span><span class="tok-n">to_string</span><span class="tok-p">(),</span>
+<span class="tok-w">        </span><span class="tok-n">value</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">AttributeValue</span><span class="tok-p">::</span><span class="tok-n">Ref</span><span class="tok-p">(</span><span class="tok-n">element</span><span class="tok-p">.</span><span class="tok-n">as_str</span><span class="tok-p">()),</span>
+<span class="tok-w">      </span><span class="tok-p">}),</span>
+<span class="tok-w">      </span><span class="tok-n">Rule</span><span class="tok-p">::</span><span class="tok-n">inline_attribute_list</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">process_inline_attribute_list</span><span class="tok-p">(</span><span class="tok-n">element</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-p">),</span>
+<span class="tok-w">      </span><span class="tok-n">_</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-p">,</span>
+<span class="tok-w">    </span><span class="tok-p">});</span>
+
+<span class="tok-w">  </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">path</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-p">.</span><span class="tok-n">get_attribute</span><span class="tok-p">(</span><span class="tok-s">&quot;path&quot;</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">    </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">path</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">path</span><span class="tok-p">,</span>
+<span class="tok-w">    </span><span class="tok-nb">None</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">      </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-p">.</span><span class="tok-n">error</span><span class="tok-p">(</span><span class="tok-s">&quot;include macro without path&quot;</span><span class="tok-p">);</span>
+<span class="tok-w">    </span><span class="tok-p">}</span>
+<span class="tok-w">  </span><span class="tok-p">};</span>
+
+<span class="tok-w">  </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">content</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">env</span><span class="tok-p">.</span><span class="tok-n">read_to_string</span><span class="tok-p">(</span><span class="tok-n">path</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">    </span><span class="tok-nb">Ok</span><span class="tok-p">(</span><span class="tok-n">content</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">content</span><span class="tok-p">,</span>
+<span class="tok-w">    </span><span class="tok-nb">Err</span><span class="tok-p">(</span><span class="tok-n">e</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">      </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-n">base</span>
+<span class="tok-w">        </span><span class="tok-p">.</span><span class="tok-n">clone</span><span class="tok-p">()</span>
+<span class="tok-w">        </span><span class="tok-p">.</span><span class="tok-n">error</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-fm">format!</span><span class="tok-p">(</span><span class="tok-s">&quot;couldn&#39;t read included file {} ({})&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">path</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">e</span><span class="tok-p">));</span>
+<span class="tok-w">    </span><span class="tok-p">}</span>
+<span class="tok-w">  </span><span class="tok-p">};</span>
+
+<span class="tok-w">  </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">include_el</span><span class="tok-w"> </span><span class="tok-o">=</span>
+<span class="tok-w">    </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">IncludeElement</span><span class="tok-p">::</span><span class="tok-n">from_parser</span><span class="tok-p">(</span>
+<span class="tok-w">      </span><span class="tok-n">content</span><span class="tok-p">,</span>
+<span class="tok-w">      </span><span class="tok-n">env</span><span class="tok-p">,</span>
+<span class="tok-w">      </span><span class="tok-o">&amp;|</span><span class="tok-n">content_ref</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">env</span><span class="tok-o">|</span><span class="tok-w"> </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">AsciidocParser</span><span class="tok-p">::</span><span class="tok-n">parse</span><span class="tok-p">(</span><span class="tok-n">Rule</span><span class="tok-p">::</span><span class="tok-n">asciidoc</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">content_ref</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">        </span><span class="tok-nb">Ok</span><span class="tok-p">(</span><span class="tok-n">ast</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">          </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">elements</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nb">Vec</span><span class="tok-p">::</span><span class="tok-n">new</span><span class="tok-p">();</span>
+<span class="tok-w">          </span><span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-n">element</span><span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span><span class="tok-n">ast</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">            </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">element</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">process_element</span><span class="tok-p">(</span><span class="tok-n">element</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">env</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">              </span><span class="tok-n">elements</span><span class="tok-p">.</span><span class="tok-n">push</span><span class="tok-p">(</span><span class="tok-n">element</span><span class="tok-p">);</span>
+<span class="tok-w">            </span><span class="tok-p">}</span>
+<span class="tok-w">          </span><span class="tok-p">}</span>
+<span class="tok-w">          </span><span class="tok-nb">Ok</span><span class="tok-p">(</span><span class="tok-n">AST</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">            </span><span class="tok-n">content</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">content_ref</span><span class="tok-p">,</span>
+<span class="tok-w">            </span><span class="tok-n">elements</span><span class="tok-p">,</span>
+<span class="tok-w">            </span><span class="tok-n">attributes</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">vec</span><span class="tok-o">!</span><span class="tok-p">[</span><span class="tok-n">Attribute</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">              </span><span class="tok-n">key</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-s">&quot;source&quot;</span><span class="tok-p">.</span><span class="tok-n">to_string</span><span class="tok-p">(),</span>
+<span class="tok-w">              </span><span class="tok-n">value</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">AttributeValue</span><span class="tok-p">::</span><span class="tok-nb">String</span><span class="tok-p">(</span><span class="tok-n">path</span><span class="tok-p">.</span><span class="tok-n">to_string</span><span class="tok-p">()),</span>
+<span class="tok-w">            </span><span class="tok-p">}],</span>
+<span class="tok-w">          </span><span class="tok-p">})</span>
+<span class="tok-w">        </span><span class="tok-p">}</span>
+<span class="tok-w">        </span><span class="tok-nb">Err</span><span class="tok-p">(</span><span class="tok-n">e</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-nb">Err</span><span class="tok-p">(</span><span class="tok-fm">format!</span><span class="tok-p">(</span><span class="tok-s">&quot;couldn&#39;t parse included file {} ({})&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">path</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">e</span><span class="tok-p">)),</span>
+<span class="tok-w">      </span><span class="tok-p">},</span>
+<span class="tok-w">    </span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">      </span><span class="tok-nb">Ok</span><span class="tok-p">(</span><span class="tok-n">inner_ast</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">inner_ast</span><span class="tok-p">,</span>
+<span class="tok-w">      </span><span class="tok-nb">Err</span><span class="tok-p">(</span><span class="tok-n">e</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">        </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-n">base</span>
+<span class="tok-w">          </span><span class="tok-p">.</span><span class="tok-n">clone</span><span class="tok-p">()</span>
+<span class="tok-w">          </span><span class="tok-p">.</span><span class="tok-n">error</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-fm">format!</span><span class="tok-p">(</span><span class="tok-s">&quot;couldn&#39;t parse included file {} ({})&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">path</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">e</span><span class="tok-p">));</span>
+<span class="tok-w">      </span><span class="tok-p">}</span>
+<span class="tok-w">    </span><span class="tok-p">};</span>
+
+<span class="tok-w">  </span><span class="tok-n">base</span><span class="tok-p">.</span><span class="tok-n">element</span><span class="tok-p">(</span><span class="tok-n">Element</span><span class="tok-p">::</span><span class="tok-n">IncludeElement</span><span class="tok-p">(</span><span class="tok-n">include_el</span><span class="tok-p">))</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+</div>
+</details>
 <div id="generic_pegs" class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="pest"><span></span>// TODO Should all unicode letters be matched? Instead of just ascii?
@@ -3741,7 +3821,11 @@ Unresolved directive in asciidoctrine.adoc - include::src/output/json-ast.adoc[]
 <span class="normal"> 7</span>
 <span class="normal"> 8</span>
 <span class="normal"> 9</span>
-<span class="normal">10</span></pre></div></td><td class="code"><div><pre><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">serde</span><span class="tok-p">::{</span><span class="tok-n">Deserialize</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">Serialize</span><span class="tok-p">};</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">std</span><span class="tok-p">::{</span><span class="tok-n">fmt</span><span class="tok-p">::</span><span class="tok-n">Debug</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">marker</span><span class="tok-p">::</span><span class="tok-n">PhantomPinned</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">pin</span><span class="tok-p">::</span><span class="tok-n">Pin</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">ptr</span><span class="tok-p">::</span><span class="tok-n">NonNull</span><span class="tok-p">};</span>
+<span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">serde</span><span class="tok-p">::{</span><span class="tok-n">Deserialize</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">Deserializer</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">Serialize</span><span class="tok-p">};</span>
+<span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-k">crate</span><span class="tok-p">::</span><span class="tok-n">util</span><span class="tok-p">::</span><span class="tok-n">Env</span><span class="tok-p">;</span>
 
 <span class="tok-cp">#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]</span>
 <span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">struct</span><span class="tok-w"> </span><span class="tok-nc">AST</span><span class="tok-o">&lt;&#39;</span><span class="tok-na">a</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span>
@@ -3895,7 +3979,7 @@ Unresolved directive in asciidoctrine.adoc - include::src/output/json-ast.adoc[]
 <span class="tok-w">  </span><span class="tok-n">TypedBlock</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-n">kind</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">BlockType</span><span class="tok-p">,</span>
 <span class="tok-w">  </span><span class="tok-p">},</span>
-<span class="tok-w">  </span><span class="tok-sd">/// Holds content which is not przessed direktly by</span>
+<span class="tok-w">  </span><span class="tok-sd">/// Holds content which is not prozessed direktly by</span>
 <span class="tok-w">  </span><span class="tok-sd">/// asciidoctrine. It can be anything. Outputs or</span>
 <span class="tok-w">  </span><span class="tok-sd">/// postprocessors could use or ignore it at their</span>
 <span class="tok-w">  </span><span class="tok-sd">/// will (e.g. videos)</span>
@@ -3964,10 +4048,96 @@ Unresolved directive in asciidoctrine.adoc - include::src/output/json-ast.adoc[]
 <span class="tok-w">  </span><span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-n">value</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">AttributeValue</span><span class="tok-o">&lt;&#39;</span><span class="tok-na">a</span><span class="tok-o">&gt;</span><span class="tok-p">,</span>
 <span class="tok-p">}</span>
 
+<span class="tok-cp">#[derive(Clone)]</span>
+<span class="tok-k">struct</span><span class="tok-w"> </span><span class="tok-nc">UnmovableString</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">  </span><span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-n">content</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nb">String</span><span class="tok-p">,</span>
+<span class="tok-w">  </span><span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-n">content_ref</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">NonNull</span><span class="tok-o">&lt;</span><span class="tok-kt">str</span><span class="tok-o">&gt;</span><span class="tok-p">,</span>
+<span class="tok-w">  </span><span class="tok-n">_pin</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">PhantomPinned</span><span class="tok-p">,</span>
+<span class="tok-p">}</span>
+
+<span class="tok-k">impl</span><span class="tok-w"> </span><span class="tok-nb">PartialEq</span><span class="tok-w"> </span><span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-n">UnmovableString</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">  </span><span class="tok-k">fn</span><span class="tok-w"> </span><span class="tok-nf">eq</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">other</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-kp">&amp;</span><span class="tok-nc">Self</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">-&gt;</span><span class="tok-w"> </span><span class="tok-kt">bool</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">    </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">content</span><span class="tok-w"> </span><span class="tok-o">==</span><span class="tok-w"> </span><span class="tok-n">other</span><span class="tok-p">.</span><span class="tok-n">content</span>
+<span class="tok-w">  </span><span class="tok-p">}</span>
+<span class="tok-p">}</span>
+
+<span class="tok-k">impl</span><span class="tok-w"> </span><span class="tok-n">Debug</span><span class="tok-w"> </span><span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-n">UnmovableString</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">  </span><span class="tok-k">fn</span><span class="tok-w"> </span><span class="tok-nf">fmt</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">f</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">std</span><span class="tok-p">::</span><span class="tok-n">fmt</span><span class="tok-p">::</span><span class="tok-n">Formatter</span><span class="tok-o">&lt;&#39;</span><span class="tok-nb">_</span><span class="tok-o">&gt;</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">-&gt;</span><span class="tok-w"> </span><span class="tok-nc">std</span><span class="tok-p">::</span><span class="tok-n">fmt</span><span class="tok-p">::</span><span class="tok-nb">Result</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">    </span><span class="tok-fm">write!</span><span class="tok-p">(</span><span class="tok-n">f</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-s">&quot;UnmovableString(</span><span class="tok-se">\&quot;</span><span class="tok-s">{}</span><span class="tok-se">\&quot;</span><span class="tok-s">)&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-bp">self</span><span class="tok-p">.</span><span class="tok-n">content</span><span class="tok-p">)</span>
+<span class="tok-w">  </span><span class="tok-p">}</span>
+<span class="tok-p">}</span>
+
+<span class="tok-k">impl</span><span class="tok-w"> </span><span class="tok-n">UnmovableString</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">  </span><span class="tok-k">fn</span><span class="tok-w"> </span><span class="tok-nf">new</span><span class="tok-p">(</span><span class="tok-n">content</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nb">String</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">-&gt;</span><span class="tok-w"> </span><span class="tok-nc">Pin</span><span class="tok-o">&lt;</span><span class="tok-nb">Box</span><span class="tok-o">&lt;</span><span class="tok-bp">Self</span><span class="tok-o">&gt;&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">res</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-bp">Self</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">      </span><span class="tok-n">content</span><span class="tok-p">,</span>
+<span class="tok-w">      </span><span class="tok-n">content_ref</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-s">&quot;&quot;</span><span class="tok-p">.</span><span class="tok-n">into</span><span class="tok-p">(),</span>
+<span class="tok-w">      </span><span class="tok-n">_pin</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">PhantomPinned</span><span class="tok-p">,</span>
+<span class="tok-w">    </span><span class="tok-p">};</span>
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">boxed</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nb">Box</span><span class="tok-p">::</span><span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-n">res</span><span class="tok-p">);</span>
+<span class="tok-w">    </span><span class="tok-n">boxed</span><span class="tok-p">.</span><span class="tok-n">content_ref</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">NonNull</span><span class="tok-p">::</span><span class="tok-n">from</span><span class="tok-p">(</span><span class="tok-n">boxed</span><span class="tok-p">.</span><span class="tok-n">content</span><span class="tok-p">.</span><span class="tok-n">as_str</span><span class="tok-p">());</span>
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">pin</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nb">Box</span><span class="tok-p">::</span><span class="tok-n">into_pin</span><span class="tok-p">(</span><span class="tok-n">boxed</span><span class="tok-p">);</span>
+<span class="tok-w">    </span><span class="tok-n">pin</span>
+<span class="tok-w">  </span><span class="tok-p">}</span>
+<span class="tok-p">}</span>
+
 <span class="tok-cp">#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]</span>
 <span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">struct</span><span class="tok-w"> </span><span class="tok-nc">IncludeElement</span><span class="tok-o">&lt;&#39;</span><span class="tok-na">a</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">  </span><span class="tok-cp">#[serde(</span>
+<span class="tok-cp">    serialize_with = </span><span class="tok-s">&quot;serialize_unmovable_string&quot;</span><span class="tok-cp">,</span>
+<span class="tok-cp">    deserialize_with = </span><span class="tok-s">&quot;deserialize_unmovable_string&quot;</span>
+<span class="tok-cp">  )]</span>
+<span class="tok-w">  </span><span class="tok-n">content</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">Pin</span><span class="tok-o">&lt;</span><span class="tok-nb">Box</span><span class="tok-o">&lt;</span><span class="tok-n">UnmovableString</span><span class="tok-o">&gt;&gt;</span><span class="tok-p">,</span>
 <span class="tok-w">  </span><span class="tok-cp">#[serde(borrow)]</span>
 <span class="tok-w">  </span><span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-n">inner</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">AST</span><span class="tok-o">&lt;&#39;</span><span class="tok-na">a</span><span class="tok-o">&gt;</span><span class="tok-p">,</span>
+<span class="tok-w">  </span><span class="tok-cp">#[serde(skip)]</span>
+<span class="tok-w">  </span><span class="tok-n">_pin</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">PhantomPinned</span><span class="tok-p">,</span>
+<span class="tok-p">}</span>
+
+<span class="tok-k">impl</span><span class="tok-w"> </span><span class="tok-n">IncludeElement</span><span class="tok-o">&lt;&#39;</span><span class="tok-nb">_</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">  </span><span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">fn</span><span class="tok-w"> </span><span class="tok-nf">from_parser</span><span class="tok-p">(</span>
+<span class="tok-w">    </span><span class="tok-n">content</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nb">String</span><span class="tok-p">,</span>
+<span class="tok-w">    </span><span class="tok-n">env</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-kp">&amp;</span><span class="tok-nc">mut</span><span class="tok-w"> </span><span class="tok-n">Env</span><span class="tok-p">,</span>
+<span class="tok-w">    </span><span class="tok-n">parser</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-kp">&amp;</span><span class="tok-nc">dyn</span><span class="tok-w"> </span><span class="tok-k">for</span><span class="tok-o">&lt;&#39;</span><span class="tok-na">a</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-nb">Fn</span><span class="tok-p">(</span><span class="tok-o">&amp;&#39;</span><span class="tok-na">a</span><span class="tok-w"> </span><span class="tok-kt">str</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">Env</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">-&gt;</span><span class="tok-w"> </span><span class="tok-nb">Result</span><span class="tok-o">&lt;</span><span class="tok-n">AST</span><span class="tok-o">&lt;&#39;</span><span class="tok-na">a</span><span class="tok-o">&gt;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-nb">String</span><span class="tok-o">&gt;</span><span class="tok-p">,</span>
+<span class="tok-w">  </span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">-&gt;</span><span class="tok-w"> </span><span class="tok-nb">Result</span><span class="tok-o">&lt;</span><span class="tok-bp">Self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-nb">String</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">content</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">UnmovableString</span><span class="tok-p">::</span><span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-n">content</span><span class="tok-p">);</span>
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">content_ref</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-k">unsafe</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"> </span><span class="tok-n">content</span><span class="tok-p">.</span><span class="tok-n">content_ref</span><span class="tok-p">.</span><span class="tok-n">as_ref</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">};</span>
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">inner_ast</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">parser</span><span class="tok-p">(</span><span class="tok-n">content_ref</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">env</span><span class="tok-p">)</span><span class="tok-o">?</span><span class="tok-p">;</span>
+
+<span class="tok-w">    </span><span class="tok-nb">Ok</span><span class="tok-p">(</span><span class="tok-n">IncludeElement</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">      </span><span class="tok-n">content</span><span class="tok-p">,</span>
+<span class="tok-w">      </span><span class="tok-n">inner</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">inner_ast</span><span class="tok-p">,</span>
+<span class="tok-w">      </span><span class="tok-n">_pin</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">PhantomPinned</span><span class="tok-p">,</span>
+<span class="tok-w">    </span><span class="tok-p">})</span>
+<span class="tok-w">  </span><span class="tok-p">}</span>
+
+<span class="tok-w">  </span><span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">fn</span><span class="tok-w"> </span><span class="tok-nf">from_data</span><span class="tok-p">(</span><span class="tok-n">content</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nb">String</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">inner</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">AST</span><span class="tok-o">&lt;&#39;</span><span class="tok-nb">static</span><span class="tok-o">&gt;</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">-&gt;</span><span class="tok-w"> </span><span class="tok-nc">Self</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">    </span><span class="tok-n">IncludeElement</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">      </span><span class="tok-n">content</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">UnmovableString</span><span class="tok-p">::</span><span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-n">content</span><span class="tok-p">),</span>
+<span class="tok-w">      </span><span class="tok-n">inner</span><span class="tok-p">,</span>
+<span class="tok-w">      </span><span class="tok-n">_pin</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">PhantomPinned</span><span class="tok-p">,</span>
+<span class="tok-w">    </span><span class="tok-p">}</span>
+<span class="tok-w">  </span><span class="tok-p">}</span>
+<span class="tok-p">}</span>
+
+<span class="tok-k">fn</span><span class="tok-w"> </span><span class="tok-nf">serialize_unmovable_string</span><span class="tok-o">&lt;</span><span class="tok-n">S</span><span class="tok-o">&gt;</span><span class="tok-p">(</span>
+<span class="tok-w">  </span><span class="tok-n">string</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-kp">&amp;</span><span class="tok-nc">Pin</span><span class="tok-o">&lt;</span><span class="tok-nb">Box</span><span class="tok-o">&lt;</span><span class="tok-n">UnmovableString</span><span class="tok-o">&gt;&gt;</span><span class="tok-p">,</span>
+<span class="tok-w">  </span><span class="tok-n">serializer</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">S</span><span class="tok-p">,</span>
+<span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">-&gt;</span><span class="tok-w"> </span><span class="tok-nb">Result</span><span class="tok-o">&lt;</span><span class="tok-n">S</span><span class="tok-p">::</span><span class="tok-nb">Ok</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">S</span><span class="tok-p">::</span><span class="tok-n">Error</span><span class="tok-o">&gt;</span>
+<span class="tok-k">where</span>
+<span class="tok-w">  </span><span class="tok-n">S</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">serde</span><span class="tok-p">::</span><span class="tok-n">Serializer</span><span class="tok-p">,</span>
+<span class="tok-p">{</span>
+<span class="tok-w">  </span><span class="tok-n">serializer</span><span class="tok-p">.</span><span class="tok-n">serialize_str</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">string</span><span class="tok-p">.</span><span class="tok-n">content</span><span class="tok-p">)</span>
+<span class="tok-p">}</span>
+
+<span class="tok-k">fn</span><span class="tok-w"> </span><span class="tok-nf">deserialize_unmovable_string</span><span class="tok-o">&lt;&#39;</span><span class="tok-na">de</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">D</span><span class="tok-o">&gt;</span><span class="tok-p">(</span>
+<span class="tok-w">  </span><span class="tok-n">deserializer</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">D</span><span class="tok-p">,</span>
+<span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">-&gt;</span><span class="tok-w"> </span><span class="tok-nb">Result</span><span class="tok-o">&lt;</span><span class="tok-n">Pin</span><span class="tok-o">&lt;</span><span class="tok-nb">Box</span><span class="tok-o">&lt;</span><span class="tok-n">UnmovableString</span><span class="tok-o">&gt;&gt;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">D</span><span class="tok-p">::</span><span class="tok-n">Error</span><span class="tok-o">&gt;</span>
+<span class="tok-k">where</span>
+<span class="tok-w">  </span><span class="tok-n">D</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">Deserializer</span><span class="tok-o">&lt;&#39;</span><span class="tok-na">de</span><span class="tok-o">&gt;</span><span class="tok-p">,</span>
+<span class="tok-p">{</span>
+<span class="tok-w">  </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">string</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nb">String</span><span class="tok-p">::</span><span class="tok-n">deserialize</span><span class="tok-p">(</span><span class="tok-n">deserializer</span><span class="tok-p">)</span><span class="tok-o">?</span><span class="tok-p">;</span>
+<span class="tok-w">  </span><span class="tok-nb">Ok</span><span class="tok-p">(</span><span class="tok-n">UnmovableString</span><span class="tok-p">::</span><span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-n">string</span><span class="tok-p">))</span>
 <span class="tok-p">}</span></code></pre>
 </div>
 </div>
