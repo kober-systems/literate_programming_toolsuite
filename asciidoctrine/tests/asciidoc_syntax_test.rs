@@ -885,9 +885,9 @@ This is some outro text.
       ElementSpan {
         source: None,
         content: "include::included.adoc[]",
-        element: Element::IncludeElement(IncludeElement {
-          content: UnmovableString::new(included_content.to_string()),
-          inner: AST {
+        element: Element::IncludeElement(IncludeElement::from_data(
+          included_content.to_string(),
+          AST {
             content: included_content,
             elements: vec![ElementSpan {
               source: None,
@@ -921,7 +921,7 @@ This is some outro text.
               value: AttributeValue::String("included.adoc".to_string()),
             }],
           },
-        }),
+        )),
         start: 26,
         end: 50,
         start_line: 3,

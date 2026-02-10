@@ -220,7 +220,7 @@ pub struct Attribute<'a> {
 }
 
 #[derive(Clone)]
-pub struct UnmovableString {
+struct UnmovableString {
   pub content: String,
   pub content_ref: NonNull<str>,
   _pin: PhantomPinned,
@@ -239,7 +239,7 @@ impl Debug for UnmovableString {
 }
 
 impl UnmovableString {
-  pub fn new(content: String) -> Pin<Box<Self>> {
+  fn new(content: String) -> Pin<Box<Self>> {
     let res = Self {
       content,
       content_ref: "".into(),
@@ -258,9 +258,11 @@ pub struct IncludeElement<'a> {
     serialize_with = "serialize_unmovable_string",
     deserialize_with = "deserialize_unmovable_string"
   )]
-  pub content: Pin<Box<UnmovableString>>,
+  content: Pin<Box<UnmovableString>>,
   #[serde(borrow)]
   pub inner: AST<'a>,
+  #[serde(skip)]
+  _pin: PhantomPinned,
 }
 
 impl IncludeElement<'_> {
@@ -276,7 +278,16 @@ impl IncludeElement<'_> {
     Ok(IncludeElement {
       content,
       inner: inner_ast,
+      _pin: PhantomPinned,
     })
+  }
+
+  pub fn from_data(content: String, inner: AST<'static>) -> Self {
+    IncludeElement {
+      content: UnmovableString::new(content),
+      inner,
+      _pin: PhantomPinned,
+    }
   }
 }
 
