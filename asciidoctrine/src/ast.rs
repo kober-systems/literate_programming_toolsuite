@@ -1,4 +1,8 @@
-use serde::{Deserialize, Serialize};
+use std::{fmt::Debug, marker::PhantomPinned, ops::Deref, pin::Pin, ptr::NonNull};
+
+use serde::{Deserialize, Deserializer, Serialize};
+
+use crate::util::Env;
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct AST<'a> {
@@ -146,7 +150,7 @@ pub enum Element<'a> {
   TypedBlock {
     kind: BlockType,
   },
-  /// Holds content which is not przessed direktly by
+  /// Holds content which is not prozessed direktly by
   /// asciidoctrine. It can be anything. Outputs or
   /// postprocessors could use or ignore it at their
   /// will (e.g. videos)
@@ -215,8 +219,83 @@ pub struct Attribute<'a> {
   pub value: AttributeValue<'a>,
 }
 
+#[derive(Clone)]
+pub struct UnmovableString {
+  pub content: String,
+  pub content_ref: NonNull<str>,
+  _pin: PhantomPinned,
+}
+
+impl PartialEq for UnmovableString {
+  fn eq(&self, other: &Self) -> bool {
+    self.content == other.content
+  }
+}
+
+impl Debug for UnmovableString {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "UnmovableString(\"{}\")", self.content)
+  }
+}
+
+impl UnmovableString {
+  pub fn new(content: String) -> Pin<Box<Self>> {
+    let res = Self {
+      content,
+      content_ref: "".into(),
+      _pin: PhantomPinned,
+    };
+    let mut boxed = Box::new(res);
+    boxed.content_ref = NonNull::from(boxed.content.as_str());
+    let pin = Box::into_pin(boxed);
+    pin
+  }
+}
+
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct IncludeElement<'a> {
+  #[serde(
+    serialize_with = "serialize_unmovable_string",
+    deserialize_with = "deserialize_unmovable_string"
+  )]
+  pub content: Pin<Box<UnmovableString>>,
   #[serde(borrow)]
   pub inner: AST<'a>,
+}
+
+impl IncludeElement<'_> {
+  pub fn from_parser(
+    content: String,
+    env: &mut Env,
+    parser: &dyn for<'a> Fn(&'a str, &mut Env) -> Result<AST<'a>, String>,
+  ) -> Result<Self, String> {
+    let content = UnmovableString::new(content);
+    let content_ref = unsafe { content.content_ref.as_ref() };
+    let inner_ast = parser(content_ref, env)?;
+
+    Ok(IncludeElement {
+      content,
+      inner: inner_ast,
+    })
+  }
+}
+
+fn serialize_unmovable_string<S>(
+  string: &Pin<Box<UnmovableString>>,
+  serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+  S: serde::Serializer,
+{
+  serializer.serialize_str(&string.content)
+}
+
+fn deserialize_unmovable_string<'de, D>(
+  deserializer: D,
+) -> Result<Pin<Box<UnmovableString>>, D::Error>
+where
+  D: Deserializer<'de>,
+{
+  let string = String::deserialize(deserializer)?;
+  Ok(UnmovableString::new(string))
 }

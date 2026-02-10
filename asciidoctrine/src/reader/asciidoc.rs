@@ -101,6 +101,7 @@ fn process_element<'a>(
         }),
     ),
     Rule::image_block => Some(process_image(element, env)),
+    Rule::include_macro => Some(process_include(element, env)),
     Rule::block => extract_inner_rule(element, env),
     Rule::inline => Some(process_inline(element, base)),
     Rule::EOI => None,
@@ -442,6 +443,73 @@ fn process_image<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> Elemen
     },
     Some(_) | None => base,
   }
+}
+
+fn process_include<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> ElementSpan<'a> {
+  let base = set_span(&element);
+
+  let base = element
+    .clone()
+    .into_inner()
+    .flatten()
+    .fold(base, |base, element| match element.as_rule() {
+      Rule::path => base.add_attribute(Attribute {
+        key: "path".to_string(),
+        value: AttributeValue::Ref(element.as_str()),
+      }),
+      Rule::inline_attribute_list => process_inline_attribute_list(element, base),
+      _ => base,
+    });
+
+  let path = match base.get_attribute("path") {
+    Some(path) => path,
+    None => {
+      return base.error("include macro without path");
+    }
+  };
+
+  let content = match env.read_to_string(path) {
+    Ok(content) => content,
+    Err(e) => {
+      return base
+        .clone()
+        .error(&format!("couldn't read included file {} ({})", path, e));
+    }
+  };
+
+  let include_el =
+    match IncludeElement::from_parser(
+      content,
+      env,
+      &|content_ref, env| match AsciidocParser::parse(Rule::asciidoc, content_ref) {
+        Ok(ast) => {
+          let mut elements = Vec::new();
+          for element in ast {
+            if let Some(element) = process_element(element, env) {
+              elements.push(element);
+            }
+          }
+          Ok(AST {
+            content: content_ref,
+            elements,
+            attributes: vec![Attribute {
+              key: "source".to_string(),
+              value: AttributeValue::String(path.to_string()),
+            }],
+          })
+        }
+        Err(e) => Err(format!("couldn't parse included file {} ({})", path, e)),
+      },
+    ) {
+      Ok(inner_ast) => inner_ast,
+      Err(e) => {
+        return base
+          .clone()
+          .error(&format!("couldn't parse included file {} ({})", path, e));
+      }
+    };
+
+  base.element(Element::IncludeElement(include_el))
 }
 
 #[derive(Debug, PartialEq)]

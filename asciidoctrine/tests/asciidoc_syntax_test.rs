@@ -1,5 +1,6 @@
 use anyhow::Result;
 use asciidoctrine::reader::asciidoc::AsciidocReader;
+use asciidoctrine::util::Environment;
 use asciidoctrine::{self, *};
 use clap::Parser;
 use pretty_assertions::assert_eq;
@@ -835,5 +836,141 @@ fn parse_nested_bullet_list() -> Result<()> {
 
 // TODO Tables
 
-// TODO Include
-// with anchor
+// --------------------------------------------------------------------------
+// Include Macro
+// --------------------------------------------------------------------------
+
+#[test]
+fn parse_basic_include() -> Result<()> {
+  let input = r#"This is some intro text.
+
+include::included.adoc[]
+
+This is some outro text.
+"#;
+
+  let included_content = r#"This is included content.
+"#;
+
+  let ast = AST {
+    content: input,
+    elements: vec![
+      ElementSpan {
+        source: None,
+        content: "This is some intro text.",
+        element: Element::Paragraph,
+        start: 0,
+        end: 24,
+        start_line: 1,
+        start_col: 1,
+        end_line: 1,
+        end_col: 25,
+        children: vec![ElementSpan {
+          source: None,
+          content: "This is some intro text.",
+          element: Element::Text,
+          start: 0,
+          end: 24,
+          start_line: 1,
+          start_col: 1,
+          end_line: 1,
+          end_col: 25,
+          children: Vec::new(),
+          positional_attributes: Vec::new(),
+          attributes: Vec::new(),
+        }],
+        positional_attributes: Vec::new(),
+        attributes: Vec::new(),
+      },
+      ElementSpan {
+        source: None,
+        content: "include::included.adoc[]",
+        element: Element::IncludeElement(IncludeElement {
+          content: UnmovableString::new(included_content.to_string()),
+          inner: AST {
+            content: included_content,
+            elements: vec![ElementSpan {
+              source: None,
+              content: "This is included content.",
+              element: Element::Paragraph,
+              start: 0,
+              end: 25,
+              start_line: 1,
+              start_col: 1,
+              end_line: 1,
+              end_col: 26,
+              children: vec![ElementSpan {
+                source: None,
+                content: "This is included content.",
+                element: Element::Text,
+                start: 0,
+                end: 25,
+                start_line: 1,
+                start_col: 1,
+                end_line: 1,
+                end_col: 26,
+                children: Vec::new(),
+                positional_attributes: Vec::new(),
+                attributes: Vec::new(),
+              }],
+              positional_attributes: Vec::new(),
+              attributes: Vec::new(),
+            }],
+            attributes: vec![Attribute {
+              key: "source".to_string(),
+              value: AttributeValue::String("included.adoc".to_string()),
+            }],
+          },
+        }),
+        start: 26,
+        end: 50,
+        start_line: 3,
+        start_col: 1,
+        end_line: 3,
+        end_col: 25,
+        children: Vec::new(),
+        positional_attributes: Vec::new(),
+        attributes: vec![Attribute {
+          key: "path".to_string(),
+          value: AttributeValue::Ref("included.adoc"),
+        }],
+      },
+      ElementSpan {
+        source: None,
+        content: "This is some outro text.",
+        element: Element::Paragraph,
+        start: 52,
+        end: 76,
+        start_line: 5,
+        start_col: 1,
+        end_line: 5,
+        end_col: 25,
+        children: vec![ElementSpan {
+          source: None,
+          content: "This is some outro text.",
+          element: Element::Text,
+          start: 52,
+          end: 76,
+          start_line: 5,
+          start_col: 1,
+          end_line: 5,
+          end_col: 25,
+          children: Vec::new(),
+          positional_attributes: Vec::new(),
+          attributes: Vec::new(),
+        }],
+        positional_attributes: Vec::new(),
+        attributes: Vec::new(),
+      },
+    ],
+    attributes: Vec::new(),
+  };
+
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::parse_from(vec![""].into_iter());
+  let mut env = util::Env::Cache(util::Cache::new());
+  env.write("included.adoc", included_content)?;
+  assert_eq!(ast, reader.parse(input, &opts, &mut env)?);
+  Ok(())
+}
+
