@@ -837,6 +837,7 @@ Modulen zu:</p>
 <span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">mod</span><span class="tok-w"> </span><span class="tok-nn">reader</span><span class="tok-p">;</span>
 <span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">reader</span><span class="tok-p">::</span><span class="tok-n">asciidoc</span><span class="tok-p">::</span><span class="tok-n">AsciidocReader</span><span class="tok-p">;</span>
 <span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">reader</span><span class="tok-p">::</span><span class="tok-n">json</span><span class="tok-p">::</span><span class="tok-n">JsonReader</span><span class="tok-p">;</span>
+<span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">reader</span><span class="tok-p">::</span><span class="tok-n">markdown</span><span class="tok-p">::</span><span class="tok-n">MarkdownReader</span><span class="tok-p">;</span>
 <span class="tok-k">mod</span><span class="tok-w"> </span><span class="tok-nn">writer</span><span class="tok-p">;</span>
 <span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">writer</span><span class="tok-p">::</span><span class="tok-n">html</span><span class="tok-p">::</span><span class="tok-n">HtmlWriter</span><span class="tok-p">;</span>
 <span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">writer</span><span class="tok-p">::</span><span class="tok-n">docx</span><span class="tok-p">::</span><span class="tok-n">DocxWriter</span><span class="tok-p">;</span>
@@ -895,8 +896,10 @@ Modulen zu:</p>
 <div class="title">src/reader/mod.rs</div>
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><div class="lineno"><table class="linenotable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">mod</span><span class="tok-w"> </span><span class="tok-nn">asciidoc</span><span class="tok-p">;</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">mod</span><span class="tok-w"> </span><span class="tok-nn">asciidoc</span><span class="tok-p">;</span>
 <span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">mod</span><span class="tok-w"> </span><span class="tok-nn">json</span><span class="tok-p">;</span>
+<span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">mod</span><span class="tok-w"> </span><span class="tok-nn">markdown</span><span class="tok-p">;</span>
 </pre></div></td></tr></table></div></code></pre>
 </div>
 </div>
@@ -3663,7 +3666,8 @@ Unresolved directive in asciidoctrine.adoc - include::src/output/json-ast.adoc[]
 <span class="normal">66</span>
 <span class="normal">67</span>
 <span class="normal">68</span>
-<span class="normal">69</span></pre></div></td><td class="code"><div><pre><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">clap</span><span class="tok-p">::{</span><span class="tok-n">Parser</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">ValueEnum</span><span class="tok-p">};</span>
+<span class="normal">69</span>
+<span class="normal">70</span></pre></div></td><td class="code"><div><pre><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">clap</span><span class="tok-p">::{</span><span class="tok-n">Parser</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">ValueEnum</span><span class="tok-p">};</span>
 <span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">std</span><span class="tok-p">::</span><span class="tok-n">path</span><span class="tok-p">::</span><span class="tok-n">PathBuf</span><span class="tok-p">;</span>
 
 <span class="tok-sd">/// Parse a single key-value pair</span>
@@ -3687,6 +3691,7 @@ Unresolved directive in asciidoctrine.adoc - include::src/output/json-ast.adoc[]
 <span class="tok-cp">#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]</span>
 <span class="tok-k">pub</span><span class="tok-w"> </span><span class="tok-k">enum</span><span class="tok-w"> </span><span class="tok-nc">Reader</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">  </span><span class="tok-n">Asciidoc</span><span class="tok-p">,</span>
+<span class="tok-w">  </span><span class="tok-n">Markdown</span><span class="tok-p">,</span>
 <span class="tok-w">  </span><span class="tok-n">Json</span><span class="tok-p">,</span>
 <span class="tok-p">}</span>
 
