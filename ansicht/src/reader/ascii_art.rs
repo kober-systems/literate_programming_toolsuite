@@ -261,10 +261,12 @@ fn elements_from_tokens(input: Vec<Token>, text: &str) -> Vec<Element> {
         if possible_blocks.is_empty() {
           possible_blocks.push(PartialElement::new(token));
         } else {
+          let mut token_used = false;
           possible_blocks = possible_blocks
             .into_iter()
             .filter_map(|mut started_block| {
               if started_block.can_continue_block(&token, text) {
+                token_used = true;
                 if started_block.add_token(token) {
                   blocks.push(Block {
                     id: next_id,
@@ -274,10 +276,16 @@ fn elements_from_tokens(input: Vec<Token>, text: &str) -> Vec<Element> {
                   next_id += 1;
                   return None;
                 }
+                return Some(started_block);
               }
               Some(started_block)
             })
             .collect();
+
+          // If token wasn't used to continue any existing block, start a new one
+          if !token_used {
+            possible_blocks.push(PartialElement::new(token));
+          }
         }
       }
     }
