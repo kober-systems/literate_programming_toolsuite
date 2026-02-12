@@ -52,6 +52,7 @@ pub fn cli_template(
   match opts.writerfmt {
     options::Writer::Html5 => HtmlWriter::new().write(ast, &opts, output)?,
     options::Writer::Json => JsonWriter::new().write(ast, &opts, output)?,
+    options::Writer::Asciidoc => AsciidocWriter::new().write(ast, &opts, output)?,
     options::Writer::Docx => match &opts.output {
       Some(output) => {
         DocxWriter::new().write(
@@ -60,7 +61,7 @@ pub fn cli_template(
           fs::File::create(output).context("Could not open output file")?,
         )?;
       }
-      None => bail!("docx cant only be written to file not to stdout"),
+      None => bail!("docx can only be written to file not to stdout"),
     },
     _ => bail!("not yet supported"),
   };

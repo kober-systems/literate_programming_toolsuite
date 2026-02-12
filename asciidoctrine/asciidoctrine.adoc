@@ -165,6 +165,7 @@ mod writer;
 pub use writer::html::HtmlWriter;
 pub use writer::docx::DocxWriter;
 pub use writer::json::JsonWriter;
+pub use writer::asciidoc::AsciidocWriter;
 ----
 <1> `ast` definiert das allgemeine Zwischenformat für alle Dokumente.
 
@@ -2406,6 +2407,7 @@ beschrieben werden (sowie wie man Formatierungsanpassungen vornehmen kann)
 pub mod html;
 pub mod docx;
 pub mod json;
+pub mod asciidoc;
 ----
 
 :leveloffset: +3

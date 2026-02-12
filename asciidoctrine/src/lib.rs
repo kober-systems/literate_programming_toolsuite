@@ -21,6 +21,7 @@ mod writer;
 pub use writer::html::HtmlWriter;
 pub use writer::docx::DocxWriter;
 pub use writer::json::JsonWriter;
+pub use writer::asciidoc::AsciidocWriter;
 
 #[derive(Error, Debug)]
 pub enum AsciidoctrineError {
