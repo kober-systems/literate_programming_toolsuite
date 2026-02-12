@@ -22,6 +22,7 @@ where
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]
 pub enum Reader {
   Asciidoc,
+  Markdown,
   Json,
 }
 

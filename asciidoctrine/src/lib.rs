@@ -16,6 +16,7 @@ pub mod extract_toc;
 pub mod reader;
 pub use reader::asciidoc::AsciidocReader;
 pub use reader::json::JsonReader;
+pub use reader::markdown::MarkdownReader;
 mod writer;
 pub use writer::html::HtmlWriter;
 pub use writer::docx::DocxWriter;

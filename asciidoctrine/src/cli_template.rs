@@ -15,6 +15,7 @@ pub fn cli_template(
 
   let reader: Box<dyn Reader> = match opts.readerfmt {
     options::Reader::Asciidoc => Box::new(AsciidocReader::new()),
+    options::Reader::Markdown => Box::new(MarkdownReader::new()),
     options::Reader::Json => Box::new(JsonReader::new()),
   };
 
