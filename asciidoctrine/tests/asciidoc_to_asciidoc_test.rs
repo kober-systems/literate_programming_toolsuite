@@ -6,56 +6,49 @@ use std::io::BufWriter;
 
 #[test]
 fn simple_paragraph() -> Result<()> {
-    let content = "This is a simple paragraph.";
+  let content = "This is a simple paragraph.";
 
-    let reader = AsciidocReader::new();
-    let opts = options::Opts::parse_from(vec!["asciidoctrine"]);
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(content, &opts, &mut env)?;
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::parse_from(vec!["asciidoctrine"]);
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
 
-    let mut buf = BufWriter::new(Vec::new());
-    let mut writer = AsciidocWriter::new();
-    writer.write(ast, &opts, &mut buf)?;
+  let mut buf = BufWriter::new(Vec::new());
+  let mut writer = AsciidocWriter::new();
+  writer.write(ast, &opts, &mut buf)?;
 
-    let output = String::from_utf8(buf.into_inner()?)?;
-    assert_eq!(output.trim(), "This is a simple paragraph.");
+  let output = String::from_utf8(buf.into_inner()?)?;
+  assert_eq!(output, content);
 
-    Ok(())
+  Ok(())
 }
 
 #[test]
 fn multiple_paragraphs() -> Result<()> {
-    let content = r#"First paragraph.
+  let content = r#"First paragraph.
 
 Second paragraph.
 
 Third paragraph."#;
 
-    let reader = AsciidocReader::new();
-    let opts = options::Opts::parse_from(vec!["asciidoctrine"]);
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(content, &opts, &mut env)?;
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::parse_from(vec!["asciidoctrine"]);
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
 
-    let mut buf = BufWriter::new(Vec::new());
-    let mut writer = AsciidocWriter::new();
-    writer.write(ast, &opts, &mut buf)?;
+  let mut buf = BufWriter::new(Vec::new());
+  let mut writer = AsciidocWriter::new();
+  writer.write(ast, &opts, &mut buf)?;
 
-    let output = String::from_utf8(buf.into_inner()?)?;
-    assert_eq!(
-        output.trim(),
-        r#"First paragraph.
+  let output = String::from_utf8(buf.into_inner()?)?;
+  assert_eq!(output, content);
 
-Second paragraph.
-
-Third paragraph."#
-    );
-
-    Ok(())
+  Ok(())
 }
 
 #[test]
 fn headers_atx_style() -> Result<()> {
-    let content = r#"= Document Title
+  let content = r#"= Document Title
 
 == Level 2 Header
 
@@ -67,300 +60,258 @@ fn headers_atx_style() -> Result<()> {
 
 ====== Level 6 Header"#;
 
-    let reader = AsciidocReader::new();
-    let opts = options::Opts::parse_from(vec!["asciidoctrine"]);
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(content, &opts, &mut env)?;
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::parse_from(vec!["asciidoctrine"]);
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
 
-    let mut buf = BufWriter::new(Vec::new());
-    let mut writer = AsciidocWriter::new();
-    writer.write(ast, &opts, &mut buf)?;
+  let mut buf = BufWriter::new(Vec::new());
+  let mut writer = AsciidocWriter::new();
+  writer.write(ast, &opts, &mut buf)?;
 
-    let output = String::from_utf8(buf.into_inner()?)?;
-    assert_eq!(
-        output.trim(),
-        r#"= Document Title
+  let output = String::from_utf8(buf.into_inner()?)?;
+  assert_eq!(output, content);
 
-== Level 2 Header
-
-=== Level 3 Header
-
-==== Level 4 Header
-
-===== Level 5 Header
-
-====== Level 6 Header"#
-    );
-
-    Ok(())
+  Ok(())
 }
 
 #[test]
 fn inline_formatting_bold() -> Result<()> {
-    let content = "Some text is *bold*.";
+  let content = "Some text is *bold*.";
 
-    let reader = AsciidocReader::new();
-    let opts = options::Opts::parse_from(vec!["asciidoctrine"]);
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(content, &opts, &mut env)?;
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::parse_from(vec!["asciidoctrine"]);
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
 
-    let mut buf = BufWriter::new(Vec::new());
-    let mut writer = AsciidocWriter::new();
-    writer.write(ast, &opts, &mut buf)?;
+  let mut buf = BufWriter::new(Vec::new());
+  let mut writer = AsciidocWriter::new();
+  writer.write(ast, &opts, &mut buf)?;
 
-    let output = String::from_utf8(buf.into_inner()?)?;
-    assert_eq!(output.trim(), "Some text is *bold*.");
+  let output = String::from_utf8(buf.into_inner()?)?;
+  assert_eq!(output, content);
 
-    Ok(())
+  Ok(())
 }
 
 #[test]
 fn inline_formatting_italic() -> Result<()> {
-    let content = "Some text is _italic_.";
+  let content = "Some text is _italic_.";
 
-    let reader = AsciidocReader::new();
-    let opts = options::Opts::parse_from(vec!["asciidoctrine"]);
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(content, &opts, &mut env)?;
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::parse_from(vec!["asciidoctrine"]);
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
 
-    let mut buf = BufWriter::new(Vec::new());
-    let mut writer = AsciidocWriter::new();
-    writer.write(ast, &opts, &mut buf)?;
+  let mut buf = BufWriter::new(Vec::new());
+  let mut writer = AsciidocWriter::new();
+  writer.write(ast, &opts, &mut buf)?;
 
-    let output = String::from_utf8(buf.into_inner()?)?;
-    assert_eq!(output.trim(), "Some text is _italic_.");
+  let output = String::from_utf8(buf.into_inner()?)?;
+  assert_eq!(output, content);
 
-    Ok(())
+  Ok(())
 }
 
 #[test]
 fn inline_formatting_monospace() -> Result<()> {
-    let content = "Some text is `monospace`.";
+  let content = "Some text is `monospace`.";
 
-    let reader = AsciidocReader::new();
-    let opts = options::Opts::parse_from(vec!["asciidoctrine"]);
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(content, &opts, &mut env)?;
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::parse_from(vec!["asciidoctrine"]);
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
 
-    let mut buf = BufWriter::new(Vec::new());
-    let mut writer = AsciidocWriter::new();
-    writer.write(ast, &opts, &mut buf)?;
+  let mut buf = BufWriter::new(Vec::new());
+  let mut writer = AsciidocWriter::new();
+  writer.write(ast, &opts, &mut buf)?;
 
-    let output = String::from_utf8(buf.into_inner()?)?;
-    assert_eq!(output.trim(), "Some text is `monospace`.");
+  let output = String::from_utf8(buf.into_inner()?)?;
+  assert_eq!(output, content);
 
-    Ok(())
+  Ok(())
 }
 
 #[test]
 fn inline_formatting_mixed() -> Result<()> {
-    let content = "Text with *bold*, _italic_, and `code` formatting.";
+  let content = "Text with *bold*, _italic_, and `code` formatting.";
 
-    let reader = AsciidocReader::new();
-    let opts = options::Opts::parse_from(vec!["asciidoctrine"]);
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(content, &opts, &mut env)?;
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::parse_from(vec!["asciidoctrine"]);
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
 
-    let mut buf = BufWriter::new(Vec::new());
-    let mut writer = AsciidocWriter::new();
-    writer.write(ast, &opts, &mut buf)?;
+  let mut buf = BufWriter::new(Vec::new());
+  let mut writer = AsciidocWriter::new();
+  writer.write(ast, &opts, &mut buf)?;
 
-    let output = String::from_utf8(buf.into_inner()?)?;
-    assert_eq!(output.trim(), "Text with *bold*, _italic_, and `code` formatting.");
+  let output = String::from_utf8(buf.into_inner()?)?;
+  assert_eq!(output, content);
 
-    Ok(())
+  Ok(())
 }
 
 #[test]
 fn bullet_list_simple() -> Result<()> {
-    let content = r#"* First item
+  let content = r#"* First item
 * Second item
 * Third item"#;
 
-    let reader = AsciidocReader::new();
-    let opts = options::Opts::parse_from(vec!["asciidoctrine"]);
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(content, &opts, &mut env)?;
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::parse_from(vec!["asciidoctrine"]);
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
 
-    let mut buf = BufWriter::new(Vec::new());
-    let mut writer = AsciidocWriter::new();
-    writer.write(ast, &opts, &mut buf)?;
+  let mut buf = BufWriter::new(Vec::new());
+  let mut writer = AsciidocWriter::new();
+  writer.write(ast, &opts, &mut buf)?;
 
-    let output = String::from_utf8(buf.into_inner()?)?;
-    assert_eq!(
-        output.trim(),
-        r#"* First item
-* Second item
-* Third item"#
-    );
+  let output = String::from_utf8(buf.into_inner()?)?;
+  assert_eq!(output, content);
 
-    Ok(())
+  Ok(())
 }
 
 #[test]
 fn bullet_list_nested() -> Result<()> {
-    let content = r#"* First item
+  let content = r#"* First item
 ** Nested item
 *** Deeply nested
 * Second item"#;
 
-    let reader = AsciidocReader::new();
-    let opts = options::Opts::parse_from(vec!["asciidoctrine"]);
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(content, &opts, &mut env)?;
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::parse_from(vec!["asciidoctrine"]);
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
 
-    let mut buf = BufWriter::new(Vec::new());
-    let mut writer = AsciidocWriter::new();
-    writer.write(ast, &opts, &mut buf)?;
+  let mut buf = BufWriter::new(Vec::new());
+  let mut writer = AsciidocWriter::new();
+  writer.write(ast, &opts, &mut buf)?;
 
-    let output = String::from_utf8(buf.into_inner()?)?;
-    assert_eq!(
-        output.trim(),
-        r#"* First item
-** Nested item
-*** Deeply nested
-* Second item"#
-    );
+  let output = String::from_utf8(buf.into_inner()?)?;
+  assert_eq!(output, content);
 
-    Ok(())
+  Ok(())
 }
 
 #[test]
 fn numbered_list_simple() -> Result<()> {
-    let content = r#". First item
+  let content = r#". First item
 . Second item
 . Third item"#;
 
-    let reader = AsciidocReader::new();
-    let opts = options::Opts::parse_from(vec!["asciidoctrine"]);
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(content, &opts, &mut env)?;
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::parse_from(vec!["asciidoctrine"]);
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
 
-    let mut buf = BufWriter::new(Vec::new());
-    let mut writer = AsciidocWriter::new();
-    writer.write(ast, &opts, &mut buf)?;
+  let mut buf = BufWriter::new(Vec::new());
+  let mut writer = AsciidocWriter::new();
+  writer.write(ast, &opts, &mut buf)?;
 
-    let output = String::from_utf8(buf.into_inner()?)?;
-    assert_eq!(
-        output.trim(),
-        r#". First item
-. Second item
-. Third item"#
-    );
+  let output = String::from_utf8(buf.into_inner()?)?;
+  assert_eq!(output, content);
 
-    Ok(())
+  Ok(())
 }
 
 #[test]
 fn numbered_list_nested() -> Result<()> {
-    let content = r#". First item
+  let content = r#". First item
 .. Nested item
 ... Deeply nested
 . Second item"#;
 
-    let reader = AsciidocReader::new();
-    let opts = options::Opts::parse_from(vec!["asciidoctrine"]);
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(content, &opts, &mut env)?;
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::parse_from(vec!["asciidoctrine"]);
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
 
-    let mut buf = BufWriter::new(Vec::new());
-    let mut writer = AsciidocWriter::new();
-    writer.write(ast, &opts, &mut buf)?;
+  let mut buf = BufWriter::new(Vec::new());
+  let mut writer = AsciidocWriter::new();
+  writer.write(ast, &opts, &mut buf)?;
 
-    let output = String::from_utf8(buf.into_inner()?)?;
-    assert_eq!(
-        output.trim(),
-        r#". First item
-.. Nested item
-... Deeply nested
-. Second item"#
-    );
+  let output = String::from_utf8(buf.into_inner()?)?;
+  assert_eq!(output, content);
 
-    Ok(())
+  Ok(())
 }
 
 #[test]
 fn code_block_listing() -> Result<()> {
-    let content = r#"[source,bash]
+  let content = r#"[source,bash]
 ----
 echo "Hello, World!"
 ls -la
 ----"#;
 
-    let reader = AsciidocReader::new();
-    let opts = options::Opts::parse_from(vec!["asciidoctrine"]);
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(content, &opts, &mut env)?;
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::parse_from(vec!["asciidoctrine"]);
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
 
-    let mut buf = BufWriter::new(Vec::new());
-    let mut writer = AsciidocWriter::new();
-    writer.write(ast, &opts, &mut buf)?;
+  let mut buf = BufWriter::new(Vec::new());
+  let mut writer = AsciidocWriter::new();
+  writer.write(ast, &opts, &mut buf)?;
 
-    let output = String::from_utf8(buf.into_inner()?)?;
-    assert_eq!(
-        output.trim(),
-        r#"[source,bash]
-----
-echo "Hello, World!"
-ls -la
-----"#
-    );
+  let output = String::from_utf8(buf.into_inner()?)?;
+  assert_eq!(output, content);
 
-    Ok(())
+  Ok(())
 }
 
 #[test]
 fn simple_table() -> Result<()> {
-    let content = r#"|===
+  let content = r#"|===
 | Col1 | Col2
 
 | Cell1 | Cell2
 | Cell3 | Cell4
 |==="#;
 
-    let reader = AsciidocReader::new();
-    let opts = options::Opts::parse_from(vec!["asciidoctrine"]);
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(content, &opts, &mut env)?;
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::parse_from(vec!["asciidoctrine"]);
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
 
-    let mut buf = BufWriter::new(Vec::new());
-    let mut writer = AsciidocWriter::new();
-    writer.write(ast, &opts, &mut buf)?;
+  let mut buf = BufWriter::new(Vec::new());
+  let mut writer = AsciidocWriter::new();
+  writer.write(ast, &opts, &mut buf)?;
 
-    let output = String::from_utf8(buf.into_inner()?)?;
-    // We may need to adjust the expected output based on how tables are parsed
-    assert!(output.contains("|==="));
-    assert!(output.contains("Col1"));
-    assert!(output.contains("Col2"));
-    assert!(output.contains("Cell1"));
+  let output = String::from_utf8(buf.into_inner()?)?;
+  // We may need to adjust the expected output based on how tables are parsed
+  assert!(output.contains("|==="));
+  assert!(output.contains("Col1"));
+  assert!(output.contains("Col2"));
+  assert!(output.contains("Cell1"));
 
-    Ok(())
+  Ok(())
 }
 
 #[test]
 fn link_inline() -> Result<()> {
-    let content = "Check out link:https://example.com[this link].";
+  let content = "Check out link:https://example.com[this link].";
 
-    let reader = AsciidocReader::new();
-    let opts = options::Opts::parse_from(vec!["asciidoctrine"]);
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(content, &opts, &mut env)?;
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::parse_from(vec!["asciidoctrine"]);
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
 
-    let mut buf = BufWriter::new(Vec::new());
-    let mut writer = AsciidocWriter::new();
-    writer.write(ast, &opts, &mut buf)?;
+  let mut buf = BufWriter::new(Vec::new());
+  let mut writer = AsciidocWriter::new();
+  writer.write(ast, &opts, &mut buf)?;
 
-    let output = String::from_utf8(buf.into_inner()?)?;
-    assert!(output.contains("link:"));
-    assert!(output.contains("https://example.com"));
-    assert!(output.contains("this link"));
+  let output = String::from_utf8(buf.into_inner()?)?;
+  assert!(output.contains("link:"));
+  assert!(output.contains("https://example.com"));
+  assert!(output.contains("this link"));
 
-    Ok(())
+  Ok(())
 }
 
 #[test]
 fn round_trip_complex_document() -> Result<()> {
-    let content = r#"= Document Title
+  let content = r#"= Document Title
 
 == Introduction
 
@@ -386,24 +337,22 @@ fn main() {
 
 That's all for now."#;
 
-    let reader = AsciidocReader::new();
-    let opts = options::Opts::parse_from(vec!["asciidoctrine"]);
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(content, &opts, &mut env)?;
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::parse_from(vec!["asciidoctrine"]);
+  let mut env = util::Env::Cache(util::Cache::new());
+  let ast = reader.parse(content, &opts, &mut env)?;
 
-    let original_element_count = ast.elements.len();
+  let mut buf = BufWriter::new(Vec::new());
+  let mut writer = AsciidocWriter::new();
+  writer.write(ast.clone(), &opts, &mut buf)?;
 
-    let mut buf = BufWriter::new(Vec::new());
-    let mut writer = AsciidocWriter::new();
-    writer.write(ast, &opts, &mut buf)?;
+  let output = String::from_utf8(buf.into_inner()?)?;
 
-    let output = String::from_utf8(buf.into_inner()?)?;
+  // Parse the output again to verify round-trip
+  let ast2 = reader.parse(&output, &opts, &mut env)?;
 
-    // Parse the output again to verify round-trip
-    let ast2 = reader.parse(&output, &opts, &mut env)?;
+  // Both ASTs should have the same structure
+  assert_eq!(ast.elements.len(), ast2.elements.len());
 
-    // Both ASTs should have the same structure
-    assert_eq!(original_element_count, ast2.elements.len());
-
-    Ok(())
+  Ok(())
 }
