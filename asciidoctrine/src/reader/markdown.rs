@@ -2,7 +2,7 @@ pub use crate::ast::*;
 use crate::options::Opts;
 use crate::util::Env;
 use crate::Result;
-use pulldown_cmark::{Event, Parser, Tag, HeadingLevel, CodeBlockKind, Options};
+use pulldown_cmark::{Event, Parser, Tag, TagEnd, HeadingLevel, CodeBlockKind, Options};
 use std::collections::HashMap;
 
 pub struct MarkdownReader {}
@@ -66,11 +66,11 @@ impl MarkdownReader {
                     let element = match tag {
                         Tag::Paragraph => Element::Paragraph,
 
-                        Tag::Heading(level, _, _) => Element::Title {
+                        Tag::Heading { level, .. } => Element::Title {
                             level: Self::heading_level_to_u32(level),
                         },
 
-                        Tag::BlockQuote => Element::TypedBlock {
+                        Tag::BlockQuote(_) => Element::TypedBlock {
                             kind: BlockType::Quote,
                         },
 
@@ -199,7 +199,7 @@ impl MarkdownReader {
                             continue;
                         }
 
-                        Tag::Link(_link_type, dest_url, title) => {
+                        Tag::Link { dest_url, title, .. } => {
                             let dest_str = dest_url.to_string();
                             let title_str = title.to_string();
 
@@ -243,7 +243,7 @@ impl MarkdownReader {
                             continue;
                         }
 
-                        Tag::Image(_link_type, dest_url, title) => {
+                        Tag::Image { dest_url, title, .. } => {
                             let dest_str = dest_url.to_string();
                             let title_str = title.to_string();
 
@@ -277,6 +277,13 @@ impl MarkdownReader {
                             continue;
                         }
 
+                        Tag::HtmlBlock => {
+                            // HTML blocks will have their content collected via Event::Html
+                            Element::TypedBlock {
+                                kind: BlockType::Passtrough,
+                            }
+                        }
+
                         _ => {
                             // For unsupported tags, create a generic element
                             Element::Text
@@ -303,7 +310,7 @@ impl MarkdownReader {
 
                 Event::End(tag) => {
                     match tag {
-                        Tag::CodeBlock(_) => {
+                        TagEnd::CodeBlock => {
                             // For code blocks, the content is in current_text
                             if let Some(mut elem) = stack.pop() {
                                 elem.attributes.push(Attribute {
@@ -400,7 +407,7 @@ impl MarkdownReader {
                     }
                 }
 
-                Event::Html(html) => {
+                Event::Html(html) | Event::InlineHtml(html) => {
                     // Treat HTML as passthrough content
                     let (start_line, start_col) = Self::byte_offset_to_position(input, range.start);
                     let (end_line, end_col) = Self::byte_offset_to_position(input, range.end);

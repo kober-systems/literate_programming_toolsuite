@@ -30,7 +30,7 @@ tera = "1"
 docx-rs = "0.4"
 log = { workspace = true }
 simple_logger = { version = "5", features = ["stderr"] }
-pulldown-cmark = "0.9"
+pulldown-cmark = "0.13"
 
 [dev-dependencies]
 pretty_assertions = "1"
