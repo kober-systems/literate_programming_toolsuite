@@ -3343,8 +3343,45 @@ This Information is visible by default.
 <div class="sect4">
 <h5 id="_andere_dokumente_einbinden">Andere Dokumente einbinden</h5>
 <div class="paragraph">
-<p>TODO</p>
+<p>Häufig ist es von Nutzen ein Dokument aufzuteilen. Das kann man mit dem
+<code>include</code> macro erreichen.</p>
 </div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div id="unittest_include_macro_input" class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="asciidoc"><div class="lineno"><table class="linenotable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span>Unresolved directive in asciidoctrine.adoc - include::included_document.adoc[]
+</pre></div></td></tr></table></div></code></pre>
+</div>
+</div>
+<div id="included_document" class="listingblock">
+<div class="title">included_document.adoc</div>
+<div class="content">
+<pre class="pygments highlight"><code data-lang="asciidoc"><div class="lineno"><table class="linenotable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span>Some text in another file.
+</pre></div></td></tr></table></div></code></pre>
+</div>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>Some text in another file.</p>
+</div>
+<details>
+<summary class="title">Html Output</summary>
+<div class="content">
+<div id="include_macro_html_output" class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="html"><span></span><span class="tok-p">&lt;</span><span class="tok-nt">p</span><span class="tok-p">&gt;</span>Some text in another file.<span class="tok-p">&lt;/</span><span class="tok-nt">p</span><span class="tok-p">&gt;</span></code></pre>
+</div>
+</div>
+</div>
+</details></div></td>
+</tr>
+</tbody>
+</table>
 <div id="blocks" class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="pest"><span></span>include_macro = { &quot;include::&quot; ~ path ~ inline_attribute_list }</code></pre>
@@ -4675,6 +4712,7 @@ beschriebenen Beispiele.</p>
 <span class="tok-w">  </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">reader</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">AsciidocReader</span><span class="tok-p">::</span><span class="tok-n">new</span><span class="tok-p">();</span>
 <span class="tok-w">  </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">opts</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">options</span><span class="tok-p">::</span><span class="tok-n">Opts</span><span class="tok-p">::</span><span class="tok-n">parse_from</span><span class="tok-p">(</span><span class="tok-fm">vec!</span><span class="tok-p">[</span><span class="tok-s">&quot;asciidoctrine&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-s">&quot;--template&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-s">&quot;-&quot;</span><span class="tok-p">]);</span>
 <span class="tok-w">  </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">env</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">util</span><span class="tok-p">::</span><span class="tok-n">Env</span><span class="tok-p">::</span><span class="tok-n">Cache</span><span class="tok-p">(</span><span class="tok-n">util</span><span class="tok-p">::</span><span class="tok-n">Cache</span><span class="tok-p">::</span><span class="tok-n">new</span><span class="tok-p">());</span>
+<span class="tok-w">  </span><span class="tok-p">{</span><span class="tok-n">add_inputs</span><span class="tok-p">}</span>
 <span class="tok-w">  </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">ast</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">reader</span><span class="tok-p">.</span><span class="tok-n">parse</span><span class="tok-p">(</span><span class="tok-n">content</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-n">opts</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">env</span><span class="tok-p">)</span><span class="tok-o">?</span><span class="tok-p">;</span>
 
 <span class="tok-w">  </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">buf</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">BufWriter</span><span class="tok-p">::</span><span class="tok-n">new</span><span class="tok-p">(</span><span class="tok-nb">Vec</span><span class="tok-p">::</span><span class="tok-n">new</span><span class="tok-p">());</span>
@@ -4703,14 +4741,26 @@ beschriebenen Beispiele.</p>
 <span class="normal">4</span>
 <span class="normal">5</span>
 <span class="normal">6</span>
-<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">anyhow</span><span class="tok-p">::</span><span class="tok-nb">Result</span><span class="tok-p">;</span>
+<span class="normal">7</span>
+<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">anyhow</span><span class="tok-p">::</span><span class="tok-nb">Result</span><span class="tok-p">;</span>
 <span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">asciidoctrine</span><span class="tok-p">::{</span><span class="tok-bp">self</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">*</span><span class="tok-p">};</span>
+<span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">asciidoctrine</span><span class="tok-p">::</span><span class="tok-n">util</span><span class="tok-p">::</span><span class="tok-n">Environment</span><span class="tok-p">;</span>
 <span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">clap</span><span class="tok-p">::</span><span class="tok-n">Parser</span><span class="tok-p">;</span>
 <span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">pretty_assertions</span><span class="tok-p">::</span><span class="tok-n">assert_eq</span><span class="tok-p">;</span>
 <span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">std</span><span class="tok-p">::</span><span class="tok-n">io</span><span class="tok-p">::</span><span class="tok-n">BufWriter</span><span class="tok-p">;</span>
 
 <span class="tok-o">&lt;&lt;</span><span class="tok-n">html</span><span class="tok-o">-</span><span class="tok-n">unit</span><span class="tok-o">-</span><span class="tok-n">tests</span><span class="tok-o">&gt;&gt;</span>
 </pre></div></td></tr></table></div></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Manchmal haben die Tests mehr als eine Eingangs-Datei. Alle Dateien
+welche auf dem Dateisystem bereits vorhanden sein müssten können wir
+folgendermaßen hinzufügen.</p>
+</div>
+<div id="unit-test-add-in-file-template" class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-n">env</span><span class="tok-p">.</span><span class="tok-n">write</span><span class="tok-p">(</span><span class="tok-s">&quot;{filepath}&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-s">r#&quot;{content}&quot;#</span><span class="tok-p">)</span><span class="tok-o">?</span><span class="tok-p">;</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -4742,13 +4792,57 @@ welche mit entsprechenden Attributen gekennzeichnet wurden.</p>
 <span class="normal">21</span>
 <span class="normal">22</span>
 <span class="normal">23</span>
-<span class="normal">24</span></pre></div></td><td class="code"><div><pre><span></span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nx">template</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nx">lisi</span><span class="tok-p">.</span><span class="tok-nx">get_snippet</span><span class="tok-p">(</span><span class="tok-s2">&quot;unit-test-template&quot;</span><span class="tok-p">).</span><span class="tok-nx">content</span><span class="tok-p">;</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span>
+<span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span></pre></div></td><td class="code"><div><pre><span></span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nx">template</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nx">lisi</span><span class="tok-p">.</span><span class="tok-nx">get_snippet</span><span class="tok-p">(</span><span class="tok-s2">&quot;unit-test-template&quot;</span><span class="tok-p">).</span><span class="tok-nx">content</span><span class="tok-p">;</span>
+<span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nx">add_input_template</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nx">lisi</span><span class="tok-p">.</span><span class="tok-nx">get_snippet</span><span class="tok-p">(</span><span class="tok-s2">&quot;unit-test-add-in-file-template&quot;</span><span class="tok-p">).</span><span class="tok-nx">content</span><span class="tok-p">;</span>
 <span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nx">tests</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s2">&quot;&quot;</span><span class="tok-p">;</span>
+
+<span class="tok-nx">fn</span><span class="tok-w"> </span><span class="tok-nx">split</span><span class="tok-p">(</span><span class="tok-nx">input</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-nx">seperator</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">  </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nx">out</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-p">[];</span>
+<span class="tok-w">  </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nx">start</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-mf">0</span><span class="tok-p">;</span>
+<span class="tok-w">  </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nx">idx</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nx">input</span><span class="tok-p">.</span><span class="tok-nx">index_of</span><span class="tok-p">(</span><span class="tok-nx">seperator</span><span class="tok-p">);</span>
+<span class="tok-w">  </span><span class="tok-k">while</span><span class="tok-w"> </span><span class="tok-nx">idx</span><span class="tok-w"> </span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-o">-</span><span class="tok-mf">1</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nx">chunk</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nx">input</span><span class="tok-p">.</span><span class="tok-nx">sub_string</span><span class="tok-p">(</span><span class="tok-nx">start</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-nx">idx</span><span class="tok-w"> </span><span class="tok-o">-</span><span class="tok-w"> </span><span class="tok-nx">start</span><span class="tok-p">);</span>
+<span class="tok-w">    </span><span class="tok-nx">out</span><span class="tok-p">.</span><span class="tok-nx">push</span><span class="tok-p">(</span><span class="tok-nx">chunk</span><span class="tok-p">);</span>
+
+<span class="tok-w">    </span><span class="tok-nx">start</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nx">idx</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-mf">1</span><span class="tok-p">;</span>
+<span class="tok-w">    </span><span class="tok-nx">idx</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nx">input</span><span class="tok-p">.</span><span class="tok-nx">index_of</span><span class="tok-p">(</span><span class="tok-nx">seperator</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-nx">start</span><span class="tok-p">);</span>
+<span class="tok-w">  </span><span class="tok-p">};</span>
+<span class="tok-w">  </span><span class="tok-nx">out</span><span class="tok-p">.</span><span class="tok-nx">push</span><span class="tok-p">(</span><span class="tok-nx">input</span><span class="tok-p">.</span><span class="tok-nx">sub_string</span><span class="tok-p">(</span><span class="tok-nx">start</span><span class="tok-p">));</span>
+<span class="tok-w">  </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-nx">out</span><span class="tok-p">;</span>
+<span class="tok-p">}</span>
 
 <span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-nx">name</span><span class="tok-w"> </span><span class="tok-ow">in</span><span class="tok-w"> </span><span class="tok-nx">lisi.get_snippet_names</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">  </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-nx">name</span><span class="tok-p">.</span><span class="tok-nx">contains</span><span class="tok-p">(</span><span class="tok-s2">&quot;unittest_&quot;</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">&amp;&amp;</span><span class="tok-w"> </span><span class="tok-nx">name</span><span class="tok-p">.</span><span class="tok-nx">contains</span><span class="tok-p">(</span><span class="tok-s2">&quot;_input&quot;</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nx">out_template</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nx">template</span><span class="tok-p">;</span>
-<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nx">compare_out</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s2">&quot;&quot;</span><span class="tok-p">;</span>
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nx">add_inputs</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s2">&quot;&quot;</span><span class="tok-p">;</span>
 
 <span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nx">snippet</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nx">lisi</span><span class="tok-p">.</span><span class="tok-nx">get_snippet</span><span class="tok-p">(</span><span class="tok-nx">name</span><span class="tok-p">);</span>
 <span class="tok-w">    </span><span class="tok-nx">out_template</span><span class="tok-p">.</span><span class="tok-nx">replace</span><span class="tok-p">(</span><span class="tok-s2">&quot;{test_name}&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-nx">snippet</span><span class="tok-p">.</span><span class="tok-nx">attrs</span><span class="tok-p">.</span><span class="tok-nx">name</span><span class="tok-p">);</span>
@@ -4756,6 +4850,18 @@ welche mit entsprechenden Attributen gekennzeichnet wurden.</p>
 <span class="tok-w">    </span><span class="tok-nx">asciidoc_content</span><span class="tok-p">.</span><span class="tok-nx">replace</span><span class="tok-p">(</span><span class="tok-s2">&quot; -- &lt;1&gt;&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-s2">&quot;&quot;</span><span class="tok-p">);</span>
 <span class="tok-w">    </span><span class="tok-nx">asciidoc_content</span><span class="tok-p">.</span><span class="tok-nx">replace</span><span class="tok-p">(</span><span class="tok-s2">&quot; -- &lt;2&gt;&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-s2">&quot;&quot;</span><span class="tok-p">);</span>
 <span class="tok-w">    </span><span class="tok-nx">out_template</span><span class="tok-p">.</span><span class="tok-nx">replace</span><span class="tok-p">(</span><span class="tok-s2">&quot;{asciidoc_content}&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-nx">asciidoc_content</span><span class="tok-p">);</span>
+
+<span class="tok-w">    </span><span class="tok-k">if</span><span class="tok-w"> </span><span class="tok-s2">&quot;inputs&quot;</span><span class="tok-w"> </span><span class="tok-ow">in</span><span class="tok-w"> </span><span class="tok-nx">snippet</span><span class="tok-p">.</span><span class="tok-nx">attrs</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">      </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nx">input_names</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nx">snippet</span><span class="tok-p">.</span><span class="tok-nx">attrs</span><span class="tok-p">.</span><span class="tok-nx">inputs</span><span class="tok-p">;</span>
+<span class="tok-w">      </span><span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-nx">input_name</span><span class="tok-w"> </span><span class="tok-ow">in</span><span class="tok-w"> </span><span class="tok-nx">split</span><span class="tok-p">(</span><span class="tok-nx">input_names</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-s2">&quot;,&quot;</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">        </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nx">input_template</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nx">add_input_template</span><span class="tok-p">;</span>
+<span class="tok-w">        </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nx">input_snippet</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nx">lisi</span><span class="tok-p">.</span><span class="tok-nx">get_snippet</span><span class="tok-p">(</span><span class="tok-nx">input_name</span><span class="tok-p">);</span>
+<span class="tok-w">        </span><span class="tok-nx">input_template</span><span class="tok-p">.</span><span class="tok-nx">replace</span><span class="tok-p">(</span><span class="tok-s2">&quot;{content}&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-nx">input_snippet</span><span class="tok-p">.</span><span class="tok-nx">content</span><span class="tok-p">);</span>
+<span class="tok-w">        </span><span class="tok-nx">input_template</span><span class="tok-p">.</span><span class="tok-nx">replace</span><span class="tok-p">(</span><span class="tok-s2">&quot;{filepath}&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-nx">input_snippet</span><span class="tok-p">.</span><span class="tok-nx">attrs</span><span class="tok-p">.</span><span class="tok-nx">title</span><span class="tok-p">);</span>
+<span class="tok-w">        </span><span class="tok-nx">add_inputs</span><span class="tok-w"> </span><span class="tok-o">+=</span><span class="tok-w"> </span><span class="tok-nx">input_template</span><span class="tok-p">;</span>
+<span class="tok-w">      </span><span class="tok-p">}</span>
+<span class="tok-w">    </span><span class="tok-p">}</span>
+<span class="tok-w">    </span><span class="tok-nx">out_template</span><span class="tok-p">.</span><span class="tok-nx">replace</span><span class="tok-p">(</span><span class="tok-s2">&quot;{add_inputs}&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-nx">add_inputs</span><span class="tok-p">);</span>
 
 <span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-nx">output_snippet</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nx">lisi</span><span class="tok-p">.</span><span class="tok-nx">get_snippet</span><span class="tok-p">(</span><span class="tok-nx">snippet</span><span class="tok-p">.</span><span class="tok-nx">attrs</span><span class="tok-p">.</span><span class="tok-nx">output</span><span class="tok-p">);</span>
 <span class="tok-w">    </span><span class="tok-nx">out_template</span><span class="tok-p">.</span><span class="tok-nx">replace</span><span class="tok-p">(</span><span class="tok-s2">&quot;{expected_content}&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-nx">output_snippet</span><span class="tok-p">.</span><span class="tok-nx">content</span><span class="tok-w"> </span><span class="tok-o">+</span><span class="tok-w"> </span><span class="tok-s2">&quot;\n&quot;</span><span class="tok-p">);</span>
