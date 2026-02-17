@@ -379,6 +379,34 @@ include::included_document.adoc[]
 }
 
 #[test]
+fn include_macro_nested() -> Result<()> {
+  let content = r#"
+include::nested/included_document.adoc[]
+"#;
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
+  let mut env = util::Env::Cache(util::Cache::new());
+  env.write("nested/included_document.adoc", r#"Some text in another file. Will include a nested file.
+
+include::nested/included_document.adoc[]"#)?;env.write("nested/nested/included_document.adoc", r#"This one is nested. It is relative to the included document."#)?;
+  let ast = reader.parse(content, &opts, &mut env)?;
+
+  let mut buf = BufWriter::new(Vec::new());
+  let mut writer = HtmlWriter::new();
+  writer.write(ast, &opts, &mut buf)?;
+
+  let output = String::from_utf8(buf.into_inner()?)?;
+  assert_eq!(
+    output,
+    r#"<p>Some text in another file. Will include a nested file.</p>
+<p>This one is nested. It is relative to the included document.</p>
+"#
+  );
+
+  Ok(())
+}
+
+#[test]
 fn inline_bold() -> Result<()> {
   let content = r#"
 Some text is *bold*.

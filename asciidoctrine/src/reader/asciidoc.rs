@@ -19,19 +19,24 @@ impl crate::Reader for AsciidocReader {
     let ast = AsciidocParser::parse(Rule::asciidoc, input)?;
 
     let mut attributes = Vec::new();
-    if let Some(path) = &args.input {
+    let source = if let Some(path) = &args.input {
       if let Some(path) = path.to_str() {
         attributes.push(Attribute {
           key: "source".to_string(),
           value: AttributeValue::String(path.to_string()),
         });
+        Some(path)
+      } else {
+        None
       }
-    }
+    } else {
+      None
+    };
 
     let mut elements = Vec::new();
 
     for element in ast {
-      if let Some(element) = process_element(element, env) {
+      if let Some(element) = process_element(element, source.unwrap_or(""), env) {
         elements.push(element);
       }
     }
@@ -50,12 +55,13 @@ pub struct AsciidocParser;
 
 fn process_element<'a>(
   element: Pair<'a, asciidoc::Rule>,
+  source: &str,
   env: &mut Env,
 ) -> Option<ElementSpan<'a>> {
   let base = set_span(&element);
 
   let element = match element.as_rule() {
-    Rule::delimited_block => Some(process_delimited_block(element, env)),
+    Rule::delimited_block => Some(process_delimited_block(element, source, env)),
     Rule::title => Some(process_title(element, base)),
     Rule::header | Rule::title_block => {
       Some(element.into_inner().fold(base, |base, subelement| {
@@ -69,18 +75,20 @@ fn process_element<'a>(
       }))
     }
     Rule::paragraph => Some(process_paragraph(element)),
-    Rule::list => extract_inner_rule(element, env),
+    Rule::list => extract_inner_rule(element, source, env),
     Rule::list_paragraph => Some(process_paragraph(element)),
     Rule::other_list_inline => Some(from_element(&element, Element::Text)),
     Rule::continuation => None,
     Rule::bullet_list => Some(process_children(
       element.clone(),
       set_span(&element).element(Element::List(ListType::Bullet)),
+      source,
       env,
     )),
     Rule::numbered_list => Some(process_children(
       element.clone(),
       set_span(&element).element(Element::List(ListType::Number)),
+      source,
       env,
     )),
     Rule::bullet_list_element | Rule::number_bullet_list_element => Some(
@@ -91,7 +99,7 @@ fn process_element<'a>(
           Rule::bullet | Rule::number_bullet => {
             base.element(Element::ListItem(sub.as_str().trim().len() as u32))
           }
-          Rule::list_element => process_children(sub, base, env),
+          Rule::list_element => process_children(sub, base, source, env),
           Rule::EOI => base,
           _ => {
             let mut base = base;
@@ -101,8 +109,8 @@ fn process_element<'a>(
         }),
     ),
     Rule::image_block => Some(process_image(element, env)),
-    Rule::include_macro => Some(process_include(element, env)),
-    Rule::block => extract_inner_rule(element, env),
+    Rule::include_macro => Some(process_include(element, source, env)),
+    Rule::block => extract_inner_rule(element, source, env),
     Rule::inline => Some(process_inline(element, base)),
     Rule::EOI => None,
     _ => Some(base),
@@ -203,6 +211,7 @@ fn process_blocktitle<'a>(
 
 fn process_delimited_block<'a>(
   element: Pair<'a, asciidoc::Rule>,
+  source: &str,
   env: &mut Env,
 ) -> ElementSpan<'a> {
   let base = set_span(&element);
@@ -213,7 +222,7 @@ fn process_delimited_block<'a>(
       Rule::anchor => process_anchor(sub, base),
       Rule::attribute_list => process_attribute_list(sub, base),
       Rule::blocktitle => process_blocktitle(sub, base),
-      Rule::delimited_table => process_inner_table(sub, base.element(Element::Table), env),
+      Rule::delimited_table => process_inner_table(sub, base.element(Element::Table), source, env),
       Rule::delimited_comment
       | Rule::delimited_source
       | Rule::delimited_literal
@@ -227,6 +236,7 @@ fn process_delimited_block<'a>(
             _ => unreachable!(),
           },
         }),
+        source,
         env,
       ),
       _ => base.add_child(set_span(&sub)),
@@ -236,6 +246,7 @@ fn process_delimited_block<'a>(
 fn process_delimited_inner<'a>(
   element: Pair<'a, asciidoc::Rule>,
   base: ElementSpan<'a>,
+  source: &str,
   env: &mut Env,
 ) -> ElementSpan<'a> {
   element.into_inner().fold(base, |base, element| {
@@ -250,7 +261,7 @@ fn process_delimited_inner<'a>(
           let ast = AsciidocParser::parse(Rule::asciidoc, element.as_str()).unwrap();
 
           for element in ast {
-            if let Some(e) = process_element(element, env) {
+            if let Some(e) = process_element(element, source, env) {
               base.children.push(e);
             }
           }
@@ -490,6 +501,7 @@ fn parse_columns_format_from_content(input: &str) -> Vec<ColumnFormat> {
 fn process_inner_table<'a>(
   element: Pair<'a, asciidoc::Rule>,
   mut base: ElementSpan<'a>,
+  source: &str,
   env: &mut Env,
 ) -> ElementSpan<'a> {
   let content = element
@@ -507,7 +519,7 @@ fn process_inner_table<'a>(
     key: "content".to_string(),
     value: AttributeValue::Ref(content),
   });
-  base.children = process_table_content(content, col_format, env);
+  base.children = process_table_content(content, col_format, source, env);
 
   base
 }
@@ -515,6 +527,7 @@ fn process_inner_table<'a>(
 fn process_table_content<'a>(
   input: &'a str,
   col_format: Vec<ColumnFormat>,
+  source: &str,
   env: &mut Env,
 ) -> Vec<ElementSpan<'a>> {
   let ast = match AsciidocParser::parse(Rule::table_inner, input) {
@@ -541,7 +554,7 @@ fn process_table_content<'a>(
 
   for element in ast {
     for (subelement, fmt) in element.into_inner().zip(col_format.iter().cycle()) {
-      cells.push(process_table_cell(subelement, fmt, env))
+      cells.push(process_table_cell(subelement, fmt, source, env))
     }
   }
 
@@ -570,6 +583,7 @@ fn process_table_content<'a>(
 fn process_table_cell<'a>(
   element: Pair<'a, asciidoc::Rule>,
   fmt: &ColumnFormat,
+  source: &str,
   env: &mut Env,
 ) -> ElementSpan<'a> {
   let mut base = set_span(&element).element(Element::TableCell);
@@ -589,7 +603,7 @@ fn process_table_cell<'a>(
       let mut elements = vec![];
 
       for element in ast {
-        if let Some(element) = process_element(element, env) {
+        if let Some(element) = process_element(element, source, env) {
           elements.push(element);
         }
       }
@@ -607,7 +621,11 @@ fn process_table_cell<'a>(
   base
 }
 
-fn process_include<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> ElementSpan<'a> {
+fn process_include<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  source: &str,
+  env: &mut Env,
+) -> ElementSpan<'a> {
   let base = set_span(&element);
 
   let base = element
@@ -629,8 +647,25 @@ fn process_include<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> Elem
       return base.error("include macro without path");
     }
   };
+  // Resolve the path relative to the current source file
+  let path = {
+    use std::path::Path;
+    if let Some(parent) = Path::new(source).parent() {
+      if let Some(parent_str) = parent.to_str() {
+        if !parent_str.is_empty() {
+          format!("{}/{}", parent_str, path)
+        } else {
+          path.to_string()
+        }
+      } else {
+        path.to_string()
+      }
+    } else {
+      path.to_string()
+    }
+  };
 
-  let content = match env.read_to_string(path) {
+  let content = match env.read_to_string(&path) {
     Ok(content) => content,
     Err(e) => {
       return base
@@ -647,7 +682,7 @@ fn process_include<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> Elem
         Ok(ast) => {
           let mut elements = Vec::new();
           for element in ast {
-            if let Some(element) = process_element(element, env) {
+            if let Some(element) = process_element(element, &path, env) {
               elements.push(element);
             }
           }
@@ -697,13 +732,14 @@ fn concat_elements<'a>(
 fn process_children<'a>(
   element: Pair<'a, asciidoc::Rule>,
   base: ElementSpan<'a>,
+  source: &str,
   env: &mut Env,
 ) -> ElementSpan<'a> {
   let mut base = base;
 
   base.children = element
     .into_inner()
-    .filter_map(|sub| process_element(sub, env))
+    .filter_map(|sub| process_element(sub, source, env))
     .collect();
 
   base
@@ -711,11 +747,12 @@ fn process_children<'a>(
 
 fn extract_inner_rule<'a>(
   element: Pair<'a, asciidoc::Rule>,
+  source: &str,
   env: &mut Env,
 ) -> Option<ElementSpan<'a>> {
   let base = set_span(&element);
   match element.into_inner().next() {
-    Some(element) => process_element(element, env),
+    Some(element) => process_element(element, source, env),
     None => Some(base.error("must have a subfield in the parser but nothing is found")),
   }
 }
