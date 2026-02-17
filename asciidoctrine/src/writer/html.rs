@@ -280,6 +280,11 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
       write_close_tag_ln("tbody", indent + 1, out)?;
       write_close_tag_ln("table", indent, out)?;
     }
+    Element::IncludeElement(include_element) => {
+      for element in include_element.inner.elements.iter() {
+        write_html(element, indent, out)?;
+      }
+    }
     _ => {
       out.write_all(
         &format!(

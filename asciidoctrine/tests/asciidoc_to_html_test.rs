@@ -1,5 +1,6 @@
 use anyhow::Result;
 use asciidoctrine::{self, *};
+use asciidoctrine::util::Environment;
 use clap::Parser;
 use pretty_assertions::assert_eq;
 use std::io::BufWriter;
@@ -19,6 +20,7 @@ fn bullet_list_with_dashes() -> Result<()> {
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
+
   let ast = reader.parse(content, &opts, &mut env)?;
 
   let mut buf = BufWriter::new(Vec::new());
@@ -81,6 +83,7 @@ fn bullet_list() -> Result<()> {
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
+
   let ast = reader.parse(content, &opts, &mut env)?;
 
   let mut buf = BufWriter::new(Vec::new());
@@ -139,6 +142,7 @@ Additional Information, that will only be shown on demand.
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
+
   let ast = reader.parse(content, &opts, &mut env)?;
 
   let mut buf = BufWriter::new(Vec::new());
@@ -173,6 +177,7 @@ This Information is visible by default.
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
+
   let ast = reader.parse(content, &opts, &mut env)?;
 
   let mut buf = BufWriter::new(Vec::new());
@@ -223,6 +228,7 @@ We can even have multiple paragraphs
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
+
   let ast = reader.parse(content, &opts, &mut env)?;
 
   let mut buf = BufWriter::new(Vec::new());
@@ -289,6 +295,7 @@ fn atx_headers() -> Result<()> {
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
+
   let ast = reader.parse(content, &opts, &mut env)?;
 
   let mut buf = BufWriter::new(Vec::new());
@@ -326,6 +333,7 @@ This is a subsubsubheader
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
+
   let ast = reader.parse(content, &opts, &mut env)?;
 
   let mut buf = BufWriter::new(Vec::new());
@@ -346,6 +354,31 @@ This is a subsubsubheader
 }
 
 #[test]
+fn include_macro() -> Result<()> {
+  let content = r#"
+include::included_document.adoc[]
+"#;
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
+  let mut env = util::Env::Cache(util::Cache::new());
+  env.write("included_document.adoc", r#"Some text in another file."#)?;
+  let ast = reader.parse(content, &opts, &mut env)?;
+
+  let mut buf = BufWriter::new(Vec::new());
+  let mut writer = HtmlWriter::new();
+  writer.write(ast, &opts, &mut buf)?;
+
+  let output = String::from_utf8(buf.into_inner()?)?;
+  assert_eq!(
+    output,
+    r#"<p>Some text in another file.</p>
+"#
+  );
+
+  Ok(())
+}
+
+#[test]
 fn inline_bold() -> Result<()> {
   let content = r#"
 Some text is *bold*.
@@ -353,6 +386,7 @@ Some text is *bold*.
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
+
   let ast = reader.parse(content, &opts, &mut env)?;
 
   let mut buf = BufWriter::new(Vec::new());
@@ -377,6 +411,7 @@ Some text is _italic_.
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
+
   let ast = reader.parse(content, &opts, &mut env)?;
 
   let mut buf = BufWriter::new(Vec::new());
@@ -401,6 +436,7 @@ Some text is `monospaced`.
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
+
   let ast = reader.parse(content, &opts, &mut env)?;
 
   let mut buf = BufWriter::new(Vec::new());
@@ -429,6 +465,7 @@ fn numbered_list() -> Result<()> {
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
+
   let ast = reader.parse(content, &opts, &mut env)?;
 
   let mut buf = BufWriter::new(Vec::new());
@@ -475,6 +512,7 @@ fn simple_table() -> Result<()> {
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
+
   let ast = reader.parse(content, &opts, &mut env)?;
 
   let mut buf = BufWriter::new(Vec::new());
@@ -525,6 +563,7 @@ echo "hello world!"
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
+
   let ast = reader.parse(content, &opts, &mut env)?;
 
   let mut buf = BufWriter::new(Vec::new());
