@@ -1,9 +1,9 @@
 # import niv sources and the pinned nixpkgs
-{ sources ? import ./nix/sources.nix, pkgs ? import sources.nixpkgs { }}:
+{ sources ? import ./nix/sources.nix, pkgs ? import sources.nixpkgs { overlays = [ (import sources.rust-overlay) ]; }}:
 
 let
   # import rust compiler
-  rust = import ./nix/rust.nix { inherit sources; };
+  rust = pkgs.rust-bin.stable.latest.minimal;
 
   # configure naersk to use our pinned rust compiler
   naersk = pkgs.callPackage sources.naersk {
