@@ -13,7 +13,6 @@ block = {
   // sidebar |
   // source |
   // stem |
-  // table |
   // verse |
   image_block |
   include_macro |
@@ -103,21 +102,9 @@ image_block = { anchor* ~ image }
 image = { "image::" ~ (url | path) ~ inline_attribute_list }
 
 delimited_table = {
-  PUSH("|" ~ "="{3,}) ~ NEWLINE ~
+  PUSH(("|" | "!") ~ "="{3,}) ~ NEWLINE ~
   delimited_inner ~
   NEWLINE ~ POP ~ &(NEWLINE | EOI)
-}
-
-table_inner = {
-  (table_cell ~ NEWLINE*)+
-}
-
-table_cell = {
-  "|" ~ table_cell_content
-}
-
-table_cell_content = {
-  (!"|" ~ ANY)*
 }
 
 delimited_comment = {

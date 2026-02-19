@@ -460,7 +460,6 @@ block = {
   // sidebar |
   // source |
   // stem |
-  // table |
   // verse |
   image_block |
   include_macro |
@@ -1672,27 +1671,15 @@ fn process_image<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> Elemen
 ====
 
 == Tabellen
-TODO
+Oftmals ist es praktisch Daten in Tabellenform anordnen zu können.
 
 [[blocks]]
 [source, pest]
 ----
 delimited_table = {
-  PUSH("|" ~ "="{3,}) ~ NEWLINE ~
+  PUSH(("|" | "!") ~ "="{3,}) ~ NEWLINE ~
   delimited_inner ~
   NEWLINE ~ POP ~ &(NEWLINE | EOI)
-}
-
-table_inner = {
-  (table_cell ~ NEWLINE*)+
-}
-
-table_cell = {
-  "|" ~ table_cell_content
-}
-
-table_cell_content = {
-  (!"|" ~ ANY)*
 }
 ----
 
@@ -1894,12 +1881,12 @@ fn parse_columns_format(input: &str) -> Vec<ColumnFormat> {
     .collect()
 }
 
-fn parse_columns_format_from_content(input: &str) -> Vec<ColumnFormat> {
+fn parse_columns_format_from_content(input: &str, delimiter: char) -> Vec<ColumnFormat> {
   input
     .lines()
     .next()
     .unwrap_or("")
-    .matches('|')
+    .matches(delimiter)
     .map(|_| ColumnFormat {
       length: 1,
       kind: ColKind::Default,
@@ -1913,6 +1900,14 @@ fn process_inner_table<'a>(
   source: &str,
   env: &mut Env,
 ) -> ElementSpan<'a> {
+  // Extract the delimiter character from the opening fence (first character)
+  let delimiter = base
+    .get_attribute("separator")
+    .unwrap_or_else(|| element.as_str())
+    .chars()
+    .next()
+    .unwrap_or('|');
+
   let content = element
     .into_inner()
     .find(|sub| sub.as_rule() == Rule::delimited_inner)
@@ -1921,14 +1916,14 @@ fn process_inner_table<'a>(
 
   let col_format = match base.get_attribute("cols") {
     Some(fmt) => parse_columns_format(fmt),
-    None => parse_columns_format_from_content(content),
+    None => parse_columns_format_from_content(content, delimiter),
   };
 
   base.attributes.push(Attribute {
     key: "content".to_string(),
     value: AttributeValue::Ref(content),
   });
-  base.children = process_table_content(content, col_format, source, env);
+  base.children = process_table_content(content, col_format, delimiter, source, env);
 
   base
 }
@@ -1936,37 +1931,83 @@ fn process_inner_table<'a>(
 fn process_table_content<'a>(
   input: &'a str,
   col_format: Vec<ColumnFormat>,
+  delimiter: char,
   source: &str,
   env: &mut Env,
 ) -> Vec<ElementSpan<'a>> {
-  let ast = match AsciidocParser::parse(Rule::table_inner, input) {
-    Ok(ast) => ast,
-    Err(e) => {
-      return vec![ElementSpan {
-        element: Element::Error(format!("could not parse cell: {}", e)),
-        source: None,
-        content: input,
-        start: 0,
-        end: 0,
-        start_line: 0,
-        start_col: 0,
-        end_line: 0,
-        end_col: 0,
-        children: vec![],
-        positional_attributes: vec![],
-        attributes: vec![],
-      }];
-    }
-  };
-
   let mut cells = vec![];
+  let mut cell_start: Option<usize> = None;
+  let mut current_pos = 0;
 
-  for element in ast {
-    for (subelement, fmt) in element.into_inner().zip(col_format.iter().cycle()) {
-      cells.push(process_table_cell(subelement, fmt, source, env))
+  for line in input.lines() {
+    let line_start = current_pos;
+    let line_len = line.len();
+    let trimmed = line.trim_start();
+    let trimmed_offset = line.len() - trimmed.len();
+
+    // Check if this line starts with the cell delimiter
+    if trimmed.starts_with(delimiter) {
+      // Save any previous cell
+      if let Some(start) = cell_start {
+        let content = input[start..current_pos].trim();
+        let fmt = &col_format[cells.len() % col_format.len()];
+
+        cells.push(process_table_cell(content, fmt, source, env));
+        cell_start = None;
+      }
+
+      // Check if there are multiple delimiters on this line
+      let rest_of_line = &trimmed[delimiter.len_utf8()..];
+      if rest_of_line.contains(delimiter) {
+        // Multiple cells on this line - split them
+        let line_offset = line_start + trimmed_offset + delimiter.len_utf8();
+        let parts: Vec<&str> = rest_of_line.split(delimiter).collect();
+
+        // Process all but the last part as complete cells
+        let mut char_offset = 0;
+        for (i, part) in parts.iter().enumerate() {
+          if i < parts.len() - 1 {
+            // Complete cell
+            let fmt = &col_format[cells.len() % col_format.len()];
+            cells.push(process_table_cell(part.trim(), fmt, source, env));
+            char_offset += part.len() + delimiter.len_utf8();
+          } else {
+            // Last part might continue on next lines
+            if !part.trim().is_empty() || i == parts.len() - 1 {
+              cell_start = Some(line_offset + char_offset);
+            }
+          }
+        }
+      } else {
+        // Single cell starting on this line
+        cell_start = Some(line_start + trimmed_offset + delimiter.len_utf8());
+      }
+    } else if cell_start.is_none() && !trimmed.is_empty() {
+      // If this is the first content and no delimiter seen, it's an implicit first cell
+      cell_start = Some(line_start);
+    }
+
+    current_pos += line_len + 1; // +1 for newline
+  }
+
+  // Don't forget the last cell
+  if let Some(start) = cell_start {
+    let content = input[start..].trim();
+    let fmt = &col_format[cells.len() % col_format.len()];
+
+    if content.starts_with("|===") || content.starts_with("!===") {
+      if let Ok(ast) = AsciidocParser::parse(Rule::delimited_table, content) {
+        for element in ast {
+          let base = set_span(&element).element(Element::Table);
+          cells.push(process_inner_table(element, base, source, env));
+        }
+      }
+    } else {
+      cells.push(process_table_cell(content, fmt, source, env));
     }
   }
 
+  // Group cells into rows
   let mut rows = vec![];
   let len = col_format.len();
   for chunk in cells.chunks(len) {
@@ -1990,21 +2031,26 @@ fn process_table_content<'a>(
 }
 
 fn process_table_cell<'a>(
-  element: Pair<'a, asciidoc::Rule>,
+  content: &'a str,
   fmt: &ColumnFormat,
   source: &str,
   env: &mut Env,
 ) -> ElementSpan<'a> {
-  let mut base = set_span(&element).element(Element::TableCell);
+  let mut base = ElementSpan {
+    element: Element::TableCell,
+    source: None,
+    content,
+    start: 0,
+    end: 0,
+    start_line: 0,
+    start_col: 0,
+    end_line: 0,
+    end_col: 0,
+    children: vec![],
+    positional_attributes: vec![],
+    attributes: vec![],
+  };
 
-  let content = element
-    .into_inner()
-    .find(|sub| sub.as_rule() == Rule::table_cell_content)
-    .unwrap()
-    .as_str()
-    .trim();
-
-  base.content = content;
   base.children = match fmt.kind {
     ColKind::Asciidoc => {
       let ast = AsciidocParser::parse(Rule::asciidoc, content).unwrap();
