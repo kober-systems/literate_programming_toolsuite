@@ -355,15 +355,7 @@ fn table_paragraph<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T
     Element::List(_) => {
       write_html(input, indent, out)?;
     }
-    _ => {
-      out.write_all(
-        &format!(
-          "<NOT-YET-SUPPORTED:{:?}>{}</NOT-YET-SUPPORTED:{:?}>\n",
-          input.element, input.content, input.element,
-        )
-        .as_bytes(),
-      )?;
-    }
+    _ => write_html(input, indent, out)?,
   }
 
   Ok(())
