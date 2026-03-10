@@ -1,5 +1,6 @@
 use anyhow::Result;
 use asciidoctrine::{self, *};
+use asciidoctrine::util::Environment;
 use clap::Parser;
 use lisi::*;
 use pretty_assertions::assert_eq;
@@ -40,6 +41,7 @@ referenced param text
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec![""].into_iter());
   let mut env = util::Env::Cache(util::Cache::new());
+
   let ast = reader.parse(content, &opts, &mut env)?;
 
   let mut lisi = Lisi::from_env(&mut env);
@@ -116,6 +118,7 @@ The default text is [[echo_text]]`untouched`.
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec![""].into_iter());
   let mut env = util::Env::Cache(util::Cache::new());
+
   let ast = reader.parse(content, &opts, &mut env)?;
 
   let mut lisi = Lisi::from_env(&mut env);
@@ -134,6 +137,61 @@ The default text is [[echo_text]]`untouched`.
 def my_other_function():
   print("touch inner snippet too")
   # touch inner snippet too
+"#
+);
+
+
+  assert!(outputs.is_empty());
+
+  Ok(())
+}
+
+#[test]
+fn snippets_imported_via_include_macro() -> Result<()> {
+  let content = r#"
+This snippet
+
+[source, yaml, save]
+.sample.yaml
+----
+some_category:
+  <<params_in_other_document>>
+----
+
+uses some snippets that are defined in another document.
+
+== The other document
+include::external_document.adoc[]
+"#;
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::parse_from(vec![""].into_iter());
+  let mut env = util::Env::Cache(util::Cache::new());
+  env.write("external_document.adoc",
+  r#"This is the content of the external doc. It has a snippet, too.
+
+[[params_in_other_document]]
+[source, yaml]
+----
+param1: True
+param2: 42
+----
+"#
+);
+
+  let ast = reader.parse(content, &opts, &mut env)?;
+
+  let mut lisi = Lisi::from_env(&mut env);
+  let _ast = lisi.transform(ast)?;
+
+  // TODO ast vergleichen
+
+  let mut outputs = env.get_cache().unwrap();
+
+  assert_eq!(
+  outputs.remove("sample.yaml").unwrap(),
+  r#"some_category:
+  param1: True
+  param2: 42
 "#
 );
 
@@ -200,6 +258,7 @@ normal way and once with a substtuted inner snippet.
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec![""].into_iter());
   let mut env = util::Env::Cache(util::Cache::new());
+
   let ast = reader.parse(content, &opts, &mut env)?;
 
   let mut lisi = Lisi::from_env(&mut env);
@@ -255,6 +314,7 @@ print(testmodule.version)
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec![""].into_iter());
   let mut env = util::Env::Cache(util::Cache::new());
+
   let ast = reader.parse(content, &opts, &mut env)?;
 
   let mut lisi = Lisi::from_env(&mut env);
@@ -303,6 +363,7 @@ require "testmodule"
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec![""].into_iter());
   let mut env = util::Env::Cache(util::Cache::new());
+
   let ast = reader.parse(content, &opts, &mut env)?;
 
   let mut lisi = Lisi::from_env(&mut env);
@@ -363,6 +424,7 @@ print(testmodule.version .. "my other snippet")
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec![""].into_iter());
   let mut env = util::Env::Cache(util::Cache::new());
+
   let ast = reader.parse(content, &opts, &mut env)?;
 
   let mut lisi = Lisi::from_env(&mut env);
@@ -431,6 +493,7 @@ Now lets go on to another thing ...
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec![""].into_iter());
   let mut env = util::Env::Cache(util::Cache::new());
+
   let ast = reader.parse(content, &opts, &mut env)?;
 
   let mut lisi = Lisi::from_env(&mut env);
@@ -522,6 +585,7 @@ And so on ...
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec![""].into_iter());
   let mut env = util::Env::Cache(util::Cache::new());
+
   let ast = reader.parse(content, &opts, &mut env)?;
 
   let mut lisi = Lisi::from_env(&mut env);
@@ -605,6 +669,7 @@ And so on ...
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec![""].into_iter());
   let mut env = util::Env::Cache(util::Cache::new());
+
   let ast = reader.parse(content, &opts, &mut env)?;
 
   let mut lisi = Lisi::from_env(&mut env);
@@ -674,6 +739,7 @@ print("My emphasized text!!\n"
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec![""].into_iter());
   let mut env = util::Env::Cache(util::Cache::new());
+
   let ast = reader.parse(content, &opts, &mut env)?;
 
   let mut lisi = Lisi::from_env(&mut env);
@@ -818,6 +884,7 @@ echo "you passed all checks"
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec![""].into_iter());
   let mut env = util::Env::Cache(util::Cache::new());
+
   let ast = reader.parse(content, &opts, &mut env)?;
 
   let mut lisi = Lisi::from_env(&mut env);
