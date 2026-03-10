@@ -529,7 +529,7 @@ pre.pygments .tok-il { color: #666 } /* Literal.Number.Integer.Long */
 <ul class="sectlevel2">
 <li><a href="#input-format">Eingabeformate</a>
 <ul class="sectlevel3">
-<li><a href="#_asciidoc">Asciidoc</a>
+<li><a href="#asciidoc-syntax">Asciidoc</a>
 <ul class="sectlevel4">
 <li><a href="#_grundlegender_aufbau_eines_asciidoc_dokuments">Grundlegender Aufbau eines Asciidoc Dokuments</a></li>
 <li><a href="#_document_header">Document Header</a></li>
@@ -743,7 +743,7 @@ zunächst in einen AST umwandeln:</p>
 Eingabedateien) für alle Eingabedateien gleich.</p>
 </li>
 <li>
-<p>Das standardmäßige Eingabeformat ist <a href="#asciidoc-syntax">[asciidoc-syntax]</a>.</p>
+<p>Das standardmäßige Eingabeformat ist <a href="#asciidoc-syntax">Asciidoc</a>.</p>
 </li>
 </ul>
 </div>
@@ -904,11 +904,8 @@ Modulen zu:</p>
 </pre></div></td></tr></table></div></code></pre>
 </div>
 </div>
-<div id="asciidoc-syntax" class="paragraph">
-<p>Unresolved directive in asciidoctrine.adoc - include::asciidoc-syntax.adoc[]</p>
-</div>
 <div class="sect3">
-<h4 id="_asciidoc">Asciidoc</h4>
+<h4 id="asciidoc-syntax">Asciidoc</h4>
 <div class="paragraph">
 <p>Asciidoc ist ein einfaches Text Markup Format.</p>
 </div>
@@ -3425,7 +3422,7 @@ This Information is visible by default.
 <tr>
 <td class="tableblock halign-left valign-top"><div class="content"><div id="unittest_include_macro_input" class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="asciidoc"><div class="lineno"><table class="linenotable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span>Unresolved directive in asciidoctrine.adoc - include::included_document.adoc[]
+<pre class="pygments highlight"><code data-lang="asciidoc"><div class="lineno"><table class="linenotable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span>Unresolved directive in asciidoc-syntax.adoc - include::included_document.adoc[]
 </pre></div></td></tr></table></div></code></pre>
 </div>
 </div>
@@ -3467,7 +3464,7 @@ urprünglich von der cli aufgerufen wurde).</p>
 <tr>
 <td class="tableblock halign-left valign-top"><div class="content"><div id="unittest_include_macro_nested_input" class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="asciidoc"><div class="lineno"><table class="linenotable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span>Unresolved directive in asciidoctrine.adoc - include::nested/included_document.adoc[]
+<pre class="pygments highlight"><code data-lang="asciidoc"><div class="lineno"><table class="linenotable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span>Unresolved directive in asciidoc-syntax.adoc - include::nested/included_document.adoc[]
 </pre></div></td></tr></table></div></code></pre>
 </div>
 </div>
@@ -3478,7 +3475,7 @@ urprünglich von der cli aufgerufen wurde).</p>
 <span class="normal">2</span>
 <span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span>Some text in another file. Will include a nested file.
 
-Unresolved directive in asciidoctrine.adoc - include::nested/included_document.adoc[]
+Unresolved directive in asciidoc-syntax.adoc - include::nested/included_document.adoc[]
 </pre></div></td></tr></table></div></code></pre>
 </div>
 </div>
@@ -3634,9 +3631,6 @@ line = { linechar+ ~ ( &amp;NEWLINE | &amp;EOI) }
 
 empty_lines = _{ NEWLINE{2, } | (NEWLINE ~ EOI) }</code></pre>
 </div>
-</div>
-<div class="paragraph">
-<p>Unresolved directive in asciidoctrine.adoc - include::src/json-syntax.adoc[]</p>
 </div>
 </div>
 </div>
