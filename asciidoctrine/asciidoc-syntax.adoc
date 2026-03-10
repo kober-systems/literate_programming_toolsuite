@@ -1,0 +1,2311 @@
+= Asciidoc
+Asciidoc ist ein einfaches Text Markup Format.
+
+Wir verwenden https://pest.rs/[pest] um die Syntax zu parsen. Es verwendet https://pest.rs/book/grammars/peg.html[Parsing Expression Grammars] um Daten zu parsen.
+
+TODO TOML Eintrag
+
+Die grundlegende Syntax definieren wir in einer eigenen Datei welche wir in unserer PEG DSL schreiben.
+
+[%collapsible]
+====
+[source, rust, save]
+.src/reader/asciidoc.pest
+----
+<<basic_document_structure>>
+
+<<blocks|join="\n\n">>
+
+////////////////////////////////////////////////////////////////////////////////
+// often resused elements
+
+<<peg_building_blocks>>
+
+////////////////////////////////////////////////////////////////////////////////
+// inline elements
+
+inline = {
+  comment |
+  link |
+  strong |
+  emphasized |
+  monospaced |
+  quoted |
+  footnote |
+  footnoteref |
+  xref
+}
+other_inline = @{ (!inline ~ ANY)+ }
+inline_parser = ${ (inline | other_inline)* ~ EOI }
+
+<<inline_elements|join="\n\n">>
+
+////////////////////////////////////////////////////////////////////////////////
+// generics
+
+<<generic_pegs|join="\n\n">>
+
+////////////////////////////////////////////////////////////////////////////////
+
+// Implicit whitespace rule
+WHITESPACE = _{ " " | "\t" }
+----
+
+Damit können wir die Syntax in einer relativ formalen Sprache definieren welche das parsen erleichtert. Diesem, noch eher groben AST, weisen wir dann eine semantische Bedeutung zu. Den Code dazu definieren wir in einem eigenen Rust Modul mit dem Namen `asciidoc.rs`.
+
+[source, rust, save]
+.src/reader/asciidoc.rs
+----
+pub use crate::ast::*;
+use crate::options::Opts;
+use crate::util::{Env, Environment};
+use crate::reader::*;
+use crate::Result;
+use pest::iterators::Pair;
+use pest::Parser;
+
+pub struct AsciidocReader {}
+
+impl AsciidocReader {
+  pub fn new() -> Self {
+    AsciidocReader {}
+  }
+}
+
+impl crate::Reader for AsciidocReader {
+  fn parse<'a>(&self, input: &'a str, args: &Opts, env: &mut Env) -> Result<AST<'a>> {
+    let ast = AsciidocParser::parse(Rule::asciidoc, input)?;
+
+    let mut attributes = Vec::new();
+    let source = if let Some(path) = &args.input {
+      if let Some(path) = path.to_str() {
+        attributes.push(Attribute {
+          key: "source".to_string(),
+          value: AttributeValue::String(path.to_string()),
+        });
+        Some(path)
+      } else {
+        None
+      }
+    } else {
+      None
+    };
+
+    let mut elements = Vec::new();
+
+    for element in ast {
+      if let Some(element) = process_element(element, source.unwrap_or(""), env) {
+        elements.push(element);
+      }
+    }
+
+    Ok(AST {
+      content: input,
+      elements,
+      attributes,
+    })
+  }
+}
+
+#[derive(Parser, Debug, Copy, Clone)]
+#[grammar = "reader/asciidoc.pest"]
+pub struct AsciidocParser;
+
+fn process_element<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  source: &str,
+  env: &mut Env,
+) -> Option<ElementSpan<'a>> {
+  let base = set_span(&element);
+
+  let element = match element.as_rule() {
+    <<asciidoc_element_rules>>
+    Rule::block => extract_inner_rule(element, source, env),
+    Rule::inline => Some(process_inline(element, base)),
+    Rule::EOI => None,
+    _ => Some(base),
+  };
+
+  element
+}
+
+<<asciidoc_parser_functions|join="\n\n">>
+
+// Helper functions
+
+fn concat_elements<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  filter: asciidoc::Rule,
+  join: &str,
+) -> Option<String> {
+  let elements: Vec<_> = element
+    .into_inner()
+    .filter(|e| e.as_rule() == filter)
+    .map(|e| e.as_str())
+    .collect();
+
+  if elements.len() > 0 {
+    Some(elements.join(join))
+  } else {
+    None
+  }
+}
+
+fn process_children<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  base: ElementSpan<'a>,
+  source: &str,
+  env: &mut Env,
+) -> ElementSpan<'a> {
+  let mut base = base;
+
+  base.children = element
+    .into_inner()
+    .filter_map(|sub| process_element(sub, source, env))
+    .collect();
+
+  base
+}
+
+fn extract_inner_rule<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  source: &str,
+  env: &mut Env,
+) -> Option<ElementSpan<'a>> {
+  let base = set_span(&element);
+  match element.into_inner().next() {
+    Some(element) => process_element(element, source, env),
+    None => Some(base.error("must have a subfield in the parser but nothing is found")),
+  }
+}
+
+fn set_span<'a>(element: &Pair<'a, asciidoc::Rule>) -> ElementSpan<'a> {
+  from_element(
+    element,
+    Element::Error(format!("Not implemented:{:?}", element)),
+  )
+}
+
+fn from_element<'a>(rule: &Pair<'a, asciidoc::Rule>, element: Element<'a>) -> ElementSpan<'a> {
+  let (start_line, start_col) = rule.as_span().start_pos().line_col();
+  let (end_line, end_col) = rule.as_span().end_pos().line_col();
+
+  ElementSpan {
+    element,
+    source: None, // TODO
+    content: rule.as_str(),
+    children: Vec::new(),
+    attributes: Vec::new(),
+    positional_attributes: Vec::new(),
+    start: rule.as_span().start(),
+    end: rule.as_span().end(),
+    start_line,
+    start_col,
+    end_line,
+    end_col,
+  }
+}
+----
+====
+
+== Grundlegender Aufbau eines Asciidoc Dokuments
+Asciidoc interpretiert einen Text als eine Sammlung von Blöcken,
+welche durch Leerzeilen getrennt sind. Wenn irgendein Text nicht als
+ein anderer Block interpretiert werden kann, so wird er als Paragraph
+interpretiert. Dadurch ist jedes Text-Dokument eine valide Asciidoc
+Datei.
+
+[[basic_document_structure]]
+[source, rust]
+----
+asciidoc = _{ (NEWLINE* ~ block)*  ~ NEWLINE* ~ EOI }
+
+block = {
+  <<block_entries>>
+  // admonition |
+  // example |
+  // fenced |
+  // listing |
+  // literal |
+  // open |
+  // passthrough |
+  // quote |
+  // sidebar |
+  // source |
+  // stem |
+  // verse |
+  image_block |
+  include_macro |
+  list |
+  attribute_entry_block |
+  // Title is nearly the last because it could prevent correct match of others
+  title_block |
+  // paragraph is the last because all others should be checked first
+  paragraph |
+  (!EOI ~ ANY)+
+}
+----
+
+=== Wichtige Konzepte
+Einige Elemente sind in ASCIIdoc wiederkehrend und können in
+verschiedenen Kontexten verwendet werden. Die wichtigsten von ihnen
+gehen wir jetzt durch.
+
+TODO Attribut Listen etc
+
+==== Elemente
+TODO
+
+==== Anker
+Oft möchte man Blöcke, Absätze etc referenzieren um sich später darauf
+zu beziehen. Asciidoc stellt dafür Anker zur Verfügung. Grundlegend sind
+es einfach Identifier (also Namen), welche man in `[[` und `]]` einrahmt
+und vor das entsprechende Element bzw vor den Block stellt.
+
+[[peg_building_blocks]]
+[source, pest]
+----
+anchor = { inline_anchor ~ NEWLINE }
+inline_anchor = { "[[" ~ (identifier | path) ~ "]]" }
+----
+
+[%collapsible]
+====
+[[asciidoc_parser_functions]]
+[source, rust]
+----
+fn process_anchor<'a>(element: Pair<'a, asciidoc::Rule>, base: ElementSpan<'a>) -> ElementSpan<'a> {
+  element
+    .into_inner()
+    .fold(base, |base, element| match element.as_rule() {
+      Rule::inline_anchor => process_inline_anchor(element, base),
+      _ => base,
+    })
+}
+
+fn process_inline_anchor<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  base: ElementSpan<'a>,
+) -> ElementSpan<'a> {
+  element.into_inner().fold(base, |base, element| {
+    match element.as_rule() {
+      Rule::identifier => base.add_attribute(Attribute {
+        key: "anchor".to_string(),
+        value: AttributeValue::Ref(element.as_str()),
+      }),
+      // TODO Fehler abfangen und anzeigen
+      _ => base,
+    }
+  })
+}
+----
+====
+
+==== Attribute
+Man kann jedem Element Eigenschaften (Attribute) zuordnen. Diese können
+beispielsweise später verwendet werden um beim rendern bestimmte Styles
+anzuwenden.
+
+Um einem Element Attribute zuzuordnen rahmt man die Liste der Attribute
+in `[` und `]` und stellt sie dem Element bzw Block vorran.
+
+[[peg_building_blocks]]
+[source, pest]
+.Element Attribute
+----
+attribute_list = { inline_attribute_list ~ NEWLINE }
+
+inline_attribute_list = {
+  "[" ~ (attribute ~ ("," ~ attribute)* )? ~ "]"
+}
+
+----
+
+Grundsätzlich gibt es zwei Arten von Attributen: Benannte und
+Unbenannte.
+
+Unbenannte Attribute werden einfach ein oder abgeschaltet. Deshalb
+ist es nicht nötig, ihnen einen Wert zuzuweisen. Wenn sie in der
+Attributliste auftauchen, sind sie automatisch eingeschaltet.
+
+Benannte Attribute können unterschiedliche Werte annehmen. Deshalb
+bekommen sie einen Namen, an den ein Wert übergeben wird, namch dem
+Schema `name=wert`.
+
+[[peg_building_blocks]]
+[source, pest]
+----
+attribute = { named_attribute | attribute_value }
+named_attribute = { identifier ~ "=" ~ attribute_value }
+attribute_value = {
+  ("\"" ~ inner_attribute_value ~ "\"") |
+  ( (!"," ~ !"]" ~ ANY)+ )
+}
+inner_attribute_value = { ( "\\\"" | (!"\"" ~ ANY))* }
+----
+
+[%collapsible]
+====
+[[asciidoc_parser_functions]]
+[source, rust]
+----
+fn process_inline_attribute_list<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  base: ElementSpan<'a>,
+) -> ElementSpan<'a> {
+  element
+    .into_inner()
+    .fold(base, |base, sub| match sub.as_rule() {
+      Rule::attribute => sub
+        .into_inner()
+        .fold(base, |base, sub| match sub.as_rule() {
+          Rule::attribute_value => base.add_positional_attribute(AttributeValue::Ref(sub.as_str())),
+          Rule::named_attribute => {
+            let mut rules = sub.into_inner();
+            let key = rules
+              .find_map(|sub| match sub.as_rule() {
+                Rule::identifier => Some(sub.as_str()),
+                _ => None,
+              })
+              .unwrap()
+              .to_string();
+            let value = rules
+              .find_map(|sub| match sub.as_rule() {
+                Rule::attribute_value => Some(sub.into_inner().concat()),
+                _ => None,
+              })
+              .unwrap();
+
+            base.add_attribute(Attribute {
+              key: key,
+              value: AttributeValue::String(value),
+            })
+          }
+          _ => base.add_child(set_span(&sub)),
+        }),
+      _ => base.add_child(set_span(&sub)),
+    })
+}
+
+fn process_attribute_list<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  base: ElementSpan<'a>,
+) -> ElementSpan<'a> {
+  element
+    .into_inner()
+    .fold(base, |base, sub| match sub.as_rule() {
+      Rule::inline_attribute_list => process_inline_attribute_list(sub, base),
+      _ => base.add_child(set_span(&sub)),
+    })
+}
+----
+====
+
+==== Blocktitel (Elementtitel)
+Blöcke haben oft ihre eigenen Titel. In Asciidoc werden sie durch eine
+Zeile vor dem Block gekennzeichnet, welche mit einem `.` beginnt.
+
+[[peg_building_blocks]]
+[source, pest]
+----
+blocktitle = { "." ~ !"." ~ line ~ NEWLINE }
+----
+
+[%collapsible]
+====
+
+[[asciidoc_parser_functions]]
+[source, rust]
+----
+fn process_blocktitle<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  base: ElementSpan<'a>,
+) -> ElementSpan<'a> {
+  element
+    .into_inner()
+    .fold(base, |base, sub| match sub.as_rule() {
+      Rule::line => base.add_attribute(Attribute {
+        key: "title".to_string(),
+        value: AttributeValue::Ref(sub.as_str()),
+      }),
+      _ => base.add_child(set_span(&sub)),
+    })
+}
+----
+
+====
+
+==== Abgetrennte Blöcke
+Ein sehr häufig genutztes Element sind abgetrennte Blöcke. Sie erlauben
+einen Text in einem speziellen Style hervorzuheben.
+
+Der generelle Aufbau ist folgender:
+
+[[delimited_block_template]]
+[source, pest]
+----
+delimited_<<blocktype>> = {
+  PUSH("<<delimiter>>"{4,}) ~ NEWLINE ~
+  delimited_inner ~
+  NEWLINE ~ POP ~ &(NEWLINE | EOI)
+}
+----
+
+[%collapsible]
+====
+
+[[block_entries]]
+[source, pest]
+----
+delimited_block |
+----
+
+[[blocks]]
+[source, pest]
+----
+delimited_block = {
+  (anchor | attribute_list | blocktitle)* ~
+  (
+    //delimited_admonition |
+    delimited_comment |
+    delimited_example |
+    //delimited_fenced |
+    //delimited_listing |
+    delimited_literal |
+    //delimited_open |
+    //delimited_passthrough |
+    //delimited_quote |
+    //delimited_sidebar |
+    delimited_source |
+    //delimited_stem |
+    delimited_table |
+    delimited_verse
+  )
+}
+
+delimited_inner = @{ (!(NEWLINE ~ PEEK) ~ ANY)* }
+----
+
+[[asciidoc_element_rules]]
+[source, rust]
+----
+Rule::delimited_block => Some(process_delimited_block(element, source, env)),
+----
+
+[[asciidoc_parser_functions]]
+[source, rust]
+----
+fn process_delimited_block<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  source: &str,
+  env: &mut Env,
+) -> ElementSpan<'a> {
+  let base = set_span(&element);
+
+  element
+    .into_inner()
+    .fold(base, |base, sub| match sub.as_rule() {
+      Rule::anchor => process_anchor(sub, base),
+      Rule::attribute_list => process_attribute_list(sub, base),
+      Rule::blocktitle => process_blocktitle(sub, base),
+      Rule::delimited_table => process_inner_table(sub, base.element(Element::Table), source, env),
+      Rule::delimited_comment
+      | Rule::delimited_source
+      | Rule::delimited_literal
+      | Rule::delimited_example => process_delimited_inner(
+        sub.clone(),
+        base.element(Element::TypedBlock {
+          kind: match sub.as_rule() {
+            Rule::delimited_comment => BlockType::Comment,
+            Rule::delimited_source | Rule::delimited_literal => BlockType::Listing,
+            Rule::delimited_example => BlockType::Example,
+            _ => unreachable!(),
+          },
+        }),
+        source,
+        env,
+      ),
+      _ => base.add_child(set_span(&sub)),
+    })
+}
+
+fn process_delimited_inner<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  base: ElementSpan<'a>,
+  source: &str,
+  env: &mut Env,
+) -> ElementSpan<'a> {
+  element.into_inner().fold(base, |base, element| {
+    let mut base = base;
+
+    match element.as_rule() {
+      Rule::delimited_inner => {
+        if let Element::TypedBlock {
+          kind: BlockType::Example,
+        } = base.element
+        {
+          let ast = AsciidocParser::parse(Rule::asciidoc, element.as_str()).unwrap();
+
+          for element in ast {
+            if let Some(e) = process_element(element, source, env) {
+              base.children.push(e);
+            }
+          }
+        }
+        base.add_attribute(Attribute {
+          key: "content".to_string(),
+          value: AttributeValue::Ref(element.as_str()),
+        })
+      }
+      _ => base,
+    }
+  })
+}
+----
+
+====
+
+== Document Header
+Viele Dokumente beginnen mit einem Header. Es ist die Hauptüberschrift
+und kann optional noch einige Metadaten enthalten welche sich auf das
+ganze Doument beziehen.
+
+
+----
+asciidoc = _{ header? ~ (NEWLINE* ~ block)*  ~ NEWLINE* ~ EOI }
+----
+
+[[blocks]]
+[source, pest]
+----
+header = {
+  title ~
+  (NEWLINE ~ author_info)? ~
+  (NEWLINE ~ revision_info)? ~
+  ( (NEWLINE ~ attribute_entry) |
+    (NEWLINE ~ "//" ~ (!EOI ~ !NEWLINE ~ ANY)* ~ &NEWLINE ) // TODO Comment entfernen
+  )*
+  ~ &NEWLINE{2,}
+}
+----
+
+[[blocks]]
+[source, pest]
+----
+revision_info = { identifier } // TODO
+
+author_info = { word+ ~ email? ~ &NEWLINE }
+
+email = { "<" ~ (LETTER | "." )+ ~ "@" ~ (LETTER | "." )+ ~ ">" }
+----
+
+== Attribute
+Manchmal will man eine Eigenschaft des Dokument verändern. Dazu
+verwendet man Attributblöcke.
+
+[[blocks]]
+[source, pest]
+----
+attribute_entry = { ":" ~ identifier ~ ":" ~ identifier? ~ &NEWLINE }
+attribute_entry_block = { attribute_entry ~ NEWLINE }
+----
+
+== Überschriften
+Überschriften werden verwendet um das Dokument in Unterthemen zu gruppieren.
+
+[[blocks]]
+[source, pest]
+----
+title_block = { anchor* ~ title }
+title = {
+  (line ~ NEWLINE ~ setext_title_style ) |
+  (atx_title_style ~ line)
+}
+setext_title_style = { ("="{4,} | "-"{4,} | "~"{4,} | "^"{4,} ) ~ &NEWLINE }
+atx_title_style = { "="+ }
+----
+
+[%collapsible]
+====
+
+[[asciidoc_element_rules]]
+[source, rust]
+----
+Rule::title => Some(process_title(element, base)),
+Rule::header | Rule::title_block => {
+  Some(element.into_inner().fold(base, |base, subelement| {
+    match subelement.as_rule() {
+      Rule::title => process_title(subelement, base.clone()),
+      Rule::anchor => process_anchor(subelement, base),
+      // We just take the attributes at the beginning
+      // of the element.
+      _ => base,
+    }
+  }))
+}
+----
+
+[[asciidoc_parser_functions]]
+[source, rust]
+----
+fn process_title<'a>(element: Pair<'a, asciidoc::Rule>, base: ElementSpan<'a>) -> ElementSpan<'a> {
+  match element.as_rule() {
+    Rule::title => {
+      element.into_inner().fold(base, |base, subelement| {
+        match subelement.as_rule() {
+          Rule::atx_title_style => base.element(Element::Title {
+            level: subelement.as_str().trim().len() as u32,
+          }),
+          Rule::setext_title_style => base.clone().element(Element::Title {
+            level: match subelement.as_str().chars().next().unwrap() {
+              '=' => 1,
+              '-' => 2,
+              '~' => 3,
+              '^' => 4,
+              _ => {
+                return base.error("Unsupported title formatting");
+              }
+            },
+          }),
+          Rule::line => base.add_attribute(Attribute {
+            key: "name".to_string(),
+            value: AttributeValue::Ref(subelement.as_str()),
+          }),
+          // We just take the attributes at the beginning
+          // of the element.
+          _ => base.error("Unsupported title formatting"),
+        }
+      })
+    }
+    _ => base,
+  }
+}
+----
+
+====
+
+[cols="a,a"]
+|====
+|
+[[unittest_header_setext_input]]
+[source, asciidoc, lisi-raw]
+[output="setext_header_html_output", name="setext_headers"]
+....
+This is a header
+================
+
+This is a subheader
+-------------------
+
+This is a subsubheader
+~~~~~~~~~~~~~~~~~~~~~~
+
+This is a subsubsubheader
+^^^^^^^^^^^^^^^^^^^^^^^^^
+....
+
+|
+
+This is a header
+================
+
+This is a subheader
+-------------------
+
+This is a subsubheader
+~~~~~~~~~~~~~~~~~~~~~~
+
+This is a subsubsubheader
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[%collapsible]
+.Html Output
+====
+
+[[setext_header_html_output]]
+[source, html]
+----
+<h1>This is a header</h1>
+<h2 id="_this_is_a_subheader">This is a subheader</h2>
+<h3 id="_this_is_a_subsubheader">This is a subsubheader</h3>
+<h4 id="_this_is_a_subsubsubheader">This is a subsubsubheader</h4>
+----
+====
+
+|
+Auch Titel im ATX Format werden erkannt.
+
+[[unittest_header_atx_input]]
+[source, asciidoc, lisi-raw]
+[output="atx_header_html_output", name="atx_headers"]
+....
+= This is a header
+
+== This is a subheader
+
+=== This is a subsubheader
+
+==== This is a subsubsubheader
+....
+
+|
+
+= This is a header
+
+== This is a subheader
+
+=== This is a subsubheader
+
+==== This is a subsubsubheader
+
+[%collapsible]
+.Html Output
+====
+
+[[atx_header_html_output]]
+[source, html]
+----
+<h1>This is a header</h1>
+<h2 id="_this_is_a_subheader">This is a subheader</h2>
+<h3 id="_this_is_a_subsubheader">This is a subsubheader</h3>
+<h4 id="_this_is_a_subsubsubheader">This is a subsubsubheader</h4>
+----
+====
+
+|====
+
+== Absätze
+Absätze sind die meistgenutzen Elemente in Texten. Ihre Verwendung
+ergibt sich ganz natürlich. Alles was an einem Stück geschrieben wurde
+(und kein anderer Block ist) ist ein Absatz. Absätze werden durch eine
+oder mehrere Leerzeilen getrennt.
+
+[[blocks]]
+[source, pest]
+----
+paragraph = ${ (!empty_lines ~ !EOI ~ ANY)+ }
+----
+
+[%collapsible]
+====
+
+[[asciidoc_element_rules]]
+[source, rust]
+----
+Rule::paragraph => Some(process_paragraph(element)),
+----
+
+[[asciidoc_parser_functions]]
+[source, rust]
+----
+fn parse_paragraph<'a>(content: &'a str) -> Vec<ElementSpan<'a>> {
+  let mut out = vec![];
+
+  let ast = AsciidocParser::parse(Rule::inline_parser, content).unwrap();
+
+  for element in ast {
+    for subelement in element.into_inner() {
+      if subelement.as_rule() != Rule::EOI {
+        out.push(match subelement.as_rule() {
+          Rule::other_inline | Rule::other_list_inline => from_element(&subelement, Element::Text),
+          Rule::inline => process_inline(subelement.clone(), set_span(&subelement)),
+          _ => set_span(&subelement),
+        });
+      }
+    }
+  }
+
+  out
+}
+
+fn process_paragraph<'a>(element: Pair<'a, asciidoc::Rule>) -> ElementSpan<'a> {
+  let mut base = from_element(&element, Element::Paragraph);
+
+  base.children = parse_paragraph(element.as_str())
+    .into_iter()
+    .map(|child| child.add_offset(&base))
+    .collect();
+
+  base
+}
+----
+
+====
+
+== Textformattierung
+Innerhalb von Blöcken will man oft Texte vormattieren. Folgende
+Formatierungen werden unterstützt:
+
+[cols="a,a",separator="¦"]
+!===
+¦
+*Fett*
+
+[[unittest_inline_bold_input]]
+[source, asciidoc, lisi-raw]
+[output="inline_bold_html_output", name="inline_bold"]
+....
+Some text is *bold*.
+....
+
+[%collapsible]
+====
+[[inline_elements]]
+[source, pest]
+----
+strong = ${ "*" ~ (!"*" ~ linechar)+ ~ "*" }
+----
+====
+
+¦
+
+Some text is *bold*.
+
+[%collapsible]
+.Html Output
+====
+
+[[inline_bold_html_output]]
+[source, html]
+----
+<p>Some text is <strong>bold</strong>.</p>
+----
+
+====
+
+¦
+
+_Kursiv_
+
+[[unittest_inline_italic_input]]
+[source, asciidoc, lisi-raw]
+[output="inline_italic_html_output", name="inline_italic"]
+....
+Some text is _italic_.
+....
+
+
+[%collapsible]
+====
+[[inline_elements]]
+[source, pest]
+----
+emphasized = ${ "_" ~ (!"_" ~ linechar)+ ~ "_" }
+----
+====
+
+¦
+
+Some text is _italic_.
+
+[%collapsible]
+.Html Output
+====
+
+[[inline_italic_html_output]]
+[source, html]
+----
+<p>Some text is <em>italic</em>.</p>
+----
+
+====
+
+¦
+`Monospaced`
+
+[[unittest_inline_monospaced_input]]
+[source, asciidoc, lisi-raw]
+[output="inline_monospaced_html_output", name="inline_monospaced"]
+....
+Some text is `monospaced`.
+....
+
+[%collapsible]
+====
+[[inline_elements]]
+[source, pest]
+----
+monospaced = ${ inline_anchor* ~ (("+" ~ (!"+" ~ linechar)+ ~ "+") | ("`" ~ (!"`" ~ linechar)+ ~ "`")) }
+----
+====
+
+¦
+
+Some text is `monospaced`.
+
+[%collapsible]
+.Html Output
+====
+
+[[inline_monospaced_html_output]]
+[source, html]
+----
+<p>Some text is <code>monospaced</code>.</p>
+----
+
+====
+
+!===
+
+[%collapsible]
+====
+[[asciidoc_parser_functions]]
+[source, rust]
+----
+fn process_inline<'a>(element: Pair<'a, asciidoc::Rule>, base: ElementSpan<'a>) -> ElementSpan<'a> {
+  element
+    .into_inner()
+    .fold(base, |base, element| match element.as_rule() {
+      Rule::link => process_link(element, base),
+      Rule::xref => process_xref(element, base),
+      Rule::monospaced | Rule::strong | Rule::emphasized => {
+        let base = base.element(Element::Styled).add_attribute(Attribute {
+          key: "style".to_string(),
+          value: AttributeValue::Ref(match element.as_rule() {
+            Rule::monospaced => "monospaced",
+            Rule::strong => "strong",
+            Rule::emphasized => "em",
+            _ => "not_supported",
+          }),
+        });
+
+        let base = match concat_elements(element.clone(), Rule::linechar, "") {
+          Some(content) => base.add_attribute(Attribute {
+            key: "content".to_string(),
+            value: AttributeValue::String(content),
+          }),
+          None => base,
+        };
+        element
+          .into_inner()
+          .fold(base, |base, subelement| match subelement.as_rule() {
+            Rule::inline_anchor => process_inline_anchor(subelement, base),
+            _ => base,
+          })
+      }
+      _ => base,
+    })
+}
+----
+====
+
+== Listen
+In Texten bieten sich Listen für alle Arten von Aufzählungen an.
+Generell unterscheiden wir drei Arten von Listen:
+
+* Unnummerierte Listen
+* Nummerierte Listen
+* Benannte Listen
+
+[[blocks]]
+[source, pest]
+----
+list = { bullet_list | numbered_list | labeled_list }
+----
+
+[[blocks]]
+[source, pest]
+----
+list_element = ${
+  (
+    list_paragraph |
+    (continuation ~ delimited_block)
+  )+
+}
+list_paragraph = ${ (inline | other_list_inline)+ }
+other_list_inline = @{ (!empty_lines ~ !EOI ~ !inline ~ !(NEWLINE ~ (bullet | number_bullet)) ~ !(continuation ~ delimited_block) ~ ANY)+ }
+----
+
+[%collapsible]
+====
+
+[[asciidoc_element_rules]]
+[source, rust]
+----
+Rule::list => extract_inner_rule(element, source, env),
+Rule::list_paragraph => Some(process_paragraph(element)),
+Rule::other_list_inline => Some(from_element(&element, Element::Text)),
+Rule::continuation => None,
+----
+
+[[inline_elements]]
+[source, pest]
+----
+continuation = { NEWLINE ~ "+" ~ NEWLINE }
+----
+
+====
+
+=== Unnummerierte Listen
+Unnummerierte Listen können mit `*` oder mit `-` erzeugt werden. Um eine
+weitere Einrückung zu erzeugen kann man mehrere Punkte hintereinander
+hängen (z.B. `**`).
+
+[%collapsible]
+====
+[[blocks]]
+[source, pest]
+----
+bullet = { ("*"+ | "-"+) }
+bullet_list_element = { bullet ~ list_element ~ (NEWLINE | EOI) }
+bullet_list = { bullet_list_element+ }
+----
+====
+
+[cols="a,a"]
+|====
+|
+
+[[unittest_bullet_list_input]]
+[source, asciidoc, lisi-raw]
+[output="bullet_list_html_output", name="bullet_list"]
+....
+* This
+* is
+* a
+* list
+** with subpoints
+*** and deeper
+**** nested subpoints
+* Next normal point
+....
+
+|
+
+* This
+* is
+* a
+* list
+** with subpoints
+*** and deeper
+**** nested subpoints
+* Next normal point
+
+[%collapsible]
+.Html Output
+====
+
+[[bullet_list_html_output]]
+[source, html]
+----
+<ul>
+  <li>
+    <p>This</p>
+  </li>
+  <li>
+    <p>is</p>
+  </li>
+  <li>
+    <p>a</p>
+  </li>
+  <li>
+    <p>list</p>
+    <ul>
+      <li>
+        <p>with subpoints</p>
+        <ul>
+          <li>
+            <p>and deeper</p>
+            <ul>
+              <li>
+                <p>nested subpoints</p>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li>
+    <p>Next normal point</p>
+  </li>
+</ul>
+----
+====
+
+|
+
+[[unittest_bullet_list_dashes_input]]
+[source, asciidoc, lisi-raw]
+[output="bullet_list_html_output", name="bullet_list_with_dashes"]
+....
+- This
+- is
+- a
+- list
+-- with subpoints
+--- and deeper
+---- nested subpoints
+- Next normal point
+....
+
+|
+
+- This
+- is
+- a
+- list
+-- with subpoints
+--- and deeper
+---- nested subpoints
+- Next normal point
+
+|====
+
+[%collapsible]
+====
+
+[[asciidoc_element_rules]]
+[source, rust]
+----
+Rule::bullet_list => Some(process_children(
+  element.clone(),
+  set_span(&element).element(Element::List(ListType::Bullet)),
+  source,
+  env,
+)),
+----
+
+====
+
+=== Nummerierte Listen
+Manchmal möchte man die genaue Reihenfolge explizit vorgeben. In
+diesem Fall verwendet man eine nummerierte Liste. Wir können die
+Nummeriungspunkte mit `.` darstellen.
+
+[%collapsible]
+====
+[[blocks]]
+[source, pest]
+----
+number_bullet = { "."+ }
+number_bullet_list_element = { number_bullet ~ list_element ~ (NEWLINE | EOI) }
+numbered_list = { number_bullet_list_element+ }
+----
+====
+
+[cols="a,a"]
+|====
+|
+
+[[unittest_numbered_list_input]]
+[source, asciidoc, lisi-raw]
+[output="numbered_list_html_output", name="numbered_list"]
+....
+. This
+. is
+. a
+.. nested
+. numbered list
+....
+
+|
+
+. This
+. is
+. a
+.. nested
+. numbered list
+
+[%collapsible]
+.Html Output
+====
+
+[[numbered_list_html_output]]
+[source, html]
+----
+<ol class="arabic">
+  <li>
+    <p>This</p>
+  </li>
+  <li>
+    <p>is</p>
+  </li>
+  <li>
+    <p>a</p>
+    <ol class="loweralpha" type="a">
+      <li>
+        <p>nested</p>
+      </li>
+    </ol>
+  </li>
+  <li>
+    <p>numbered list</p>
+  </li>
+</ol>
+----
+====
+
+|====
+
+[%collapsible]
+====
+
+[[asciidoc_element_rules]]
+[source, rust]
+----
+Rule::numbered_list => Some(process_children(
+  element.clone(),
+  set_span(&element).element(Element::List(ListType::Number)),
+  source,
+  env,
+)),
+Rule::bullet_list_element | Rule::number_bullet_list_element => Some(
+  element
+    .clone()
+    .into_inner()
+    .fold(set_span(&element), |base, sub| match sub.as_rule() {
+      Rule::bullet | Rule::number_bullet => {
+        base.element(Element::ListItem(sub.as_str().trim().len() as u32))
+      }
+      Rule::list_element => process_children(sub, base, source, env),
+      Rule::EOI => base,
+      _ => {
+        let mut base = base;
+        base.children.push(set_span(&sub));
+        base
+      }
+    }),
+),
+----
+
+====
+
+=== Abhacklisten
+TODO
+
+=== Benannte Listen (Description Lists)
+TODO
+
+[[blocks]]
+[source, pest]
+----
+label_bullet = { (!"::" ~ linechar) ~ "::" }
+labeled_list = { (label_bullet ~ list_element)+ }
+----
+
+== Links
+TODO
+
+[[inline_elements]]
+[source, pest]
+----
+link = ${ url ~ inline_attribute_list }
+url = ${proto ~ "://" ~ path}
+proto = ${ ("http" ~ "s"?) |
+           "mailto" |
+           "git"
+         }
+----
+
+[%collapsible]
+====
+
+[[asciidoc_parser_functions]]
+[source, rust]
+----
+fn process_link<'a>(element: Pair<'a, asciidoc::Rule>, base: ElementSpan<'a>) -> ElementSpan<'a> {
+  element
+    .into_inner()
+    .fold(base.element(Element::Link), |base, element| {
+      match element.as_rule() {
+        Rule::url => {
+          let base = base.add_attribute(Attribute {
+            key: "url".to_string(),
+            value: AttributeValue::Ref(element.as_str()),
+          });
+          let element = element.into_inner().next().unwrap(); // TODO Fehler möglich?
+          base.add_attribute(Attribute {
+            key: "protocol".to_string(),
+            value: AttributeValue::Ref(element.as_str()),
+          })
+        }
+        Rule::inline_attribute_list => process_inline_attribute_list(element, base),
+        _ => base.add_child(set_span(&element)),
+      }
+    })
+}
+----
+
+====
+
+== Querverweise
+TODO
+
+[[inline_elements]]
+[source, pest]
+----
+xref = !{ "<<" ~ identifier ~ (NEWLINE? ~ "," ~ NEWLINE? ~ word+)? ~ ">>" }
+----
+
+[%collapsible]
+====
+
+[[asciidoc_parser_functions]]
+[source, rust]
+----
+fn process_xref<'a>(element: Pair<'a, asciidoc::Rule>, base: ElementSpan<'a>) -> ElementSpan<'a> {
+  let base = element
+    .clone()
+    .into_inner()
+    .fold(base.element(Element::XRef), |base, element| {
+      match element.as_rule() {
+        Rule::identifier => base.add_attribute(Attribute {
+          key: "id".to_string(),
+          value: AttributeValue::Ref(element.as_str()),
+        }),
+        Rule::word => base,
+        _ => base,
+      }
+    });
+
+  match concat_elements(element, Rule::word, " ") {
+    Some(content) => base.add_attribute(Attribute {
+      key: "content".to_string(),
+      value: AttributeValue::String(content),
+    }),
+    None => base,
+  }
+}
+----
+
+====
+
+== Fußnoten
+TODO
+
+[[inline_elements]]
+[source, pest]
+----
+footnote = { "footnote:" ~ inline_attribute_list }
+footnoteref = { "footnoteref:" ~ inline_attribute_list }
+
+quoted = @{ inline_attribute_list ~ "#" ~ (!"#" ~ linechar)+ ~ "#" }
+----
+
+== Bilder
+Um Bilder einzubinden verwenden wir die übliche Syntax für Macros mit dem Schlüsselwort _image_.
+
+[[blocks]]
+[source, pest]
+----
+image_block = { anchor* ~ image }
+image = { "image::" ~ (url | path) ~ inline_attribute_list }
+----
+
+[%collapsible]
+====
+
+[[asciidoc_element_rules]]
+[source, rust]
+----
+Rule::image_block => Some(process_image(element, env)),
+----
+
+[[asciidoc_parser_functions]]
+[source, rust]
+----
+fn process_image<'a>(element: Pair<'a, asciidoc::Rule>, env: &mut Env) -> ElementSpan<'a> {
+  let base = element.clone().into_inner().flatten().fold(
+    set_span(&element).element(Element::Image),
+    |base, element| match element.as_rule() {
+      Rule::url => base.add_attribute(Attribute {
+        key: "path".to_string(),
+        value: AttributeValue::Ref(element.as_str()),
+      }),
+      Rule::path => base.add_attribute(Attribute {
+        key: "path".to_string(),
+        value: AttributeValue::Ref(element.as_str()),
+      }),
+      Rule::inline_attribute_list => process_inline_attribute_list(element, base),
+      _ => base,
+    },
+  );
+
+  match base.get_attribute("opts") {
+    Some("inline") => match base.get_attribute("path") {
+      Some(path) => match env.read_to_string(path) {
+        Ok(content) => base.add_attribute(Attribute {
+          key: "content".to_string(),
+          value: AttributeValue::String(content),
+        }),
+        Err(e) => base.clone().error(&format!(
+          "couldn't read content of image file {} ({})",
+          path, e
+        )),
+      },
+      None => base.error("There was no path of inline image defined"),
+    },
+    Some(_) | None => base,
+  }
+}
+----
+
+====
+
+== Tabellen
+Oftmals ist es praktisch Daten in Tabellenform anordnen zu können.
+
+[[blocks]]
+[source, pest]
+----
+delimited_table = {
+  PUSH(("|" | "!") ~ "="{3,}) ~ NEWLINE ~
+  delimited_inner ~
+  NEWLINE ~ POP ~ &(NEWLINE | EOI)
+}
+----
+
+[cols="a,a",separator="!"]
+!===
+
+[[unittest_simple_table_input]]
+[source, asciidoc, lisi-raw]
+[output="simple_table_html_output", name="simple_table"]
+....
+|===
+| Col1 | Col2
+| Cel1 | Cel2
+| Cel3 | Cel4
+|===
+....
+
+!
+
+[separator="|"]
+|===
+| Col1 | Col2
+| Cel1 | Cel2
+| Cel3 | Cel4
+|===
+
+[%collapsible]
+.Html Output
+====
+
+[[simple_table_html_output]]
+[source, html]
+----
+<table class="tableblock frame-all grid-all stretch">
+  <colgroup>
+    <col style="width: 50%;">
+    <col style="width: 50%;">
+  </colgroup>
+  <tbody>
+    <tr>
+      <td><p>Col1</p></td>
+      <td><p>Col2</p></td>
+    </tr>
+    <tr>
+      <td><p>Cel1</p></td>
+      <td><p>Cel2</p></td>
+    </tr>
+    <tr>
+      <td><p>Cel3</p></td>
+      <td><p>Cel4</p></td>
+    </tr>
+  </tbody>
+</table>
+----
+====
+
+!===
+
+[cols="a,a",separator="!"]
+!===
+
+[[unittest_formated_table_input]]
+[source, asciidoc, lisi-raw]
+[output="formated_table_html_output", name="formated_table"]
+....
+[cols="1,a"]
+|===
+|
+Here inline *markup* _text_ is rendered specially
+
+But paragraphs
+
+* or
+** Lists
+** are not handled as such
+|
+In this cell *markup* _text_ is handeled specially
+
+We can even have multiple paragraphs
+
+* List
+** with
+** multiple
+* entries
+|===
+....
+
+!
+
+[separator="|"]
+[cols="1,a"]
+|===
+|
+Here inline *markup* _text_ is rendered specially
+
+But paragraphs
+
+* or
+** Lists
+** are not handled as such
+|
+In this cell *markup* _text_ is handeled specially
+
+We can even have multiple paragraphs
+
+* List
+** with
+** multiple
+* entries
+|===
+
+[%collapsible]
+.Html Output
+====
+
+[[formated_table_html_output]]
+[source, html]
+----
+<table class="tableblock frame-all grid-all stretch">
+  <colgroup>
+    <col style="width: 50%;">
+    <col style="width: 50%;">
+  </colgroup>
+  <tbody>
+    <tr>
+      <td><p>Here inline <strong>markup</strong> <em>text</em> is rendered specially
+
+But paragraphs
+
+* or
+** Lists
+** are not handled as such</p></td>
+      <td>
+        <p>In this cell <strong>markup</strong> <em>text</em> is handeled specially</p>
+        <p>We can even have multiple paragraphs</p>
+        <ul>
+          <li>
+            <p>List</p>
+            <ul>
+              <li>
+                <p>with</p>
+              </li>
+              <li>
+                <p>multiple</p>
+              </li>
+            </ul>
+          </li>
+          <li>
+            <p>entries</p>
+          </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+----
+====
+
+!===
+
+[%collapsible]
+====
+
+[[delimited_block_rules]]
+[source, rust]
+----
+Rule::delimited_table => process_inner_table(sub, base.element(Element::Table), source, env),
+----
+
+[[asciidoc_parser_functions]]
+[source, rust]
+----
+#[derive(Debug, PartialEq)]
+enum ColKind {
+  Default,
+  Asciidoc,
+}
+
+#[derive(Debug, PartialEq)]
+struct ColumnFormat {
+  length: usize,
+  kind: ColKind,
+}
+
+fn parse_column_format(input: &str) -> ColumnFormat {
+  ColumnFormat {
+    length: 1,
+    kind: match input {
+      "a" => ColKind::Asciidoc,
+      _ => ColKind::Default,
+    },
+  }
+}
+
+fn parse_columns_format(input: &str) -> Vec<ColumnFormat> {
+  input
+    .split(',')
+    .map(|input| parse_column_format(input.trim()))
+    .collect()
+}
+
+fn parse_columns_format_from_content(input: &str, delimiter: char) -> Vec<ColumnFormat> {
+  input
+    .lines()
+    .next()
+    .unwrap_or("")
+    .matches(delimiter)
+    .map(|_| ColumnFormat {
+      length: 1,
+      kind: ColKind::Default,
+    })
+    .collect()
+}
+
+fn process_inner_table<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  mut base: ElementSpan<'a>,
+  source: &str,
+  env: &mut Env,
+) -> ElementSpan<'a> {
+  // Extract the delimiter character from the opening fence (first character)
+  let delimiter = base
+    .get_attribute("separator")
+    .unwrap_or_else(|| element.as_str())
+    .chars()
+    .next()
+    .unwrap_or('|');
+
+  let content = element
+    .into_inner()
+    .find(|sub| sub.as_rule() == Rule::delimited_inner)
+    .unwrap()
+    .as_str();
+
+  let col_format = match base.get_attribute("cols") {
+    Some(fmt) => parse_columns_format(fmt),
+    None => parse_columns_format_from_content(content, delimiter),
+  };
+
+  base.attributes.push(Attribute {
+    key: "content".to_string(),
+    value: AttributeValue::Ref(content),
+  });
+  base.children = process_table_content(content, col_format, delimiter, source, env);
+
+  base
+}
+
+fn process_table_content<'a>(
+  input: &'a str,
+  col_format: Vec<ColumnFormat>,
+  delimiter: char,
+  source: &str,
+  env: &mut Env,
+) -> Vec<ElementSpan<'a>> {
+  let mut cells = vec![];
+  let mut cell_start: Option<usize> = None;
+  let mut current_pos = 0;
+
+  for line in input.lines() {
+    let line_start = current_pos;
+    let line_len = line.len();
+    let trimmed = line.trim_start();
+    let trimmed_offset = line.len() - trimmed.len();
+
+    // Check if this line starts with the cell delimiter
+    if trimmed.starts_with(delimiter) {
+      // Save any previous cell
+      if let Some(start) = cell_start {
+        let content = input[start..current_pos].trim();
+        let fmt = &col_format[cells.len() % col_format.len()];
+
+        cells.push(process_table_cell(content, fmt, source, env));
+        cell_start = None;
+      }
+
+      // Check if there are multiple delimiters on this line
+      let rest_of_line = &trimmed[delimiter.len_utf8()..];
+      if rest_of_line.contains(delimiter) {
+        // Multiple cells on this line - split them
+        let line_offset = line_start + trimmed_offset + delimiter.len_utf8();
+        let parts: Vec<&str> = rest_of_line.split(delimiter).collect();
+
+        // Process all but the last part as complete cells
+        let mut char_offset = 0;
+        for (i, part) in parts.iter().enumerate() {
+          if i < parts.len() - 1 {
+            // Complete cell
+            let fmt = &col_format[cells.len() % col_format.len()];
+            cells.push(process_table_cell(part.trim(), fmt, source, env));
+            char_offset += part.len() + delimiter.len_utf8();
+          } else {
+            // Last part might continue on next lines
+            if !part.trim().is_empty() || i == parts.len() - 1 {
+              cell_start = Some(line_offset + char_offset);
+            }
+          }
+        }
+      } else {
+        // Single cell starting on this line
+        cell_start = Some(line_start + trimmed_offset + delimiter.len_utf8());
+      }
+    } else if cell_start.is_none() && !trimmed.is_empty() {
+      // If this is the first content and no delimiter seen, it's an implicit first cell
+      cell_start = Some(line_start);
+    }
+
+    current_pos += line_len + 1; // +1 for newline
+  }
+
+  // Don't forget the last cell
+  if let Some(start) = cell_start {
+    let content = input[start..].trim();
+    let fmt = &col_format[cells.len() % col_format.len()];
+
+    if content.starts_with("|===") || content.starts_with("!===") {
+      if let Ok(ast) = AsciidocParser::parse(Rule::delimited_table, content) {
+        for element in ast {
+          let base = set_span(&element).element(Element::Table);
+          cells.push(process_inner_table(element, base, source, env));
+        }
+      }
+    } else {
+      cells.push(process_table_cell(content, fmt, source, env));
+    }
+  }
+
+  // Group cells into rows
+  let mut rows = vec![];
+  let len = col_format.len();
+  for chunk in cells.chunks(len) {
+    rows.push(ElementSpan {
+      element: Element::TableRow,
+      source: None,
+      content: "",
+      start: 0,
+      end: 0,
+      start_line: 0,
+      start_col: 0,
+      end_line: 0,
+      end_col: 0,
+      children: chunk.to_vec(),
+      positional_attributes: vec![],
+      attributes: vec![],
+    })
+  }
+
+  rows
+}
+
+fn process_table_cell<'a>(
+  content: &'a str,
+  fmt: &ColumnFormat,
+  source: &str,
+  env: &mut Env,
+) -> ElementSpan<'a> {
+  let mut base = ElementSpan {
+    element: Element::TableCell,
+    source: None,
+    content,
+    start: 0,
+    end: 0,
+    start_line: 0,
+    start_col: 0,
+    end_line: 0,
+    end_col: 0,
+    children: vec![],
+    positional_attributes: vec![],
+    attributes: vec![],
+  };
+
+  base.children = match fmt.kind {
+    ColKind::Asciidoc => {
+      let ast = AsciidocParser::parse(Rule::asciidoc, content).unwrap();
+
+      let mut elements = vec![];
+
+      for element in ast {
+        if let Some(element) = process_element(element, source, env) {
+          elements.push(element);
+        }
+      }
+      elements
+    }
+    ColKind::Default => {
+      let mut base = base.clone();
+      base.element = Element::Paragraph;
+      base.children = parse_paragraph(content);
+
+      vec![base]
+    }
+  };
+
+  base
+}
+----
+
+====
+
+== Kommentare
+Manchmal möchte man nur einen Kommentar für den Author eines Textes
+(also meistens für sich selbst) festhalten, ohne dass dieser am Ende im
+Dokument für den Leser erscheint. Asciidoc biete dazu Kommentare an.
+
+[%collapsible]
+====
+
+[[inline_elements]]
+[source, pest]
+----
+// TODO Damit werden keine Kommentare zu Beginn eines Paragraphen angezeigt
+comment = { NEWLINE ~ "//" ~ (!NEWLINE ~ ANY)* ~ &NEWLINE }
+----
+
+[[blocks]]
+[source, pest]
+----
+<<delimited_block_template|
+    blocktype := "comment",
+    delimiter := "/" >>
+----
+
+[[delimited_block_rules]]
+[source, rust]
+----
+Rule::delimited_comment => BlockType::Comment,
+----
+
+====
+
+== Quellcode Blöcke
+Gerade Markup-Formate wie Asciidoc bieten sich an, um Quellcode Blöcke
+einzubinden, da sie -- genauso wie Quelltext -- in reinen Textdateien
+abgespeichert werden.
+
+Sie können als abgetrennte Blöcke mit `-` oder `.` gekennzeichnet
+werden.
+
+[%collapsible]
+====
+
+[[blocks]]
+[source, pest]
+----
+<<delimited_block_template|
+    blocktype := "literal",
+    delimiter := "." >>
+
+<<delimited_block_template|
+    blocktype := "source",
+    delimiter := "-" >>
+----
+
+[[delimited_block_rules]]
+[source, rust]
+----
+Rule::delimited_source | Rule::delimited_literal => BlockType::Listing,
+----
+
+====
+
+[cols="a,a"]
+|====
+|
+
+[[unittest_sourcecode_block_input]]
+[source, asciidoc, lisi-raw]
+[output="sourceblock_html_output", name="sourcecode_blocks"]
+....
+[source, bash]
+----
+echo "hello world!"
+----
+....
+
+|
+
+[source, bash]
+----
+echo "hello world!"
+----
+
+[%collapsible]
+.Html Output
+====
+
+[[sourceblock_html_output]]
+[source, html]
+----
+<div class="listingblock">
+  <pre>echo "hello world!"</pre>
+</div>
+----
+====
+
+|
+
+[[unittest_sourcecode_block_input]]
+[source, asciidoc, lisi-raw]
+[output="sourceblock_html_output", name="sourcecode_blocks"]
+----
+[source, bash]
+....
+echo "hello world!"
+....
+----
+
+|
+
+[source, bash]
+....
+echo "hello world!"
+....
+
+[%collapsible]
+.Html Output
+====
+
+[[sourceblock_html_output]]
+[source, html]
+----
+<div class="listingblock">
+  <pre>echo "hello world!"</pre>
+</div>
+----
+====
+
+|====
+
+== Beispiel Blöcke
+Manchmal möchte man Inhalte als Beispiel kennzeichnen. Um das zu tun,
+packt man den entsprechenden Inhalt in einen abgetrennten Block aus `=`
+Zeichen.
+
+[%collapsible]
+====
+
+[[blocks]]
+[source, pest]
+----
+<<delimited_block_template|
+    blocktype := "example",
+    delimiter := "=" >>
+
+delimited_verse = { "verse" } // TODO
+----
+
+[[delimited_block_rules]]
+[source, rust]
+----
+Rule::delimited_example => BlockType::Example,
+----
+
+====
+
+=== Einklappbare Blöcke
+Einklappbare Blöcke sind nützlich, wenn man ergaenzende Informationen
+nur bei Bedarf anzeigen möchte. So kann man die Informationen einbinden,
+ohne dass der normale Leser überfordert wird.
+
+[cols="a,a"]
+|====
+|
+[[unittest_collapsible_input]]
+[source, asciidoc, lisi-raw]
+[output="collapsible_html_output", name="collapsible_blocks"]
+....
+[%collapsible]
+====
+Additional Information, that will only be shown on demand.
+====
+....
+
+|
+
+[%collapsible]
+====
+Additional Information, that will only be shown on demand.
+====
+
+[%collapsible]
+.Html Output
+====
+
+[[collapsible_html_output]]
+[source, html]
+----
+<details>
+  <summary class="title">Details</summary>
+  <div class="content">
+    <div class="paragraph">
+      <p>Additional Information, that will only be shown on demand.</p>
+    </div>
+  </div>
+</details>
+----
+====
+
+|
+Blöcke können auch standardmäßig geöffnet sein.
+
+[[unittest_collapsible_open_input]]
+[source, asciidoc, lisi-raw]
+[output="collapsible_open_html_output", name="collapsible_blocks_open"]
+....
+[%collapsible%open]
+====
+This Information is visible by default.
+====
+....
+
+|
+
+[%collapsible%open]
+====
+This Information is visible by default.
+====
+
+[%collapsible]
+.Html Output
+====
+[[collapsible_open_html_output]]
+[source, html]
+----
+<details open>
+  <summary class="title">Details</summary>
+  <div class="content">
+    <div class="paragraph">
+      <p>This Information is visible by default.</p>
+    </div>
+  </div>
+</details>
+----
+====
+
+|====
+
+== Andere Dokumente einbinden
+Häufig ist es von Nutzen ein Dokument aufzuteilen. Das kann man mit dem
+`include` macro erreichen.
+
+[cols="a,a"]
+|====
+|
+[[unittest_include_macro_input]]
+[source, asciidoc, lisi-raw]
+[output="include_macro_html_output", inputs="included_document", name="include_macro"]
+....
+include::included_document.adoc[]
+....
+
+[[included_document]]
+[source, asciidoc, lisi-raw]
+.included_document.adoc
+....
+Some text in another file.
+....
+
+|
+
+Some text in another file.
+
+[%collapsible]
+.Html Output
+====
+[[include_macro_html_output]]
+[source, html]
+----
+<p>Some text in another file.</p>
+----
+====
+
+|====
+
+Manchmal will man ein Dokument einbinden, welches seinerseits wiederum
+ein Dokument einbindet. In diesem Fall sollten Dokumente immer relativ
+zum einbindenden Dokument sein (und nicht zu dem Dokument welches
+urprünglich von der cli aufgerufen wurde).
+
+[cols="a,a"]
+|====
+|
+[[unittest_include_macro_nested_input]]
+[source, asciidoc, lisi-raw]
+[output="include_macro_nested_html_output", inputs="nested_document1,nested_document2", name="include_macro_nested"]
+....
+include::nested/included_document.adoc[]
+....
+
+[[nested_document1]]
+[source, asciidoc, lisi-raw]
+.nested/included_document.adoc
+....
+Some text in another file. Will include a nested file.
+
+include::nested/included_document.adoc[]
+....
+
+[[nested_document2]]
+[source, asciidoc, lisi-raw]
+.nested/nested/included_document.adoc
+....
+This one is nested. It is relative to the included document.
+....
+
+|
+
+Some text in another file. Will include a nested file.
+
+This one is nested. It is relative to the included document.
+
+[%collapsible]
+.Html Output
+====
+[[include_macro_nested_html_output]]
+[source, html]
+----
+<p>Some text in another file. Will include a nested file.</p>
+<p>This one is nested. It is relative to the included document.</p>
+----
+====
+
+|====
+
+
+[[blocks]]
+[source, pest]
+----
+include_macro = { "include::" ~ path ~ inline_attribute_list }
+----
+
+[%collapsible]
+====
+
+[[asciidoc_element_rules]]
+[source, rust]
+----
+Rule::include_macro => Some(process_include(element, source, env)),
+----
+
+[[asciidoc_parser_functions]]
+[source, rust]
+----
+fn process_include<'a>(
+  element: Pair<'a, asciidoc::Rule>,
+  source: &str,
+  env: &mut Env,
+) -> ElementSpan<'a> {
+  let base = set_span(&element);
+
+  let base = element
+    .clone()
+    .into_inner()
+    .flatten()
+    .fold(base, |base, element| match element.as_rule() {
+      Rule::path => base.add_attribute(Attribute {
+        key: "path".to_string(),
+        value: AttributeValue::Ref(element.as_str()),
+      }),
+      Rule::inline_attribute_list => process_inline_attribute_list(element, base),
+      _ => base,
+    });
+
+  let path = match base.get_attribute("path") {
+    Some(path) => path,
+    None => {
+      return base.error("include macro without path");
+    }
+  };
+  <<resolve_include_path>>
+
+  let content = match env.read_to_string(&path) {
+    Ok(content) => content,
+    Err(e) => {
+      return base
+        .clone()
+        .error(&format!("couldn't read included file {} ({})", path, e));
+    }
+  };
+
+  let include_el =
+    match IncludeElement::from_parser(
+      content,
+      env,
+      &|content_ref, env| match AsciidocParser::parse(Rule::asciidoc, content_ref) {
+        Ok(ast) => {
+          let mut elements = Vec::new();
+          for element in ast {
+            if let Some(element) = process_element(element, &path, env) {
+              elements.push(element);
+            }
+          }
+          Ok(AST {
+            content: content_ref,
+            elements,
+            attributes: vec![Attribute {
+              key: "source".to_string(),
+              value: AttributeValue::String(path.to_string()),
+            }],
+          })
+        }
+        Err(e) => Err(format!("couldn't parse included file {} ({})", path, e)),
+      },
+    ) {
+      Ok(inner_ast) => inner_ast,
+      Err(e) => {
+        return base
+          .clone()
+          .error(&format!("couldn't parse included file {} ({})", path, e));
+      }
+    };
+
+  base.element(Element::IncludeElement(include_el))
+}
+----
+
+[[resolve_include_path]]
+[source, rust]
+----
+// Resolve the path relative to the current source file
+let path = {
+  use std::path::Path;
+  if let Some(parent) = Path::new(source).parent() {
+    if let Some(parent_str) = parent.to_str() {
+      if !parent_str.is_empty() {
+        format!("{}/{}", parent_str, path)
+      } else {
+        path.to_string()
+      }
+    } else {
+      path.to_string()
+    }
+  } else {
+    path.to_string()
+  }
+};
+----
+
+====
+
+[[generic_pegs]]
+[source, pest]
+----
+// TODO Should all unicode letters be matched? Instead of just ascii?
+identifier = @{ (ASCII_ALPHANUMERIC | "_") ~ (ASCII_ALPHANUMERIC | "_" | "-" | ".")* }
+
+word = @{ (LETTER | NUMBER | "_" | "-")+ }
+path = @{ (LETTER | NUMBER | "_" | "-" | "." | "/" | "~" )+ }
+
+linechar = { (!NEWLINE ~ ANY) }
+
+line = { linechar+ ~ ( &NEWLINE | &EOI) }
+
+empty_lines = _{ NEWLINE{2, } | (NEWLINE ~ EOI) }
+----
+
