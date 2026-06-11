@@ -4,6 +4,7 @@ use thiserror::Error;
 mod ast;
 pub use ast::*;
 pub mod reader;
+pub mod writer;
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -18,5 +19,5 @@ pub trait Reader {
 }
 
 pub trait Writer<T: io::Write> {
-  fn write<'a>(&mut self, ast: AST, out: T) -> Result<()>;
+  fn write<'a>(&mut self, ast: AST<'a>, out: T) -> Result<()>;
 }
