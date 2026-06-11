@@ -1,6 +1,9 @@
 use std::{cmp::Ordering, collections::HashMap};
 
-use crate::AST;
+use crate::{
+  ast::{Element as AstElement, ElementSpan, Slice, TextPosition},
+  SequenceDiagramElement, AST,
+};
 
 pub struct AsciiArtReader {}
 
@@ -10,9 +13,11 @@ impl AsciiArtReader {
   }
 
   pub fn parse<'a>(&self, input: &'a str) -> AST<'a> {
+    let ascii_elements = parse_elements(input);
+    let elements = parse_sequence_diagram(&ascii_elements, input);
     AST {
       content: input,
-      elements: vec![],
+      elements,
     }
   }
 }
@@ -244,6 +249,7 @@ pub fn parse_elements(input: &str) -> Vec<Element> {
 fn elements_from_tokens(input: Vec<Token>, text: &str) -> Vec<Element> {
   use Element::*;
 
+  let all_tokens = input.clone();
   let mut possible_blocks: Vec<PartialElement> = vec![];
   let mut texts = vec![];
   let mut blocks = vec![];
@@ -315,9 +321,154 @@ fn elements_from_tokens(input: Vec<Token>, text: &str) -> Vec<Element> {
       }
     }
   }
+  let mut connections = connections_between_blocks(&all_tokens, &blocks, &mut next_id);
+
   out.append(&mut blocks);
+  out.append(&mut connections);
+
+  out.sort_by(|a, b| {
+    let a = a.get_bounds();
+    let b = b.get_bounds();
+    a.start
+      .line
+      .cmp(&b.start.line)
+      .then(a.start.column.cmp(&b.start.column))
+  });
 
   out
+}
+
+fn connections_between_blocks(
+  tokens: &[Token],
+  blocks: &[Element],
+  next_id: &mut usize,
+) -> Vec<Element> {
+  let mut connections = vec![];
+
+  for token in tokens {
+    let Token::VLine {
+      column,
+      line_start,
+      line_end,
+    } = token
+    else {
+      continue;
+    };
+
+    if blocks.iter().any(|block| match block {
+      Element::Block { border, .. } => border.contains(token),
+      _ => false,
+    }) {
+      continue;
+    }
+
+    let from = blocks.iter().find_map(|block| match block {
+      Element::Block { id, border, .. }
+        if border.contains(&Token::ConnectionSign {
+          line: line_start - 1,
+          column: *column,
+        }) =>
+      {
+        Some(*id)
+      }
+      _ => None,
+    });
+
+    let to = blocks.iter().find_map(|block| match block {
+      Element::Block { id, border, .. }
+        if border.contains(&Token::ConnectionSign {
+          line: line_end + 1,
+          column: *column,
+        }) =>
+      {
+        Some(*id)
+      }
+      _ => None,
+    });
+
+    if let (Some(from), Some(to)) = (from, to) {
+      connections.push(Element::Connection {
+        id: *next_id,
+        from,
+        to,
+        inner_elements: vec![],
+        tokens: vec![*token],
+      });
+      *next_id += 1;
+    }
+  }
+
+  for token in tokens {
+    let Token::Arrow { line, column } = token else {
+      continue;
+    };
+
+    if let Some(hline) = tokens.iter().find_map(|token| match token {
+      Token::HLine {
+        line: hline_line,
+        column_start,
+        column_end,
+      } if hline_line == line && *column_end + 1 == *column => {
+        Some((*column_start, *column_end, *token))
+      }
+      _ => None,
+    }) {
+      let (column_start, column_end, hline) = hline;
+      let from = lifeline_from_at(&connections, column_start - 1, *line);
+      let to = lifeline_from_at(&connections, column_end + 2, *line);
+
+      if let (Some(from), Some(to)) = (from, to) {
+        connections.push(Element::Connection {
+          id: *next_id,
+          from,
+          to,
+          inner_elements: vec![],
+          tokens: vec![hline, *token],
+        });
+        *next_id += 1;
+      }
+    } else if let Some(hline) = tokens.iter().find_map(|token| match token {
+      Token::HLine {
+        line: hline_line,
+        column_start,
+        column_end,
+      } if hline_line == line && *column_start == *column + 1 => {
+        Some((*column_start, *column_end, *token))
+      }
+      _ => None,
+    }) {
+      let (column_start, column_end, hline) = hline;
+      let from = lifeline_from_at(&connections, column_end + 1, *line);
+      let to = lifeline_from_at(&connections, column_start - 2, *line);
+
+      if let (Some(from), Some(to)) = (from, to) {
+        connections.push(Element::Connection {
+          id: *next_id,
+          from,
+          to,
+          inner_elements: vec![],
+          tokens: vec![*token, hline],
+        });
+        *next_id += 1;
+      }
+    }
+  }
+
+  connections
+}
+
+fn lifeline_from_at(connections: &[Element], column: usize, line: usize) -> Option<usize> {
+  connections.iter().find_map(|connection| match connection {
+    Element::Connection { from, tokens, .. }
+      if tokens.iter().any(|token| {
+        matches!(token, Token::VLine { column: vline_column, line_start, line_end }
+          if *vline_column == column && *line_start <= line && *line_end >= line)
+      }) =>
+    {
+      Some(*from)
+    }
+    _ => None,
+  })
 }
 
 struct PartialElement {
@@ -336,7 +487,7 @@ impl PartialElement {
     }
   }
 
-  fn can_continue_block(&self, next_token: &Token, text: &str) -> bool {
+  fn can_continue_block(&self, next_token: &Token, _text: &str) -> bool {
     use Token::*;
 
     match next_token {
@@ -351,6 +502,10 @@ impl PartialElement {
           && self.counter_clock_cycle_end.column + 1 == *column_start
         {
           true
+        } else if self.tokens.iter().any(|token| {
+          matches!(token, ConnectionSign { line: sign_line, column } if sign_line == line && *column + 1 == *column_start)
+        }) {
+          true
         } else {
           false
         }
@@ -363,6 +518,10 @@ impl PartialElement {
         } else if self.counter_clock_cycle_end.line + 1 == *line
           && self.counter_clock_cycle_end.column == *column
         {
+          true
+        } else if self.tokens.iter().any(|token| {
+          matches!(token, HLine { line: hline_line, column_end, .. } if hline_line == line && *column_end + 1 == *column)
+        }) {
           true
         } else {
           false
@@ -416,20 +575,22 @@ fn parse_tokens(input: &str) -> Vec<Token> {
         .enumerate()
         .filter_map(move |(col, sign)| match sign {
           ' ' => None,
-          '+' => Some(ConnectionSign {
-            line: line_number,
-            column: col,
-          }),
+          '+' | '┌' | '┐' | '┘' | '└' | '┬' | '┴' | '╔' | '╗' | '╝' | '╚' | '╤' | '╧' => {
+            Some(ConnectionSign {
+              line: line_number,
+              column: col,
+            })
+          }
           '>' | '<' | 'v' | '^' => Some(Arrow {
             line: line_number,
             column: col,
           }),
-          '-' => Some(HLine {
+          '-' | '─' => Some(HLine {
             line: line_number,
             column_start: col,
             column_end: col,
           }),
-          '|' => Some(VLine {
+          '|' | '│' => Some(VLine {
             column: col,
             line_start: line_number,
             line_end: line_number,
@@ -645,6 +806,160 @@ fn condense_vertical(input: Vec<Token>) -> Vec<Token> {
       });
   out.append(&mut after);
   out
+}
+
+struct Participant {
+  id: usize,
+  name: String,
+  lifeline_col: usize,
+}
+
+fn parse_sequence_diagram(elements: &[Element], input: &str) -> Vec<ElementSpan> {
+  let lines: Vec<&str> = input.lines().collect();
+  let participants = extract_participants(elements, &lines);
+  if participants.is_empty() {
+    return vec![];
+  }
+  extract_messages(elements, &lines, &participants)
+}
+
+fn extract_participants(elements: &[Element], lines: &[&str]) -> Vec<Participant> {
+  let mut participants: Vec<Participant> = elements
+    .iter()
+    .filter_map(|element| participant_from_block(element, lines))
+    .collect();
+
+  participants.sort_by_key(|p| p.lifeline_col);
+  participants
+}
+
+fn participant_from_block(element: &Element, lines: &[&str]) -> Option<Participant> {
+  let Element::Block {
+    id,
+    inner_elements,
+    border,
+  } = element
+  else {
+    return None;
+  };
+
+  let bounds = element.get_bounds();
+  let lifeline_col = border.iter().find_map(|token| match token {
+    Token::ConnectionSign { line, column }
+      if *line == bounds.end.line
+        && *column > bounds.start.column
+        && *column < bounds.end.column =>
+    {
+      Some(*column)
+    }
+    _ => None,
+  })?;
+
+  let name_line = inner_elements.iter().find_map(|element| match element {
+    Element::Text { tokens, .. } => tokens.first().and_then(|token| match token {
+      Token::Text { line, .. } => Some(*line),
+      _ => None,
+    }),
+    _ => None,
+  })?;
+
+  let name = text_between(
+    lines,
+    name_line,
+    bounds.start.column + 1,
+    bounds.end.column - 1,
+  )
+  .trim()
+  .to_string();
+
+  if name.is_empty() {
+    None
+  } else {
+    Some(Participant {
+      id: *id,
+      name,
+      lifeline_col,
+    })
+  }
+}
+
+fn extract_messages(
+  elements: &[Element],
+  lines: &[&str],
+  participants: &[Participant],
+) -> Vec<ElementSpan> {
+  let mut result = vec![];
+  let mut pending_text: Option<String> = None;
+
+  for element in elements {
+    match element {
+      Element::Text { tokens, .. } => {
+        let Some(Token::Text {
+          line,
+          column_start,
+          column_end,
+        }) = tokens.first()
+        else {
+          continue;
+        };
+
+        let text = text_between(lines, *line, *column_start, *column_end)
+          .trim()
+          .to_string();
+        if !text.is_empty() {
+          pending_text = Some(text);
+        }
+      }
+      Element::Connection {
+        from, to, tokens, ..
+      } if tokens
+        .iter()
+        .any(|token| matches!(token, Token::Arrow { .. }))
+        && tokens
+          .iter()
+          .any(|token| matches!(token, Token::HLine { .. })) =>
+      {
+        let from = participants.iter().find(|p| p.id == *from);
+        let to = participants.iter().find(|p| p.id == *to);
+
+        if let (Some(from), Some(to)) = (from, to) {
+          let bounds = element.get_bounds();
+          let message = pending_text.take().unwrap_or_default();
+          result.push(ElementSpan {
+            source: None,
+            position: TextPosition::Slice(Slice {
+              start: bounds.start.line,
+              end: bounds.end.line,
+            }),
+            element: AstElement::Sequence(SequenceDiagramElement::Message {
+              from: from.name.clone(),
+              to: to.name.clone(),
+              message,
+              meta: None,
+            }),
+            children: vec![],
+            attrs: vec![],
+          });
+        }
+      }
+      _ => {}
+    }
+  }
+
+  result
+}
+
+fn text_between(lines: &[&str], line: usize, column_start: usize, column_end: usize) -> String {
+  lines
+    .get(line)
+    .map(|line| {
+      line
+        .chars()
+        .skip(column_start)
+        .take(column_end - column_start + 1)
+        .collect()
+    })
+    .unwrap_or_default()
 }
 
 #[cfg(test)]
@@ -1051,6 +1366,52 @@ mod tests {
     );
   }
 
+  #[test]
+  fn single_styled_box_to_tokens() {
+    use Token::*;
+    let tokens = parse_tokens(SINGLE_BOX_STYLE);
+    assert_eq!(
+      tokens,
+      vec![
+        ConnectionSign { line: 2, column: 4 },
+        HLine {
+          line: 2,
+          column_start: 5,
+          column_end: 9
+        },
+        ConnectionSign {
+          line: 2,
+          column: 10
+        },
+        VLine {
+          column: 4,
+          line_start: 3,
+          line_end: 3
+        },
+        Text {
+          line: 3,
+          column_start: 6,
+          column_end: 8
+        },
+        VLine {
+          column: 10,
+          line_start: 3,
+          line_end: 3
+        },
+        ConnectionSign { line: 4, column: 4 },
+        HLine {
+          line: 4,
+          column_start: 5,
+          column_end: 9
+        },
+        ConnectionSign {
+          line: 4,
+          column: 10
+        },
+      ]
+    );
+  }
+
   // parse elements
 
   #[test]
@@ -1098,6 +1459,426 @@ mod tests {
           column_end: 32,
         }]
       }]
+    );
+  }
+
+  #[test]
+  fn sequence_diagram_with_message_to_elements() {
+    use Token::*;
+    let elements = parse_elements(
+      r"
+    ┌──────┐     ┌──────┐
+    │Client│     │Target│
+    └──┬───┘     └──┬───┘
+       │            │
+       │  message   │
+       │───────────>│
+       │            │
+    ┌──┴───┐     ┌──┴───┐
+    │Client│     │Target│
+    └──────┘     └──────┘
+  ",
+    );
+
+    assert_eq!(
+      elements,
+      vec![
+        Element::Block {
+          id: 0,
+          inner_elements: vec![Element::Text {
+            id: 4,
+            tokens: vec![Text {
+              line: 2,
+              column_start: 5,
+              column_end: 10
+            }],
+          }],
+          border: vec![
+            ConnectionSign { line: 1, column: 4 },
+            HLine {
+              line: 1,
+              column_start: 5,
+              column_end: 10
+            },
+            ConnectionSign {
+              line: 1,
+              column: 11
+            },
+            VLine {
+              column: 4,
+              line_start: 2,
+              line_end: 2
+            },
+            VLine {
+              column: 11,
+              line_start: 2,
+              line_end: 2
+            },
+            ConnectionSign { line: 3, column: 4 },
+            HLine {
+              line: 3,
+              column_start: 5,
+              column_end: 6
+            },
+            ConnectionSign { line: 3, column: 7 },
+            HLine {
+              line: 3,
+              column_start: 8,
+              column_end: 10
+            },
+            ConnectionSign {
+              line: 3,
+              column: 11
+            },
+          ],
+        },
+        Element::Block {
+          id: 1,
+          inner_elements: vec![Element::Text {
+            id: 5,
+            tokens: vec![Text {
+              line: 2,
+              column_start: 18,
+              column_end: 23
+            }],
+          }],
+          border: vec![
+            ConnectionSign {
+              line: 1,
+              column: 17
+            },
+            HLine {
+              line: 1,
+              column_start: 18,
+              column_end: 23
+            },
+            ConnectionSign {
+              line: 1,
+              column: 24
+            },
+            VLine {
+              column: 17,
+              line_start: 2,
+              line_end: 2
+            },
+            VLine {
+              column: 24,
+              line_start: 2,
+              line_end: 2
+            },
+            ConnectionSign {
+              line: 3,
+              column: 17
+            },
+            HLine {
+              line: 3,
+              column_start: 18,
+              column_end: 19
+            },
+            ConnectionSign {
+              line: 3,
+              column: 20
+            },
+            HLine {
+              line: 3,
+              column_start: 21,
+              column_end: 23
+            },
+            ConnectionSign {
+              line: 3,
+              column: 24
+            },
+          ],
+        },
+        Element::Connection {
+          id: 9,
+          from: 0,
+          to: 2,
+          inner_elements: vec![],
+          tokens: vec![VLine {
+            column: 7,
+            line_start: 4,
+            line_end: 7,
+          }],
+        },
+        Element::Connection {
+          id: 10,
+          from: 1,
+          to: 3,
+          inner_elements: vec![],
+          tokens: vec![VLine {
+            column: 20,
+            line_start: 4,
+            line_end: 7,
+          }],
+        },
+        Element::Text {
+          id: 6,
+          tokens: vec![Text {
+            line: 5,
+            column_start: 10,
+            column_end: 16
+          }],
+        },
+        Element::Connection {
+          id: 11,
+          from: 0,
+          to: 1,
+          inner_elements: vec![],
+          tokens: vec![
+            HLine {
+              line: 6,
+              column_start: 8,
+              column_end: 18
+            },
+            Arrow {
+              line: 6,
+              column: 19
+            },
+          ],
+        },
+        Element::Block {
+          id: 2,
+          inner_elements: vec![Element::Text {
+            id: 7,
+            tokens: vec![Text {
+              line: 9,
+              column_start: 5,
+              column_end: 10
+            }],
+          }],
+          border: vec![
+            ConnectionSign { line: 8, column: 4 },
+            HLine {
+              line: 8,
+              column_start: 5,
+              column_end: 6
+            },
+            ConnectionSign { line: 8, column: 7 },
+            HLine {
+              line: 8,
+              column_start: 8,
+              column_end: 10
+            },
+            ConnectionSign {
+              line: 8,
+              column: 11
+            },
+            VLine {
+              column: 4,
+              line_start: 9,
+              line_end: 9
+            },
+            VLine {
+              column: 11,
+              line_start: 9,
+              line_end: 9
+            },
+            ConnectionSign {
+              line: 10,
+              column: 4
+            },
+            HLine {
+              line: 10,
+              column_start: 5,
+              column_end: 10
+            },
+            ConnectionSign {
+              line: 10,
+              column: 11
+            },
+          ],
+        },
+        Element::Block {
+          id: 3,
+          inner_elements: vec![Element::Text {
+            id: 8,
+            tokens: vec![Text {
+              line: 9,
+              column_start: 18,
+              column_end: 23
+            }],
+          }],
+          border: vec![
+            ConnectionSign {
+              line: 8,
+              column: 17
+            },
+            HLine {
+              line: 8,
+              column_start: 18,
+              column_end: 19
+            },
+            ConnectionSign {
+              line: 8,
+              column: 20
+            },
+            HLine {
+              line: 8,
+              column_start: 21,
+              column_end: 23
+            },
+            ConnectionSign {
+              line: 8,
+              column: 24
+            },
+            VLine {
+              column: 17,
+              line_start: 9,
+              line_end: 9
+            },
+            VLine {
+              column: 24,
+              line_start: 9,
+              line_end: 9
+            },
+            ConnectionSign {
+              line: 10,
+              column: 17
+            },
+            HLine {
+              line: 10,
+              column_start: 18,
+              column_end: 23
+            },
+            ConnectionSign {
+              line: 10,
+              column: 24
+            },
+          ],
+        },
+      ]
+    );
+  }
+
+  #[test]
+  fn boxes_with_lifeline_connector_to_elements() {
+    use Token::*;
+    let elements = parse_elements(
+      r"
+    ┌──────┐
+    │Client│
+    └──┬───┘
+       │
+    ┌──┴───┐
+    │Client│
+    └──────┘
+  ",
+    );
+
+    assert_eq!(
+      elements,
+      vec![
+        Element::Block {
+          id: 0,
+          inner_elements: vec![Element::Text {
+            id: 2,
+            tokens: vec![Text {
+              line: 2,
+              column_start: 5,
+              column_end: 10
+            },],
+          }],
+          border: vec![
+            ConnectionSign { line: 1, column: 4 },
+            HLine {
+              line: 1,
+              column_start: 5,
+              column_end: 10
+            },
+            ConnectionSign {
+              line: 1,
+              column: 11
+            },
+            VLine {
+              column: 4,
+              line_start: 2,
+              line_end: 2
+            },
+            VLine {
+              column: 11,
+              line_start: 2,
+              line_end: 2
+            },
+            ConnectionSign { line: 3, column: 4 },
+            HLine {
+              line: 3,
+              column_start: 5,
+              column_end: 6
+            },
+            ConnectionSign { line: 3, column: 7 },
+            HLine {
+              line: 3,
+              column_start: 8,
+              column_end: 10
+            },
+            ConnectionSign {
+              line: 3,
+              column: 11
+            },
+          ],
+        },
+        Element::Connection {
+          id: 4,
+          from: 0,
+          to: 1,
+          inner_elements: vec![],
+          tokens: vec![VLine {
+            column: 7,
+            line_start: 4,
+            line_end: 4,
+          }],
+        },
+        Element::Block {
+          id: 1,
+          inner_elements: vec![Element::Text {
+            id: 3,
+            tokens: vec![Text {
+              line: 6,
+              column_start: 5,
+              column_end: 10
+            },],
+          }],
+          border: vec![
+            ConnectionSign { line: 5, column: 4 },
+            HLine {
+              line: 5,
+              column_start: 5,
+              column_end: 6
+            },
+            ConnectionSign { line: 5, column: 7 },
+            HLine {
+              line: 5,
+              column_start: 8,
+              column_end: 10
+            },
+            ConnectionSign {
+              line: 5,
+              column: 11
+            },
+            VLine {
+              column: 4,
+              line_start: 6,
+              line_end: 6
+            },
+            VLine {
+              column: 11,
+              line_start: 6,
+              line_end: 6
+            },
+            ConnectionSign { line: 7, column: 4 },
+            HLine {
+              line: 7,
+              column_start: 5,
+              column_end: 10
+            },
+            ConnectionSign {
+              line: 7,
+              column: 11
+            },
+          ],
+        },
+      ]
     );
   }
 
@@ -1288,5 +2069,11 @@ mod tests {
              +-->| Box |
                  +-----+
   ";
-}
 
+  const SINGLE_BOX_STYLE: &str = r"
+
+    ┌─────┐
+    │ Box │
+    └─────┘
+  ";
+}

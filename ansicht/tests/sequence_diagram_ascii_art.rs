@@ -42,3 +42,27 @@ fn sequence_diagram_elements(input: Vec<ElementSpan>) -> Vec<SequenceDiagramElem
 
 const OAUTH_HAPPY_PATH_ASCII: &str =
   include_str!("examples/sequence-diagram/oauth.happy_path.ascii");
+
+#[test]
+fn service_discovery_flow() -> Result<()> {
+  let content = SERVICE_DISCOVERY_ASCII;
+  let reader = reader::AsciiArtReader::new();
+  let ast = reader.parse(content);
+
+  assert_eq!(
+    sequence_diagram_elements(ast.elements),
+    vec![
+      SequenceDiagramElement::message("Client", "Device", "get_hashes"),
+      SequenceDiagramElement::message("Device", "Client", "current hash"),
+      SequenceDiagramElement::message("Client", "Device", "get_number_protocols"),
+      SequenceDiagramElement::message("Device", "Client", "1"),
+      SequenceDiagramElement::message("Client", "Device", "get_protocol_schema(0)"),
+      SequenceDiagramElement::message("Device", "Client", "schema data"),
+    ]
+  );
+
+  Ok(())
+}
+
+const SERVICE_DISCOVERY_ASCII: &str =
+  include_str!("examples/sequence-diagram/service_discovery.ascii");
