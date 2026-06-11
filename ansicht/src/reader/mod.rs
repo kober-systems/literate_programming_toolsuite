@@ -3,3 +3,6 @@ pub use ascii_art::AsciiArtReader;
 
 mod mermaid;
 pub use mermaid::MermaidReader;
+
+mod cucumber;
+pub use cucumber::CucumberReader;

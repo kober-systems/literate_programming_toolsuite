@@ -1,0 +1,28 @@
+WHITESPACE = _{ " " | "\t" }
+
+feature_file = _{ SOI ~ feature ~ EOI }
+
+feature = {
+  "Feature:" ~ feature_name ~ NEWLINE ~
+  (blank_line)* ~
+  (scenario)*
+}
+
+feature_name = @{ (!(NEWLINE) ~ ANY)+ }
+
+blank_line = { NEWLINE }
+
+scenario = {
+  "Scenario:" ~ scenario_name ~ NEWLINE ~
+  (step ~ NEWLINE)* ~
+  (blank_line)*
+}
+
+scenario_name = @{ (!(NEWLINE) ~ ANY)+ }
+
+step = {
+  step_keyword ~ step_text
+}
+
+step_keyword = @{ "When" | "Then" | "Given" | "And" | "But" }
+step_text = @{ (!(NEWLINE) ~ ANY)+ }
