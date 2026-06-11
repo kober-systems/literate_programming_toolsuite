@@ -46,6 +46,8 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "log",
+ "pest",
+ "pest_derive",
  "pretty_assertions",
  "thiserror",
 ]

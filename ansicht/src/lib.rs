@@ -6,7 +6,10 @@ pub use ast::*;
 pub mod reader;
 
 #[derive(Error, Debug)]
-pub enum Error {}
+pub enum Error {
+  #[error("Parse error: {0}")]
+  ParseError(String),
+}
 
 type Result<T> = std::result::Result<T, Error>;
 

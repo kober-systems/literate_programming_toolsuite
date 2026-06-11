@@ -1,0 +1,14 @@
+mermaid = _{ "sequenceDiagram" ~ NEWLINE ~ (interaction ~ NEWLINE)* ~ EOI }
+
+interaction = {
+  whitespace* ~ participant ~ whitespace* ~ arrow ~ whitespace* ~ participant ~ ":" ~ message
+}
+
+arrow = @{ "->>" | "-->>" }
+
+participant = @{ (ASCII_ALPHANUMERIC | "_" | " ")+ }
+message = @{ ((!NEWLINE) ~ ANY)* }
+
+whitespace = _{ " " | "\t" }
+
+WHITESPACE = _{ " " | "\t" }

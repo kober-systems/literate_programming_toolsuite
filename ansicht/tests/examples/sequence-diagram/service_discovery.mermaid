@@ -1,0 +1,7 @@
+sequenceDiagram
+    Client->>Device: get_hashes
+    Device-->>Client: current hash
+    Client->>Device: get_number_protocols
+    Device-->>Client: 1
+    Client->>Device: get_protocol_schema(0)
+    Device-->>Client: schema data
