@@ -1,4 +1,4 @@
-use ansicht::reader::{parse_elements, Element, Token};
+use ansicht::reader::ascii_art::{parse_elements, Element, Token};
 use pretty_assertions::assert_eq;
 
 /// helper macro for more ergonimic tests
@@ -641,4 +641,3 @@ Footer Text
   assert!(block_count >= 1, "Should have at least one block element");
   assert!(elements.len() >= 3, "Should have multiple elements");
 }
-
