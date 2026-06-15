@@ -3,6 +3,20 @@ use ansicht::*;
 use pretty_assertions::assert_eq;
 
 #[test]
+fn oauth_happy_path_ascii_art_writer() -> Result<()> {
+  let ast = reader::PlantUmlReader::new().parse(OAUTH_HAPPY_PATH_PLANTUML)?;
+
+  let mut writer = writer::ascii_art::AsciiArtWriter::new();
+  let mut output = Vec::new();
+  writer.write(ast, &mut output)?;
+
+  let actual = String::from_utf8(output)?;
+  assert_eq!(actual, OAUTH_HAPPY_PATH_ASCII);
+
+  Ok(())
+}
+
+#[test]
 fn service_discovery_ascii_art_writer() -> Result<()> {
   let ast = reader::CucumberReader::new().parse(SERVICE_DISCOVERY_FEATURE)?;
 
@@ -62,3 +76,9 @@ const SERVICE_DISCOVERY_ASCII: &str =
 
 const SERVICE_DISCOVERY_FEATURE: &str =
   include_str!("examples/sequence-diagram/service_discovery.feature");
+
+const OAUTH_HAPPY_PATH_PLANTUML: &str =
+  include_str!("examples/sequence-diagram/oauth.happy_path.plantuml");
+
+const OAUTH_HAPPY_PATH_ASCII: &str =
+  include_str!("examples/sequence-diagram/oauth.happy_path.ascii");
