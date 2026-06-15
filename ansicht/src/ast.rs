@@ -1,4 +1,6 @@
-#[derive(Debug, Clone, PartialEq)]
+use serde::Serialize;
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct AST<'a> {
   pub content: &'a str,
   pub elements: Vec<ElementSpan>,
@@ -9,7 +11,7 @@ pub struct AST<'a> {
 /// This is meant to form a tree of elements.
 /// Every element holds references to its source, it
 /// subelements and the attributes defined on it.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct ElementSpan {
   // The source document. Could be empty if
   // e.g. it's the same as the source of it's
@@ -23,7 +25,7 @@ pub struct ElementSpan {
   pub attrs: Vec<Attribute>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum TextPosition {
   BoundingBox {
     start: CursorPosition,
@@ -33,25 +35,25 @@ pub enum TextPosition {
   // TODO Token Vector
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct CursorPosition {
   pub line: usize,
   pub column: usize,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Slice {
   pub start: usize,
   pub end: usize,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum Element {
   DataFlow(DataflowElement), // TypeFlow better name?
   Sequence(SequenceDiagramElement),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum DataflowElement {
   /// A Dataset
   Dataset {
@@ -75,7 +77,7 @@ pub enum DataflowElement {
   Error(String),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum SequenceDiagramElement {
   /// A message (or method or function call or event etc) from one
   /// participant to another
@@ -103,10 +105,10 @@ impl SequenceDiagramElement {
   }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct MetaData {}
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum Attribute {
   Link(String),
   Position, // TODO Add information about the graphical position

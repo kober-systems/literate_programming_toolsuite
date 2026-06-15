@@ -53,6 +53,7 @@ enum Format {
   Mermaid,
   #[value(alias = "gherkin", alias = "feature")]
   Cucumber,
+  Json,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -101,6 +102,7 @@ fn parse_ast<'a>(format: Format, input: &'a str) -> anyhow::Result<AST<'a>> {
     Format::AsciiArt => Ok(reader::AsciiArtReader::new().parse(input)),
     Format::Mermaid => Ok(reader::MermaidReader::new().parse(input)?),
     Format::Cucumber => Ok(reader::CucumberReader::new().parse(input)?),
+    Format::Json => anyhow::bail!("JSON is only supported as an output format"),
   }
 }
 
@@ -120,6 +122,7 @@ fn write_ast(
       perspective: perspective.to_string(),
     }
     .write(ast, &mut output)?,
+    Format::Json => writer::json::JsonWriter.write(ast, &mut output)?,
   }
 
   Ok(output)
@@ -132,6 +135,7 @@ fn infer_format(path: &PathBuf) -> Option<Format> {
     "ascii" | "txt" => Some(Format::AsciiArt),
     "mmd" | "mermaid" => Some(Format::Mermaid),
     "feature" | "gherkin" => Some(Format::Cucumber),
+    "json" => Some(Format::Json),
     _ => None,
   }
 }
