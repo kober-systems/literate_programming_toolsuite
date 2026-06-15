@@ -8,6 +8,7 @@ edition = "2018"
 anyhow = { workspace = true }
 thiserror = { workspace = true }
 log = { workspace = true }
+clap = { workspace = true }
 pest = { workspace = true }
 pest_derive = { workspace = true }
 
