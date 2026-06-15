@@ -1,0 +1,28 @@
+plantuml = _{ SOI ~ line* ~ EOI }
+
+line = _{ blank_line | statement ~ NEWLINE? }
+blank_line = _{ ws* ~ NEWLINE }
+statement = _{ ws* ~ (plantuml_directive | activation | note_across | participant_declaration | message_interaction | ignored_line) ~ ws* }
+
+plantuml_directive = { "@" ~ (!NEWLINE ~ ANY)* }
+activation = { ("activate" | "deactivate") ~ (!NEWLINE ~ ANY)* }
+
+participant_declaration = { ("participant" | "actor") ~ ws+ ~ (participant_alias_declaration | participant_plain_declaration) }
+participant_alias_declaration = { declaration_name ~ ws+ ~ "as" ~ ws+ ~ declaration_name }
+participant_plain_declaration = { declaration_name }
+declaration_name = { quoted_name | bare_declaration_name }
+bare_declaration_name = @{ (!(" as " | NEWLINE) ~ ANY)+ }
+quoted_name = @{ "\"" ~ ("\\\"" | (!"\"" ~ ANY))* ~ "\"" }
+
+note_across = { "note" ~ ws+ ~ "across" ~ ws* ~ ":" ~ note_text }
+note_text = @{ (!NEWLINE ~ ANY)* }
+
+message_interaction = { message_sender ~ arrow ~ message_receiver ~ ":" ~ message_text }
+message_sender = @{ (!arrow ~ !NEWLINE ~ ANY)+ }
+message_receiver = @{ (!":" ~ !NEWLINE ~ ANY)+ }
+arrow = @{ "-->>" | "->>" | "-->" | "->" | "<<--" | "<--" | "<<-" | "<-" }
+message_text = @{ (!NEWLINE ~ ANY)* }
+
+ignored_line = @{ (!NEWLINE ~ ANY)+ }
+
+ws = _{ " " | "\t" }

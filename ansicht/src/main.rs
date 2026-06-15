@@ -51,6 +51,8 @@ enum Format {
   #[value(alias = "ascii")]
   AsciiArt,
   Mermaid,
+  #[value(alias = "puml")]
+  PlantUml,
   #[value(alias = "gherkin", alias = "feature")]
   Cucumber,
   Json,
@@ -101,6 +103,7 @@ fn parse_ast<'a>(format: Format, input: &'a str) -> anyhow::Result<AST<'a>> {
   match format {
     Format::AsciiArt => Ok(reader::AsciiArtReader::new().parse(input)),
     Format::Mermaid => Ok(reader::MermaidReader::new().parse(input)?),
+    Format::PlantUml => Ok(reader::PlantUmlReader::new().parse(input)?),
     Format::Cucumber => Ok(reader::CucumberReader::new().parse(input)?),
     Format::Json => anyhow::bail!("JSON is only supported as an output format"),
   }
@@ -117,6 +120,7 @@ fn write_ast(
   match format {
     Format::AsciiArt => writer::ascii_art::AsciiArtWriter::new().write(ast, &mut output)?,
     Format::Mermaid => writer::mermaid::MermaidWriter.write(ast, &mut output)?,
+    Format::PlantUml => anyhow::bail!("PlantUML is only supported as an input format"),
     Format::Cucumber => writer::cucumber::CucumberWriter {
       feature_name: feature_name.to_string(),
       perspective: perspective.to_string(),
@@ -134,6 +138,7 @@ fn infer_format(path: &PathBuf) -> Option<Format> {
   match extension.as_str() {
     "ascii" | "txt" => Some(Format::AsciiArt),
     "mmd" | "mermaid" => Some(Format::Mermaid),
+    "plantuml" | "puml" => Some(Format::PlantUml),
     "feature" | "gherkin" => Some(Format::Cucumber),
     "json" => Some(Format::Json),
     _ => None,

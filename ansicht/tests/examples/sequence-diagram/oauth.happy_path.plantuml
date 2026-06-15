@@ -1,0 +1,55 @@
+@startuml
+participant User as "End User"
+participant UserAgent as "User's Browser"
+participant ClientApp as "Client Application"
+participant AuthServer as "Authorization Server"
+participant ResourceServer as "Resource Server"
+
+note across: Initial Redirect for Authorization
+User->>UserAgent: Request Access
+activate UserAgent
+UserAgent->>ClientApp: Request Access
+deactivate UserAgent
+activate ClientApp
+ClientApp->>UserAgent: Redirect to AuthServer (client_id, response_type=code, redirect_uri, scope)
+deactivate ClientApp
+activate UserAgent
+UserAgent->>AuthServer: Follow Redirect
+deactivate UserAgent
+activate AuthServer
+
+note across: User Grants Consent
+AuthServer->>UserAgent: Display Consent Form
+deactivate AuthServer
+activate UserAgent
+UserAgent->>User: Display Consent Form
+User->>UserAgent: Grant Consent
+UserAgent->>AuthServer: Grant Consent
+deactivate UserAgent
+activate AuthServer
+AuthServer->>UserAgent: Redirect with Authorization Code
+deactivate AuthServer
+activate UserAgent
+UserAgent->>ClientApp: Follow Redirect with Code
+deactivate UserAgent
+activate ClientApp
+
+note across: Token Exchange and Resource Access
+ClientApp->>AuthServer: Exchange Code for Token
+deactivate ClientApp
+activate AuthServer
+AuthServer->>ClientApp: Respond with Access Token
+deactivate AuthServer
+activate ClientApp
+ClientApp->>ResourceServer: Request Protected Resource (with Access Token)
+deactivate ClientApp
+activate ResourceServer
+ResourceServer->>ClientApp: Respond with Protected Resource
+deactivate ResourceServer
+activate ClientApp
+ClientApp ->> UserAgent: Display Resource
+deactivate ClientApp
+activate UserAgent
+UserAgent ->> User: Display Resource
+deactivate UserAgent
+@enduml

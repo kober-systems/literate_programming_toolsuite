@@ -1,0 +1,8 @@
+@startuml
+Client -> Device: get_hashes
+Device --> Client: current hash
+Client -> Device: get_number_protocols
+Client <-- Device: 1
+Client -> Device: get_protocol_schema(0)
+Client <-- Device: schema data
+@enduml
