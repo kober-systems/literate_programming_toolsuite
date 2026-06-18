@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PUBLISH_DIR="./cargo-publish"
+BRANCH="master"
+
+cleanup() {
+  rc=$?
+  # try removing worktree if present
+  if [ -d "$PUBLISH_DIR" ]; then
+    # if it's a git worktree, remove it cleanly
+    if git worktree list --porcelain 2>/dev/null | grep -qF "$(realpath "$PUBLISH_DIR")"; then
+      git worktree remove --force "$PUBLISH_DIR" || true
+    else
+      rm -rf "$PUBLISH_DIR" || true
+    fi
+  fi
+  exit $rc
+}
+trap cleanup EXIT
+
+# ensure jj exported Git refs are up to date (if you use jj)
+if command -v jj >/dev/null 2>&1; then
+  jj git export
+fi
+
+# remove any previous dir
+rm -rf "$PUBLISH_DIR"
+
+# create worktree of the requested branch
+git worktree add "$PUBLISH_DIR" "$BRANCH"
+
+# go to worktree, verify package contents, publish
+cd "$PUBLISH_DIR"
+
+git pull --rebase
+
+# check literate state
+# TODO need to run ./build to check the literate sync state
+if [ "sync" != "$(cat .litstate)" ]; then
+  echo "literate state must be sync"
+  exit 1
+fi
+
+cargo semver-checks
+
+echo "Package contents:"
+cargo package --list
+
+# publish (fail will trigger cleanup)
+cargo login
+cargo publish --package ansicht
+cargo publish --package asciidoctrine
+cargo publish --package lisi
+cargo logout
+
+# TODO git version
+git push --tags
+
+# success: script exits and cleanup trap removes the worktree folder
