@@ -22,8 +22,9 @@ asciidoctrine:: An extensible <<asciidoctrine/asciidoctrine.adoc#, asciidoc inte
   isn't very mature right now.
 lisi:: A flexible <<lisi/lisi.adoc#,literate programming tool>> for both tangle
   and weave. It has some basic functionality right now.
-ansicht:: A <<ansicht/ansicht.adoc#,visual programming tool>> primerily meant
-  to use in conjunction with literate programming tools. Currently just a draft.
+ansicht:: A <<ansicht/ansicht.adoc#,visual programming tool>> primerily
+  meant to use in conjunction with literate programming tools. Currently
+  it has very basic functionality.
 dolmetscher:: A <<dolmetscher/dolmetscher.adoc#,translation helper
   tool>>. Currently just a draft.
 
