@@ -1,6 +1,6 @@
 [package]
 name = "asciidoctrine"
-version = "0.1.1"
+version = "0.2.0"
 description = "process asciidoc files"
 readme = "asciidoctrine.adoc"
 homepage = "https://kober-systems.github.io/literate_programming_toolsuite/asciidoctrine/asciidoctrine.html"
