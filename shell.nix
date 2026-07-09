@@ -6,6 +6,7 @@ in
 pkgs.mkShell {
   nativeBuildInputs = [
     pkgs.rust-bin.stable.latest.${profile}
+    pkgs.cargo-mutants
     pkgs.cargo-semver-checks
     pkgs.deno
 

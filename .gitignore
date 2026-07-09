@@ -5,3 +5,4 @@ target
 result*
 .litstate
 /cargo-deploy/
+/mutants.out
