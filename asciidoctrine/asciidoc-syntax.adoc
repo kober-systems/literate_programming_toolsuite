@@ -1285,18 +1285,55 @@ labeled_list = { (label_bullet ~ list_element)+ }
 ----
 
 == Links
-TODO
+Links sind nützlich um auf andere Quelle zu verweisen.
 
 [[inline_elements]]
 [source, pest]
 ----
-link = ${ url ~ inline_attribute_list }
+link = ${ url ~ inline_attribute_list? }
 url = ${proto ~ "://" ~ path}
 proto = ${ ("http" ~ "s"?) |
            "mailto" |
            "git"
          }
 ----
+
+[cols="a,a"]
+|====
+|
+
+[[unittest_links_input]]
+[source, asciidoc, lisi-raw]
+[output="links_html_output", name="links"]
+....
+This paragraph has links. A raw link
+https://kober-systems.github.io/literate_programming_toolsuite/
+and a link to
+https://github.com/kober-systems/literate_programming_toolsuite/tree/master/asciidoctrine[Asciidocrine].
+....
+
+|
+
+This paragraph has links. A raw link
+https://kober-systems.github.io/literate_programming_toolsuite/
+and a link to
+https://github.com/kober-systems/literate_programming_toolsuite/tree/master/asciidoctrine[Asciidocrine].
+
+[%collapsible]
+.Html Output
+====
+
+[[links_html_output]]
+[source, html]
+----
+<p>This paragraph has links. A raw link
+<a href="https://kober-systems.github.io/literate_programming_toolsuite/"/>
+and a link to
+<a href="https://github.com/kober-systems/literate_programming_toolsuite/tree/master/asciidoctrine">Asciidocrine</a>.</p>
+----
+====
+
+|====
 
 [%collapsible]
 ====

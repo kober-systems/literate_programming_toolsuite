@@ -321,7 +321,11 @@ fn inline<T: io::Write>(input: &ElementSpan, out: &mut T) -> Result<()> {
         None => "".to_string(),
       };
 
-      out.write_all(&format!("<a href=\"{}\">{}</a>", url, content).as_bytes())?;
+      if content.is_empty() {
+        out.write_all(&format!("<a href=\"{}\"/>", url).as_bytes())?;
+      } else {
+        out.write_all(&format!("<a href=\"{}\">{}</a>", url, content).as_bytes())?;
+      }
     }
     Element::XRef => {
       let id = input.get_attribute("id").unwrap_or("");

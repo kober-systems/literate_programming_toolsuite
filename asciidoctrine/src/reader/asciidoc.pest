@@ -180,7 +180,7 @@ monospaced = ${ inline_anchor* ~ (("+" ~ (!"+" ~ linechar)+ ~ "+") | ("`" ~ (!"`
 
 continuation = { NEWLINE ~ "+" ~ NEWLINE }
 
-link = ${ url ~ inline_attribute_list }
+link = ${ url ~ inline_attribute_list? }
 url = ${proto ~ "://" ~ path}
 proto = ${ ("http" ~ "s"?) |
            "mailto" |

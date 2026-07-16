@@ -482,6 +482,37 @@ Some text is `monospaced`.
 }
 
 #[test]
+fn links() -> Result<()> {
+  let content = r#"
+This paragraph has links. A raw link
+https://kober-systems.github.io/literate_programming_toolsuite/
+and a link to
+https://github.com/kober-systems/literate_programming_toolsuite/tree/master/asciidoctrine[Asciidocrine].
+"#;
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
+  let mut env = util::Env::Cache(util::Cache::new());
+
+  let ast = reader.parse(content, &opts, &mut env)?;
+
+  let mut buf = BufWriter::new(Vec::new());
+  let mut writer = HtmlWriter::new();
+  writer.write(ast, &opts, &mut buf)?;
+
+  let output = String::from_utf8(buf.into_inner()?)?;
+  assert_eq!(
+    output,
+    r#"<p>This paragraph has links. A raw link
+<a href="https://kober-systems.github.io/literate_programming_toolsuite/"/>
+and a link to
+<a href="https://github.com/kober-systems/literate_programming_toolsuite/tree/master/asciidoctrine">Asciidocrine</a>.</p>
+"#
+  );
+
+  Ok(())
+}
+
+#[test]
 fn numbered_list() -> Result<()> {
   let content = r#"
 . This
