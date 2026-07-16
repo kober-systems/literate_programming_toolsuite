@@ -10,7 +10,7 @@ fn service_discovery_mermaid_writer() -> Result<()> {
   writer.write(ast, &mut output)?;
 
   let actual = String::from_utf8(output)?;
-  assert_eq!(actual, SERVICE_DISCOVERY_MERMAID);
+  assert_eq!(actual, SERVICE_DISCOVERY_MERMAID.replace('\r', ""));
 
   Ok(())
 }
