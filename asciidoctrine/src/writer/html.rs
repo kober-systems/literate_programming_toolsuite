@@ -1,7 +1,12 @@
 pub use crate::ast::*;
 use crate::util::Environment;
 use crate::{options, Result, AsciidoctrineError};
+use std::cell::RefCell;
 use std::io;
+
+thread_local! {
+  static FOOTNOTES: RefCell<Vec<String>> = RefCell::new(Vec::new());
+}
 use tera::{Context, Tera};
 
 pub struct HtmlWriter {
@@ -20,9 +25,11 @@ impl<T: io::Write> crate::Writer<T> for HtmlWriter {
   fn write<'a>(&mut self, ast: AST, args: &options::Opts, mut out: T) -> Result<()> {
     let mut buf = io::BufWriter::new(Vec::new());
 
+    FOOTNOTES.with(|footnotes| footnotes.borrow_mut().clear());
     for element in ast.elements.iter() {
       write_html(element, 0, &mut buf)?;
     }
+    write_footnotes(&mut buf)?;
     let bytes = buf.into_inner()?;
 
     let mut context = Context::new();
@@ -337,6 +344,21 @@ fn inline<T: io::Write>(input: &ElementSpan, out: &mut T) -> Result<()> {
 
       out.write_all(&format!("<a href=\"#{}\">{}</a>", id, content).as_bytes())?;
     }
+    Element::Footnote => {
+      let content = input.get_attribute("content").unwrap_or("");
+      let number = FOOTNOTES.with(|footnotes| {
+        let mut footnotes = footnotes.borrow_mut();
+        footnotes.push(content.split_whitespace().collect::<Vec<_>>().join(" "));
+        footnotes.len()
+      });
+      out.write_all(
+        format!(
+          "<sup class=\"footnote\">[<a id=\"_footnoteref_{}\" class=\"footnote\" href=\"#_footnotedef_{}\" title=\"View footnote.\">{}</a>]</sup>",
+          number, number, number
+        )
+        .as_bytes(),
+      )?;
+    }
     _ => {
       out.write_all(
         &format!(
@@ -371,6 +393,29 @@ fn table_paragraph<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T
 
 // Helper Functions
 //----------------------------------------------------
+
+fn write_footnotes<T: io::Write>(out: &mut T) -> Result<()> {
+  FOOTNOTES.with(|footnotes| -> Result<()> {
+    let footnotes = footnotes.borrow();
+    if footnotes.is_empty() {
+      return Ok(());
+    }
+
+    out.write_all(b"<div id=\"footnotes\">\n  <hr>\n")?;
+    for (index, footnote) in footnotes.iter().enumerate() {
+      let number = index + 1;
+      out.write_all(
+        format!(
+          "  <div class=\"footnote\" id=\"_footnotedef_{}\">\n    <a href=\"#_footnoteref_{}\">{}</a>. {}\n  </div>\n",
+          number, number, number, footnote
+        )
+        .as_bytes(),
+      )?;
+    }
+    out.write_all(b"</div>\n")?;
+    Ok(())
+  })
+}
 
 fn escape_text(input: &str) -> String {
   input.replace("<", "&lt;").replace(">", "&gt;")

@@ -168,6 +168,8 @@ pub enum Element<'a> {
   XRef,
   /// An external link
   Link,
+  /// An inline footnote
+  Footnote,
   /// A list item
   ListItem(u32),
   /// A table row

@@ -2109,33 +2109,36 @@ Formatierungen werden unterstützt:</p>
 <span class="tok-w">  </span><span class="tok-n">element</span>
 <span class="tok-w">    </span><span class="tok-p">.</span><span class="tok-n">into_inner</span><span class="tok-p">()</span>
 <span class="tok-w">    </span><span class="tok-p">.</span><span class="tok-n">fold</span><span class="tok-p">(</span><span class="tok-n">base</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">|</span><span class="tok-n">base</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">element</span><span class="tok-o">|</span><span class="tok-w"> </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">element</span><span class="tok-p">.</span><span class="tok-n">as_rule</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
-<span class="tok-w">      </span><span class="tok-n">Rule</span><span class="tok-p">::</span><span class="tok-n">link</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">process_link</span><span class="tok-p">(</span><span class="tok-n">element</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-p">),</span>
-<span class="tok-w">      </span><span class="tok-n">Rule</span><span class="tok-p">::</span><span class="tok-n">xref</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">process_xref</span><span class="tok-p">(</span><span class="tok-n">element</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-p">),</span>
-<span class="tok-w">      </span><span class="tok-n">Rule</span><span class="tok-p">::</span><span class="tok-n">monospaced</span><span class="tok-w"> </span><span class="tok-o">|</span><span class="tok-w"> </span><span class="tok-n">Rule</span><span class="tok-p">::</span><span class="tok-n">strong</span><span class="tok-w"> </span><span class="tok-o">|</span><span class="tok-w"> </span><span class="tok-n">Rule</span><span class="tok-p">::</span><span class="tok-n">emphasized</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span>
-<span class="tok-w">        </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-p">.</span><span class="tok-n">element</span><span class="tok-p">(</span><span class="tok-n">Element</span><span class="tok-p">::</span><span class="tok-n">Styled</span><span class="tok-p">).</span><span class="tok-n">add_attribute</span><span class="tok-p">(</span><span class="tok-n">Attribute</span><span class="tok-w"> </span><span class="tok-p">{</span>
-<span class="tok-w">          </span><span class="tok-n">key</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-s">&quot;style&quot;</span><span class="tok-p">.</span><span class="tok-n">to_string</span><span class="tok-p">(),</span>
-<span class="tok-w">          </span><span class="tok-n">value</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">AttributeValue</span><span class="tok-p">::</span><span class="tok-n">Ref</span><span class="tok-p">(</span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">element</span><span class="tok-p">.</span><span class="tok-n">as_rule</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
-<span class="tok-w">            </span><span class="tok-n">Rule</span><span class="tok-p">::</span><span class="tok-n">monospaced</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-s">&quot;monospaced&quot;</span><span class="tok-p">,</span>
-<span class="tok-w">            </span><span class="tok-n">Rule</span><span class="tok-p">::</span><span class="tok-n">strong</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-s">&quot;strong&quot;</span><span class="tok-p">,</span>
-<span class="tok-w">            </span><span class="tok-n">Rule</span><span class="tok-p">::</span><span class="tok-n">emphasized</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-s">&quot;em&quot;</span><span class="tok-p">,</span>
-<span class="tok-w">            </span><span class="tok-n">_</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-s">&quot;not_supported&quot;</span><span class="tok-p">,</span>
-<span class="tok-w">          </span><span class="tok-p">}),</span>
-<span class="tok-w">        </span><span class="tok-p">});</span>
+<span class="tok-w">      </span><span class="tok-o">&lt;&lt;</span><span class="tok-n">asciidoc_inline_rules</span><span class="tok-o">&gt;&gt;</span>
+<span class="tok-w">      </span><span class="tok-n">_</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-p">,</span>
+<span class="tok-w">    </span><span class="tok-p">})</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div id="asciidoc_inline_rules" class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-n">Rule</span><span class="tok-p">::</span><span class="tok-n">monospaced</span><span class="tok-w"> </span><span class="tok-o">|</span><span class="tok-w"> </span><span class="tok-n">Rule</span><span class="tok-p">::</span><span class="tok-n">strong</span><span class="tok-w"> </span><span class="tok-o">|</span><span class="tok-w"> </span><span class="tok-n">Rule</span><span class="tok-p">::</span><span class="tok-n">emphasized</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">  </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-p">.</span><span class="tok-n">element</span><span class="tok-p">(</span><span class="tok-n">Element</span><span class="tok-p">::</span><span class="tok-n">Styled</span><span class="tok-p">).</span><span class="tok-n">add_attribute</span><span class="tok-p">(</span><span class="tok-n">Attribute</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">    </span><span class="tok-n">key</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-s">&quot;style&quot;</span><span class="tok-p">.</span><span class="tok-n">to_string</span><span class="tok-p">(),</span>
+<span class="tok-w">    </span><span class="tok-n">value</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">AttributeValue</span><span class="tok-p">::</span><span class="tok-n">Ref</span><span class="tok-p">(</span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">element</span><span class="tok-p">.</span><span class="tok-n">as_rule</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">      </span><span class="tok-n">Rule</span><span class="tok-p">::</span><span class="tok-n">monospaced</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-s">&quot;monospaced&quot;</span><span class="tok-p">,</span>
+<span class="tok-w">      </span><span class="tok-n">Rule</span><span class="tok-p">::</span><span class="tok-n">strong</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-s">&quot;strong&quot;</span><span class="tok-p">,</span>
+<span class="tok-w">      </span><span class="tok-n">Rule</span><span class="tok-p">::</span><span class="tok-n">emphasized</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-s">&quot;em&quot;</span><span class="tok-p">,</span>
+<span class="tok-w">      </span><span class="tok-n">_</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-s">&quot;not_supported&quot;</span><span class="tok-p">,</span>
+<span class="tok-w">    </span><span class="tok-p">}),</span>
+<span class="tok-w">  </span><span class="tok-p">});</span>
 
-<span class="tok-w">        </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">concat_elements</span><span class="tok-p">(</span><span class="tok-n">element</span><span class="tok-p">.</span><span class="tok-n">clone</span><span class="tok-p">(),</span><span class="tok-w"> </span><span class="tok-n">Rule</span><span class="tok-p">::</span><span class="tok-n">linechar</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-s">&quot;&quot;</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span>
-<span class="tok-w">          </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">content</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-p">.</span><span class="tok-n">add_attribute</span><span class="tok-p">(</span><span class="tok-n">Attribute</span><span class="tok-w"> </span><span class="tok-p">{</span>
-<span class="tok-w">            </span><span class="tok-n">key</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-s">&quot;content&quot;</span><span class="tok-p">.</span><span class="tok-n">to_string</span><span class="tok-p">(),</span>
-<span class="tok-w">            </span><span class="tok-n">value</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">AttributeValue</span><span class="tok-p">::</span><span class="tok-nb">String</span><span class="tok-p">(</span><span class="tok-n">content</span><span class="tok-p">),</span>
-<span class="tok-w">          </span><span class="tok-p">}),</span>
-<span class="tok-w">          </span><span class="tok-nb">None</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-p">,</span>
-<span class="tok-w">        </span><span class="tok-p">};</span>
-<span class="tok-w">        </span><span class="tok-n">element</span>
-<span class="tok-w">          </span><span class="tok-p">.</span><span class="tok-n">into_inner</span><span class="tok-p">()</span>
-<span class="tok-w">          </span><span class="tok-p">.</span><span class="tok-n">fold</span><span class="tok-p">(</span><span class="tok-n">base</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">|</span><span class="tok-n">base</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">subelement</span><span class="tok-o">|</span><span class="tok-w"> </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">subelement</span><span class="tok-p">.</span><span class="tok-n">as_rule</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
-<span class="tok-w">            </span><span class="tok-n">Rule</span><span class="tok-p">::</span><span class="tok-n">inline_anchor</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">process_inline_anchor</span><span class="tok-p">(</span><span class="tok-n">subelement</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-p">),</span>
-<span class="tok-w">            </span><span class="tok-n">_</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-p">,</span>
-<span class="tok-w">          </span><span class="tok-p">})</span>
-<span class="tok-w">      </span><span class="tok-p">}</span>
+<span class="tok-w">  </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">concat_elements</span><span class="tok-p">(</span><span class="tok-n">element</span><span class="tok-p">.</span><span class="tok-n">clone</span><span class="tok-p">(),</span><span class="tok-w"> </span><span class="tok-n">Rule</span><span class="tok-p">::</span><span class="tok-n">linechar</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-s">&quot;&quot;</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">    </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">content</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-p">.</span><span class="tok-n">add_attribute</span><span class="tok-p">(</span><span class="tok-n">Attribute</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">      </span><span class="tok-n">key</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-s">&quot;content&quot;</span><span class="tok-p">.</span><span class="tok-n">to_string</span><span class="tok-p">(),</span>
+<span class="tok-w">      </span><span class="tok-n">value</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">AttributeValue</span><span class="tok-p">::</span><span class="tok-nb">String</span><span class="tok-p">(</span><span class="tok-n">content</span><span class="tok-p">),</span>
+<span class="tok-w">    </span><span class="tok-p">}),</span>
+<span class="tok-w">    </span><span class="tok-nb">None</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-p">,</span>
+<span class="tok-w">  </span><span class="tok-p">};</span>
+<span class="tok-w">  </span><span class="tok-n">element</span>
+<span class="tok-w">    </span><span class="tok-p">.</span><span class="tok-n">into_inner</span><span class="tok-p">()</span>
+<span class="tok-w">    </span><span class="tok-p">.</span><span class="tok-n">fold</span><span class="tok-p">(</span><span class="tok-n">base</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-o">|</span><span class="tok-n">base</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">subelement</span><span class="tok-o">|</span><span class="tok-w"> </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">subelement</span><span class="tok-p">.</span><span class="tok-n">as_rule</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">      </span><span class="tok-n">Rule</span><span class="tok-p">::</span><span class="tok-n">inline_anchor</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">process_inline_anchor</span><span class="tok-p">(</span><span class="tok-n">subelement</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-p">),</span>
 <span class="tok-w">      </span><span class="tok-n">_</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-p">,</span>
 <span class="tok-w">    </span><span class="tok-p">})</span>
 <span class="tok-p">}</span></code></pre>
@@ -2592,6 +2595,11 @@ and a link to
 <details>
 <summary class="title">Details</summary>
 <div class="content">
+<div id="asciidoc_inline_rules" class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-n">Rule</span><span class="tok-p">::</span><span class="tok-n">link</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">process_link</span><span class="tok-p">(</span><span class="tok-n">element</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-p">),</span></code></pre>
+</div>
+</div>
 <div id="asciidoc_parser_functions" class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span><span class="tok-w"> </span><span class="tok-nf">process_link</span><span class="tok-o">&lt;&#39;</span><span class="tok-na">a</span><span class="tok-o">&gt;</span><span class="tok-p">(</span><span class="tok-n">element</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">Pair</span><span class="tok-o">&lt;&#39;</span><span class="tok-na">a</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">asciidoc</span><span class="tok-p">::</span><span class="tok-n">Rule</span><span class="tok-o">&gt;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">ElementSpan</span><span class="tok-o">&lt;&#39;</span><span class="tok-na">a</span><span class="tok-o">&gt;</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">-&gt;</span><span class="tok-w"> </span><span class="tok-nc">ElementSpan</span><span class="tok-o">&lt;&#39;</span><span class="tok-na">a</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span>
@@ -2673,6 +2681,11 @@ This is the referenced paragraph
 <details>
 <summary class="title">Details</summary>
 <div class="content">
+<div id="asciidoc_inline_rules" class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-n">Rule</span><span class="tok-p">::</span><span class="tok-n">xref</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">process_xref</span><span class="tok-p">(</span><span class="tok-n">element</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-p">),</span></code></pre>
+</div>
+</div>
 <div id="asciidoc_parser_functions" class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span><span class="tok-w"> </span><span class="tok-nf">process_xref</span><span class="tok-o">&lt;&#39;</span><span class="tok-na">a</span><span class="tok-o">&gt;</span><span class="tok-p">(</span><span class="tok-n">element</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">Pair</span><span class="tok-o">&lt;&#39;</span><span class="tok-na">a</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">asciidoc</span><span class="tok-p">::</span><span class="tok-n">Rule</span><span class="tok-o">&gt;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">ElementSpan</span><span class="tok-o">&lt;&#39;</span><span class="tok-na">a</span><span class="tok-o">&gt;</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">-&gt;</span><span class="tok-w"> </span><span class="tok-nc">ElementSpan</span><span class="tok-o">&lt;&#39;</span><span class="tok-na">a</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span>
@@ -2706,7 +2719,8 @@ This is the referenced paragraph
 <div class="sect4">
 <h5 id="_fußnoten">Fußnoten</h5>
 <div class="paragraph">
-<p>TODO</p>
+<p>Manchmal möchte an gerne einen ergänzenden Kommentar haben, welcher aber
+nicht in den Haupttext gehört. Hier bieten sich Fußnoten an.</p>
 </div>
 <div id="inline_elements" class="listingblock">
 <div class="content">
@@ -2716,6 +2730,91 @@ footnoteref = { &quot;footnoteref:&quot; ~ inline_attribute_list }
 quoted = @{ inline_attribute_list ~ &quot;#&quot; ~ (!&quot;#&quot; ~ linechar)+ ~ &quot;#&quot; }</code></pre>
 </div>
 </div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div id="unittest_footnotes_input" class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="asciidoc"><div class="lineno"><table class="linenotable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span>This is the main text footnote:[Not all information goes into the man
+text. Some is usefull in footnotes] it explains the genral idea of this
+paragraph.
+</pre></div></td></tr></table></div></code></pre>
+</div>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>This is the main text <sup class="footnote">[<a id="_footnoteref_1" class="footnote" href="#_footnotedef_1" title="View footnote.">1</a>]</sup> it explains the genral idea of this
+paragraph.</p>
+</div>
+<details>
+<summary class="title">Html Output</summary>
+<div class="content">
+<div id="footnotes_html_output" class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="html"><span></span><span class="tok-p">&lt;</span><span class="tok-nt">p</span><span class="tok-p">&gt;</span>This is the main text <span class="tok-p">&lt;</span><span class="tok-nt">sup</span> <span class="tok-na">class</span><span class="tok-o">=</span><span class="tok-s">&quot;footnote&quot;</span><span class="tok-p">&gt;</span>[<span class="tok-p">&lt;</span><span class="tok-nt">a</span> <span class="tok-na">id</span><span class="tok-o">=</span><span class="tok-s">&quot;_footnoteref_1&quot;</span> <span class="tok-na">class</span><span class="tok-o">=</span><span class="tok-s">&quot;footnote&quot;</span> <span class="tok-na">href</span><span class="tok-o">=</span><span class="tok-s">&quot;#_footnotedef_1&quot;</span> <span class="tok-na">title</span><span class="tok-o">=</span><span class="tok-s">&quot;View footnote.&quot;</span><span class="tok-p">&gt;</span>1<span class="tok-p">&lt;/</span><span class="tok-nt">a</span><span class="tok-p">&gt;</span>]<span class="tok-p">&lt;/</span><span class="tok-nt">sup</span><span class="tok-p">&gt;</span> it explains the genral idea of this
+paragraph.<span class="tok-p">&lt;/</span><span class="tok-nt">p</span><span class="tok-p">&gt;</span>
+<span class="tok-p">&lt;</span><span class="tok-nt">div</span> <span class="tok-na">id</span><span class="tok-o">=</span><span class="tok-s">&quot;footnotes&quot;</span><span class="tok-p">&gt;</span>
+  <span class="tok-p">&lt;</span><span class="tok-nt">hr</span><span class="tok-p">&gt;</span>
+  <span class="tok-p">&lt;</span><span class="tok-nt">div</span> <span class="tok-na">class</span><span class="tok-o">=</span><span class="tok-s">&quot;footnote&quot;</span> <span class="tok-na">id</span><span class="tok-o">=</span><span class="tok-s">&quot;_footnotedef_1&quot;</span><span class="tok-p">&gt;</span>
+    <span class="tok-p">&lt;</span><span class="tok-nt">a</span> <span class="tok-na">href</span><span class="tok-o">=</span><span class="tok-s">&quot;#_footnoteref_1&quot;</span><span class="tok-p">&gt;</span>1<span class="tok-p">&lt;/</span><span class="tok-nt">a</span><span class="tok-p">&gt;</span>. Not all information goes into the man text. Some is usefull in footnotes
+  <span class="tok-p">&lt;/</span><span class="tok-nt">div</span><span class="tok-p">&gt;</span>
+<span class="tok-p">&lt;/</span><span class="tok-nt">div</span><span class="tok-p">&gt;</span></code></pre>
+</div>
+</div>
+</div>
+</details>
+<div id="footnotes">
+<hr>
+<div class="footnote" id="_footnotedef_1">
+<a href="#_footnoteref_1">1</a>. Not all information goes into the man text. Some is usefull in footnotes
+</div>
+</div></div></td>
+</tr>
+</tbody>
+</table>
+<details>
+<summary class="title">Details</summary>
+<div class="content">
+<div id="asciidoc_inline_rules" class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-n">Rule</span><span class="tok-p">::</span><span class="tok-n">footnote</span><span class="tok-w"> </span><span class="tok-o">|</span><span class="tok-w"> </span><span class="tok-n">Rule</span><span class="tok-p">::</span><span class="tok-n">footnoteref</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">process_footnote</span><span class="tok-p">(</span><span class="tok-n">element</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-p">),</span></code></pre>
+</div>
+</div>
+<div id="asciidoc_parser_functions" class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span><span class="tok-w"> </span><span class="tok-nf">process_footnote</span><span class="tok-o">&lt;&#39;</span><span class="tok-na">a</span><span class="tok-o">&gt;</span><span class="tok-p">(</span><span class="tok-n">element</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">Pair</span><span class="tok-o">&lt;&#39;</span><span class="tok-na">a</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">asciidoc</span><span class="tok-p">::</span><span class="tok-n">Rule</span><span class="tok-o">&gt;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">ElementSpan</span><span class="tok-o">&lt;&#39;</span><span class="tok-na">a</span><span class="tok-o">&gt;</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">-&gt;</span><span class="tok-w"> </span><span class="tok-nc">ElementSpan</span><span class="tok-o">&lt;&#39;</span><span class="tok-na">a</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">  </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">kind</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">element</span><span class="tok-p">.</span><span class="tok-n">as_rule</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">    </span><span class="tok-n">Rule</span><span class="tok-p">::</span><span class="tok-n">footnoteref</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-s">&quot;ref&quot;</span><span class="tok-p">,</span>
+<span class="tok-w">    </span><span class="tok-n">_</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-s">&quot;note&quot;</span><span class="tok-p">,</span>
+<span class="tok-w">  </span><span class="tok-p">};</span>
+<span class="tok-w">  </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">element</span>
+<span class="tok-w">    </span><span class="tok-p">.</span><span class="tok-n">into_inner</span><span class="tok-p">()</span>
+<span class="tok-w">    </span><span class="tok-p">.</span><span class="tok-n">fold</span><span class="tok-p">(</span><span class="tok-n">base</span><span class="tok-p">.</span><span class="tok-n">element</span><span class="tok-p">(</span><span class="tok-n">Element</span><span class="tok-p">::</span><span class="tok-n">Footnote</span><span class="tok-p">),</span><span class="tok-w"> </span><span class="tok-o">|</span><span class="tok-n">base</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">element</span><span class="tok-o">|</span><span class="tok-w"> </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">element</span><span class="tok-p">.</span><span class="tok-n">as_rule</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">      </span><span class="tok-n">Rule</span><span class="tok-p">::</span><span class="tok-n">inline_attribute_list</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">process_inline_attribute_list</span><span class="tok-p">(</span><span class="tok-n">element</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-p">),</span>
+<span class="tok-w">      </span><span class="tok-n">_</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-p">.</span><span class="tok-n">add_child</span><span class="tok-p">(</span><span class="tok-n">set_span</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">element</span><span class="tok-p">)),</span>
+<span class="tok-w">    </span><span class="tok-p">})</span>
+<span class="tok-w">    </span><span class="tok-p">.</span><span class="tok-n">add_attribute</span><span class="tok-p">(</span><span class="tok-n">Attribute</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">      </span><span class="tok-n">key</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-s">&quot;kind&quot;</span><span class="tok-p">.</span><span class="tok-n">to_string</span><span class="tok-p">(),</span>
+<span class="tok-w">      </span><span class="tok-n">value</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">AttributeValue</span><span class="tok-p">::</span><span class="tok-n">Ref</span><span class="tok-p">(</span><span class="tok-n">kind</span><span class="tok-p">),</span>
+<span class="tok-w">    </span><span class="tok-p">});</span>
+
+<span class="tok-w">  </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-p">.</span><span class="tok-n">positional_attributes</span><span class="tok-p">.</span><span class="tok-n">get</span><span class="tok-p">(</span><span class="tok-mi">0</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">    </span><span class="tok-nb">Some</span><span class="tok-p">(</span><span class="tok-n">value</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-p">.</span><span class="tok-n">clone</span><span class="tok-p">().</span><span class="tok-n">add_attribute</span><span class="tok-p">(</span><span class="tok-n">Attribute</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">      </span><span class="tok-n">key</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-s">&quot;content&quot;</span><span class="tok-p">.</span><span class="tok-n">to_string</span><span class="tok-p">(),</span>
+<span class="tok-w">      </span><span class="tok-n">value</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">AttributeValue</span><span class="tok-p">::</span><span class="tok-nb">String</span><span class="tok-p">(</span><span class="tok-n">value</span><span class="tok-p">.</span><span class="tok-n">as_str</span><span class="tok-p">().</span><span class="tok-n">to_string</span><span class="tok-p">()),</span>
+<span class="tok-w">    </span><span class="tok-p">}),</span>
+<span class="tok-w">    </span><span class="tok-nb">None</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-p">,</span>
+<span class="tok-w">  </span><span class="tok-p">}</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+</div>
+</details>
 </div>
 <div class="sect4">
 <h5 id="_bilder">Bilder</h5>
@@ -4285,6 +4384,8 @@ Unresolved directive in asciidoctrine.adoc - include::src/output/json-ast.adoc[]
 <span class="tok-w">  </span><span class="tok-n">XRef</span><span class="tok-p">,</span>
 <span class="tok-w">  </span><span class="tok-sd">/// An external link</span>
 <span class="tok-w">  </span><span class="tok-n">Link</span><span class="tok-p">,</span>
+<span class="tok-w">  </span><span class="tok-sd">/// An inline footnote</span>
+<span class="tok-w">  </span><span class="tok-n">Footnote</span><span class="tok-p">,</span>
 <span class="tok-w">  </span><span class="tok-sd">/// A list item</span>
 <span class="tok-w">  </span><span class="tok-n">ListItem</span><span class="tok-p">(</span><span class="tok-kt">u32</span><span class="tok-p">),</span>
 <span class="tok-w">  </span><span class="tok-sd">/// A table row</span>

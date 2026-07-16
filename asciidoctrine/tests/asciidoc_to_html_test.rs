@@ -202,6 +202,40 @@ This Information is visible by default.
 }
 
 #[test]
+fn footnotes() -> Result<()> {
+  let content = r##"
+This is the main text footnote:[Not all information goes into the man
+text. Some is usefull in footnotes] it explains the genral idea of this
+paragraph.
+"##;
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
+  let mut env = util::Env::Cache(util::Cache::new());
+
+  let ast = reader.parse(content, &opts, &mut env)?;
+
+  let mut buf = BufWriter::new(Vec::new());
+  let mut writer = HtmlWriter::new();
+  writer.write(ast, &opts, &mut buf)?;
+
+  let output = String::from_utf8(buf.into_inner()?)?;
+  assert_eq!(
+    output,
+    r##"<p>This is the main text <sup class="footnote">[<a id="_footnoteref_1" class="footnote" href="#_footnotedef_1" title="View footnote.">1</a>]</sup> it explains the genral idea of this
+paragraph.</p>
+<div id="footnotes">
+  <hr>
+  <div class="footnote" id="_footnotedef_1">
+    <a href="#_footnoteref_1">1</a>. Not all information goes into the man text. Some is usefull in footnotes
+  </div>
+</div>
+"##
+  );
+
+  Ok(())
+}
+
+#[test]
 fn formated_table() -> Result<()> {
   let content = r##"
 [cols="1,a"]

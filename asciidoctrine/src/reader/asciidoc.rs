@@ -356,8 +356,6 @@ fn process_inline<'a>(element: Pair<'a, asciidoc::Rule>, base: ElementSpan<'a>) 
   element
     .into_inner()
     .fold(base, |base, element| match element.as_rule() {
-      Rule::link => process_link(element, base),
-      Rule::xref => process_xref(element, base),
       Rule::monospaced | Rule::strong | Rule::emphasized => {
         let base = base.element(Element::Styled).add_attribute(Attribute {
           key: "style".to_string(),
@@ -383,6 +381,9 @@ fn process_inline<'a>(element: Pair<'a, asciidoc::Rule>, base: ElementSpan<'a>) 
             _ => base,
           })
       }
+      Rule::link => process_link(element, base),
+      Rule::xref => process_xref(element, base),
+      Rule::footnote | Rule::footnoteref => process_footnote(element, base),
       _ => base,
     })
 }
@@ -428,6 +429,31 @@ fn process_xref<'a>(element: Pair<'a, asciidoc::Rule>, base: ElementSpan<'a>) ->
     Some(content) => base.add_attribute(Attribute {
       key: "content".to_string(),
       value: AttributeValue::String(content),
+    }),
+    None => base,
+  }
+}
+
+fn process_footnote<'a>(element: Pair<'a, asciidoc::Rule>, base: ElementSpan<'a>) -> ElementSpan<'a> {
+  let kind = match element.as_rule() {
+    Rule::footnoteref => "ref",
+    _ => "note",
+  };
+  let base = element
+    .into_inner()
+    .fold(base.element(Element::Footnote), |base, element| match element.as_rule() {
+      Rule::inline_attribute_list => process_inline_attribute_list(element, base),
+      _ => base.add_child(set_span(&element)),
+    })
+    .add_attribute(Attribute {
+      key: "kind".to_string(),
+      value: AttributeValue::Ref(kind),
+    });
+
+  match base.positional_attributes.get(0) {
+    Some(value) => base.clone().add_attribute(Attribute {
+      key: "content".to_string(),
+      value: AttributeValue::String(value.as_str().to_string()),
     }),
     None => base,
   }

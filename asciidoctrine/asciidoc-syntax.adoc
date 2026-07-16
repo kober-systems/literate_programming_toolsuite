@@ -969,37 +969,42 @@ fn process_inline<'a>(element: Pair<'a, asciidoc::Rule>, base: ElementSpan<'a>) 
   element
     .into_inner()
     .fold(base, |base, element| match element.as_rule() {
-      Rule::link => process_link(element, base),
-      Rule::xref => process_xref(element, base),
-      Rule::monospaced | Rule::strong | Rule::emphasized => {
-        let base = base.element(Element::Styled).add_attribute(Attribute {
-          key: "style".to_string(),
-          value: AttributeValue::Ref(match element.as_rule() {
-            Rule::monospaced => "monospaced",
-            Rule::strong => "strong",
-            Rule::emphasized => "em",
-            _ => "not_supported",
-          }),
-        });
-
-        let base = match concat_elements(element.clone(), Rule::linechar, "") {
-          Some(content) => base.add_attribute(Attribute {
-            key: "content".to_string(),
-            value: AttributeValue::String(content),
-          }),
-          None => base,
-        };
-        element
-          .into_inner()
-          .fold(base, |base, subelement| match subelement.as_rule() {
-            Rule::inline_anchor => process_inline_anchor(subelement, base),
-            _ => base,
-          })
-      }
+      <<asciidoc_inline_rules>>
       _ => base,
     })
 }
 ----
+
+[[asciidoc_inline_rules]]
+[source, rust]
+----
+Rule::monospaced | Rule::strong | Rule::emphasized => {
+  let base = base.element(Element::Styled).add_attribute(Attribute {
+    key: "style".to_string(),
+    value: AttributeValue::Ref(match element.as_rule() {
+      Rule::monospaced => "monospaced",
+      Rule::strong => "strong",
+      Rule::emphasized => "em",
+      _ => "not_supported",
+    }),
+  });
+
+  let base = match concat_elements(element.clone(), Rule::linechar, "") {
+    Some(content) => base.add_attribute(Attribute {
+      key: "content".to_string(),
+      value: AttributeValue::String(content),
+    }),
+    None => base,
+  };
+  element
+    .into_inner()
+    .fold(base, |base, subelement| match subelement.as_rule() {
+      Rule::inline_anchor => process_inline_anchor(subelement, base),
+      _ => base,
+    })
+}
+----
+
 ====
 
 == Listen
@@ -1351,6 +1356,12 @@ and a link to
 [%collapsible]
 ====
 
+[[asciidoc_inline_rules]]
+[source, rust]
+----
+Rule::link => process_link(element, base),
+----
+
 [[asciidoc_parser_functions]]
 [source, rust]
 ----
@@ -1427,6 +1438,12 @@ This is the referenced paragraph
 [%collapsible]
 ====
 
+[[asciidoc_inline_rules]]
+[source, rust]
+----
+Rule::xref => process_xref(element, base),
+----
+
 [[asciidoc_parser_functions]]
 [source, rust]
 ----
@@ -1458,7 +1475,8 @@ fn process_xref<'a>(element: Pair<'a, asciidoc::Rule>, base: ElementSpan<'a>) ->
 ====
 
 == Fußnoten
-TODO
+Manchmal möchte an gerne einen ergänzenden Kommentar haben, welcher aber
+nicht in den Haupttext gehört. Hier bieten sich Fußnoten an.
 
 [[inline_elements]]
 [source, pest]
@@ -1468,6 +1486,85 @@ footnoteref = { "footnoteref:" ~ inline_attribute_list }
 
 quoted = @{ inline_attribute_list ~ "#" ~ (!"#" ~ linechar)+ ~ "#" }
 ----
+
+[cols="a,a"]
+|====
+|
+
+[[unittest_footnotes_input]]
+[source, asciidoc, lisi-raw]
+[output="footnotes_html_output", name="footnotes"]
+....
+This is the main text footnote:[Not all information goes into the man
+text. Some is usefull in footnotes] it explains the genral idea of this
+paragraph.
+....
+
+|
+
+This is the main text footnote:[Not all information goes into the man
+text. Some is usefull in footnotes] it explains the genral idea of this
+paragraph.
+
+[%collapsible]
+.Html Output
+====
+
+[[footnotes_html_output]]
+[source, html]
+----
+<p>This is the main text <sup class="footnote">[<a id="_footnoteref_1" class="footnote" href="#_footnotedef_1" title="View footnote.">1</a>]</sup> it explains the genral idea of this
+paragraph.</p>
+<div id="footnotes">
+  <hr>
+  <div class="footnote" id="_footnotedef_1">
+    <a href="#_footnoteref_1">1</a>. Not all information goes into the man text. Some is usefull in footnotes
+  </div>
+</div>
+----
+====
+
+|====
+
+[%collapsible]
+====
+
+[[asciidoc_inline_rules]]
+[source, rust]
+----
+Rule::footnote | Rule::footnoteref => process_footnote(element, base),
+----
+
+[[asciidoc_parser_functions]]
+[source, rust]
+----
+fn process_footnote<'a>(element: Pair<'a, asciidoc::Rule>, base: ElementSpan<'a>) -> ElementSpan<'a> {
+  let kind = match element.as_rule() {
+    Rule::footnoteref => "ref",
+    _ => "note",
+  };
+  let base = element
+    .into_inner()
+    .fold(base.element(Element::Footnote), |base, element| match element.as_rule() {
+      Rule::inline_attribute_list => process_inline_attribute_list(element, base),
+      _ => base.add_child(set_span(&element)),
+    })
+    .add_attribute(Attribute {
+      key: "kind".to_string(),
+      value: AttributeValue::Ref(kind),
+    });
+
+  match base.positional_attributes.get(0) {
+    Some(value) => base.clone().add_attribute(Attribute {
+      key: "content".to_string(),
+      value: AttributeValue::String(value.as_str().to_string()),
+    }),
+    None => base,
+  }
+}
+----
+
+====
 
 == Bilder
 Um Bilder einzubinden verwenden wir die übliche Syntax für Macros mit dem Schlüsselwort _image_.

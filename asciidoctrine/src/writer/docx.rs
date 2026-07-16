@@ -41,6 +41,10 @@ fn paragraph(input: &ElementSpan, out: Paragraph) -> Result<Paragraph> {
 
       Ok(out.add_hyperlink(Hyperlink::new(url, HyperlinkType::External)))
     }
+    Element::Footnote => {
+      let r = Run::new();
+      Ok(out.add_run(r.add_text(input.get_attribute("content").unwrap_or("").to_string())))
+    }
     _ => Err(AsciidoctrineError::MalformedAst),
   }
 }
@@ -62,7 +66,7 @@ fn write_doc(input: &ElementSpan, out: Docx) -> Result<Docx> {
         .try_fold(Paragraph::new(), |p, element| paragraph(element, p))?;
       Ok(out.add_paragraph(p))
     }
-    Element::Text | Element::Link => Err(AsciidoctrineError::MalformedAst),
+    Element::Text | Element::Link | Element::Footnote => Err(AsciidoctrineError::MalformedAst),
     _ => {
       error!(
         "<NOT-YET-SUPPORTED:{:?}>{}</NOT-YET-SUPPORTED>\n",

@@ -53,6 +53,9 @@ impl AsciidocWriter {
       Element::XRef => {
         self.write_xref(element, out)?;
       }
+      Element::Footnote => {
+        self.write_footnote(element, out)?;
+      }
       Element::Image => {
         self.write_image(element, out)?;
       }
@@ -325,6 +328,17 @@ impl AsciidocWriter {
     }
 
     write!(out, "]")?;
+    Ok(())
+  }
+
+  fn write_footnote<W: Write>(&mut self, element: &ElementSpan, out: &mut W) -> crate::Result<()> {
+    let content = element.get_attribute("content").unwrap_or("");
+    let kind = match element.get_attribute("kind") {
+      Some("ref") => "footnoteref",
+      _ => "footnote",
+    };
+
+    write!(out, "{}:[{}]", kind, content)?;
     Ok(())
   }
 
