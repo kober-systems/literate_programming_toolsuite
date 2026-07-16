@@ -11,7 +11,7 @@ fn oauth_happy_path_ascii_art_writer() -> Result<()> {
   writer.write(ast, &mut output)?;
 
   let actual = String::from_utf8(output)?.replace('\r', "");
-  assert_eq!(actual, OAUTH_HAPPY_PATH_ASCII);
+  assert_eq!(actual, OAUTH_HAPPY_PATH_ASCII.replace('\r', ""));
 
   Ok(())
 }
@@ -66,7 +66,7 @@ fn service_discovery_ascii_art_writer() -> Result<()> {
   );
 
   // Verify formatting
-  assert_eq!(actual, SERVICE_DISCOVERY_ASCII);
+  assert_eq!(actual, SERVICE_DISCOVERY_ASCII.replace('\r', ""));
 
   Ok(())
 }
