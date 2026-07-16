@@ -14,7 +14,7 @@ fn service_discovery_cucumber() -> Result<()> {
   writer.write(ast, &mut output)?;
 
   let actual = String::from_utf8(output)?;
-  assert_eq!(actual, SERVICE_DISCOVERY_FEATURE);
+  assert_eq!(actual, SERVICE_DISCOVERY_FEATURE.replace('\r', ""));
 
   Ok(())
 }
