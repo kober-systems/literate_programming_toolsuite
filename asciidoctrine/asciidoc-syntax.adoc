@@ -783,7 +783,8 @@ oder mehrere Leerzeilen getrennt.
 [[blocks]]
 [source, pest]
 ----
-paragraph = ${ (!empty_lines ~ !EOI ~ ANY)+ }
+paragraph = { anchor* ~ paragraph_content }
+paragraph_content = ${ (!empty_lines ~ !EOI ~ ANY)+ }
 ----
 
 [%collapsible]
@@ -821,7 +822,19 @@ fn parse_paragraph<'a>(content: &'a str) -> Vec<ElementSpan<'a>> {
 fn process_paragraph<'a>(element: Pair<'a, asciidoc::Rule>) -> ElementSpan<'a> {
   let mut base = from_element(&element, Element::Paragraph);
 
-  base.children = parse_paragraph(element.as_str())
+  for subelement in element.clone().into_inner() {
+    match subelement.as_rule() {
+      Rule::anchor => base = process_anchor(subelement, base),
+      Rule::paragraph_content => {
+        let attributes = base.attributes;
+        base = from_element(&subelement, Element::Paragraph);
+        base.attributes = attributes;
+      }
+      _ => (),
+    }
+  }
+
+  base.children = parse_paragraph(base.content)
     .into_iter()
     .map(|child| child.add_offset(&base))
     .collect();
@@ -1367,13 +1380,49 @@ fn process_link<'a>(element: Pair<'a, asciidoc::Rule>, base: ElementSpan<'a>) ->
 ====
 
 == Querverweise
-TODO
+cross references can be used to reference another section of the same
+document.
 
 [[inline_elements]]
 [source, pest]
 ----
 xref = !{ "<<" ~ identifier ~ (NEWLINE? ~ "," ~ NEWLINE? ~ word+)? ~ ">>" }
 ----
+
+[cols="a,a"]
+|====
+|
+
+[[unittest_xrefs_input]]
+[source, asciidoc, lisi-raw]
+[output="xrefs_html_output", name="cross_references"]
+....
+This paragraph <<referenced_paragraph>> the other paragraph.
+
+[[referenced_paragraph]]
+This is the referenced paragraph
+....
+
+|
+
+This paragraph <<referenced_paragraph>> the other paragraph.
+
+[[referenced_paragraph]]
+This is the referenced paragraph
+
+[%collapsible]
+.Html Output
+====
+
+[[xrefs_html_output]]
+[source, html]
+----
+<p>This paragraph <a href="#referenced_paragraph">referenced_paragraph</a> the other paragraph.</p>
+<p id="referenced_paragraph">This is the referenced paragraph</p>
+----
+====
+
+|====
 
 [%collapsible]
 ====

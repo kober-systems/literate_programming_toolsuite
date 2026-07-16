@@ -74,7 +74,8 @@ title = {
 setext_title_style = { ("="{4,} | "-"{4,} | "~"{4,} | "^"{4,} ) ~ &NEWLINE }
 atx_title_style = { "="+ }
 
-paragraph = ${ (!empty_lines ~ !EOI ~ ANY)+ }
+paragraph = { anchor* ~ paragraph_content }
+paragraph_content = ${ (!empty_lines ~ !EOI ~ ANY)+ }
 
 list = { bullet_list | numbered_list | labeled_list }
 

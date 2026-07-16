@@ -1923,7 +1923,8 @@ oder mehrere Leerzeilen getrennt.</p>
 </div>
 <div id="blocks" class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="pest"><span></span>paragraph = ${ (!empty_lines ~ !EOI ~ ANY)+ }</code></pre>
+<pre class="pygments highlight"><code data-lang="pest"><span></span>paragraph = { anchor* ~ paragraph_content }
+paragraph_content = ${ (!empty_lines ~ !EOI ~ ANY)+ }</code></pre>
 </div>
 </div>
 <details>
@@ -1959,7 +1960,19 @@ oder mehrere Leerzeilen getrennt.</p>
 <span class="tok-k">fn</span><span class="tok-w"> </span><span class="tok-nf">process_paragraph</span><span class="tok-o">&lt;&#39;</span><span class="tok-na">a</span><span class="tok-o">&gt;</span><span class="tok-p">(</span><span class="tok-n">element</span><span class="tok-p">:</span><span class="tok-w"> </span><span class="tok-nc">Pair</span><span class="tok-o">&lt;&#39;</span><span class="tok-na">a</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">asciidoc</span><span class="tok-p">::</span><span class="tok-n">Rule</span><span class="tok-o">&gt;</span><span class="tok-p">)</span><span class="tok-w"> </span><span class="tok-p">-&gt;</span><span class="tok-w"> </span><span class="tok-nc">ElementSpan</span><span class="tok-o">&lt;&#39;</span><span class="tok-na">a</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span>
 <span class="tok-w">  </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">from_element</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">element</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">Element</span><span class="tok-p">::</span><span class="tok-n">Paragraph</span><span class="tok-p">);</span>
 
-<span class="tok-w">  </span><span class="tok-n">base</span><span class="tok-p">.</span><span class="tok-n">children</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">parse_paragraph</span><span class="tok-p">(</span><span class="tok-n">element</span><span class="tok-p">.</span><span class="tok-n">as_str</span><span class="tok-p">())</span>
+<span class="tok-w">  </span><span class="tok-k">for</span><span class="tok-w"> </span><span class="tok-n">subelement</span><span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span><span class="tok-n">element</span><span class="tok-p">.</span><span class="tok-n">clone</span><span class="tok-p">().</span><span class="tok-n">into_inner</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">    </span><span class="tok-k">match</span><span class="tok-w"> </span><span class="tok-n">subelement</span><span class="tok-p">.</span><span class="tok-n">as_rule</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">      </span><span class="tok-n">Rule</span><span class="tok-p">::</span><span class="tok-n">anchor</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">process_anchor</span><span class="tok-p">(</span><span class="tok-n">subelement</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-p">),</span>
+<span class="tok-w">      </span><span class="tok-n">Rule</span><span class="tok-p">::</span><span class="tok-n">paragraph_content</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span>
+<span class="tok-w">        </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">attributes</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">base</span><span class="tok-p">.</span><span class="tok-n">attributes</span><span class="tok-p">;</span>
+<span class="tok-w">        </span><span class="tok-n">base</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">from_element</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">subelement</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">Element</span><span class="tok-p">::</span><span class="tok-n">Paragraph</span><span class="tok-p">);</span>
+<span class="tok-w">        </span><span class="tok-n">base</span><span class="tok-p">.</span><span class="tok-n">attributes</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">attributes</span><span class="tok-p">;</span>
+<span class="tok-w">      </span><span class="tok-p">}</span>
+<span class="tok-w">      </span><span class="tok-n">_</span><span class="tok-w"> </span><span class="tok-o">=&gt;</span><span class="tok-w"> </span><span class="tok-p">(),</span>
+<span class="tok-w">    </span><span class="tok-p">}</span>
+<span class="tok-w">  </span><span class="tok-p">}</span>
+
+<span class="tok-w">  </span><span class="tok-n">base</span><span class="tok-p">.</span><span class="tok-n">children</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">parse_paragraph</span><span class="tok-p">(</span><span class="tok-n">base</span><span class="tok-p">.</span><span class="tok-n">content</span><span class="tok-p">)</span>
 <span class="tok-w">    </span><span class="tok-p">.</span><span class="tok-n">into_iter</span><span class="tok-p">()</span>
 <span class="tok-w">    </span><span class="tok-p">.</span><span class="tok-n">map</span><span class="tok-p">(</span><span class="tok-o">|</span><span class="tok-n">child</span><span class="tok-o">|</span><span class="tok-w"> </span><span class="tok-n">child</span><span class="tok-p">.</span><span class="tok-n">add_offset</span><span class="tok-p">(</span><span class="tok-o">&amp;</span><span class="tok-n">base</span><span class="tok-p">))</span>
 <span class="tok-w">    </span><span class="tok-p">.</span><span class="tok-n">collect</span><span class="tok-p">();</span>
@@ -2610,13 +2623,53 @@ and a link to
 <div class="sect4">
 <h5 id="_querverweise">Querverweise</h5>
 <div class="paragraph">
-<p>TODO</p>
+<p>cross references can be used to reference another section of the same
+document.</p>
 </div>
 <div id="inline_elements" class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="pest"><span></span>xref = !{ &quot;&lt;&lt;&quot; ~ identifier ~ (NEWLINE? ~ &quot;,&quot; ~ NEWLINE? ~ word+)? ~ &quot;&gt;&gt;&quot; }</code></pre>
 </div>
 </div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div id="unittest_xrefs_input" class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="asciidoc"><div class="lineno"><table class="linenotable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span>This paragraph &lt;&lt;referenced_paragraph&gt;&gt; the other paragraph.
+
+[[referenced_paragraph]]
+This is the referenced paragraph
+</pre></div></td></tr></table></div></code></pre>
+</div>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>This paragraph <a href="#referenced_paragraph">[referenced_paragraph]</a> the other paragraph.</p>
+</div>
+<div id="referenced_paragraph" class="paragraph">
+<p>This is the referenced paragraph</p>
+</div>
+<details>
+<summary class="title">Html Output</summary>
+<div class="content">
+<div id="xrefs_html_output" class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="html"><span></span><span class="tok-p">&lt;</span><span class="tok-nt">p</span><span class="tok-p">&gt;</span>This paragraph <span class="tok-p">&lt;</span><span class="tok-nt">a</span> <span class="tok-na">href</span><span class="tok-o">=</span><span class="tok-s">&quot;#referenced_paragraph&quot;</span><span class="tok-p">&gt;</span>referenced_paragraph<span class="tok-p">&lt;/</span><span class="tok-nt">a</span><span class="tok-p">&gt;</span> the other paragraph.<span class="tok-p">&lt;/</span><span class="tok-nt">p</span><span class="tok-p">&gt;</span>
+<span class="tok-p">&lt;</span><span class="tok-nt">p</span> <span class="tok-na">id</span><span class="tok-o">=</span><span class="tok-s">&quot;referenced_paragraph&quot;</span><span class="tok-p">&gt;</span>This is the referenced paragraph<span class="tok-p">&lt;/</span><span class="tok-nt">p</span><span class="tok-p">&gt;</span></code></pre>
+</div>
+</div>
+</div>
+</details></div></td>
+</tr>
+</tbody>
+</table>
 <details>
 <summary class="title">Details</summary>
 <div class="content">
@@ -4896,7 +4949,7 @@ beschriebenen Beispiele.</p>
 <div class="content">
 <pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-cp">#[test]</span>
 <span class="tok-k">fn</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-n">test_name</span><span class="tok-p">}()</span><span class="tok-w"> </span><span class="tok-p">-&gt;</span><span class="tok-w"> </span><span class="tok-nb">Result</span><span class="tok-o">&lt;</span><span class="tok-p">()</span><span class="tok-o">&gt;</span><span class="tok-w"> </span><span class="tok-p">{</span>
-<span class="tok-w">  </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">content</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">r#&quot;{asciidoc_content}&quot;#</span><span class="tok-p">;</span>
+<span class="tok-w">  </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">content</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">r##&quot;{asciidoc_content}&quot;##</span><span class="tok-p">;</span>
 <span class="tok-w">  </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">reader</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">AsciidocReader</span><span class="tok-p">::</span><span class="tok-n">new</span><span class="tok-p">();</span>
 <span class="tok-w">  </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">opts</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">options</span><span class="tok-p">::</span><span class="tok-n">Opts</span><span class="tok-p">::</span><span class="tok-n">parse_from</span><span class="tok-p">(</span><span class="tok-fm">vec!</span><span class="tok-p">[</span><span class="tok-s">&quot;asciidoctrine&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-s">&quot;--template&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-s">&quot;-&quot;</span><span class="tok-p">]);</span>
 <span class="tok-w">  </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-k">mut</span><span class="tok-w"> </span><span class="tok-n">env</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">util</span><span class="tok-p">::</span><span class="tok-n">Env</span><span class="tok-p">::</span><span class="tok-n">Cache</span><span class="tok-p">(</span><span class="tok-n">util</span><span class="tok-p">::</span><span class="tok-n">Cache</span><span class="tok-p">::</span><span class="tok-n">new</span><span class="tok-p">());</span>
@@ -4910,7 +4963,7 @@ beschriebenen Beispiele.</p>
 <span class="tok-w">  </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">output</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-nb">String</span><span class="tok-p">::</span><span class="tok-n">from_utf8</span><span class="tok-p">(</span><span class="tok-n">buf</span><span class="tok-p">.</span><span class="tok-n">into_inner</span><span class="tok-p">()</span><span class="tok-o">?</span><span class="tok-p">)</span><span class="tok-o">?</span><span class="tok-p">;</span>
 <span class="tok-w">  </span><span class="tok-fm">assert_eq!</span><span class="tok-p">(</span>
 <span class="tok-w">    </span><span class="tok-n">output</span><span class="tok-p">,</span>
-<span class="tok-w">    </span><span class="tok-s">r#&quot;{expected_content}&quot;#</span>
+<span class="tok-w">    </span><span class="tok-s">r##&quot;{expected_content}&quot;##</span>
 <span class="tok-w">  </span><span class="tok-p">);</span>
 
 <span class="tok-w">  </span><span class="tok-nb">Ok</span><span class="tok-p">(())</span>

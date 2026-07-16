@@ -7,7 +7,7 @@ use std::io::BufWriter;
 
 #[test]
 fn bullet_list_with_dashes() -> Result<()> {
-  let content = r#"
+  let content = r##"
 - This
 - is
 - a
@@ -16,7 +16,7 @@ fn bullet_list_with_dashes() -> Result<()> {
 --- and deeper
 ---- nested subpoints
 - Next normal point
-"#;
+"##;
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
@@ -30,7 +30,7 @@ fn bullet_list_with_dashes() -> Result<()> {
   let output = String::from_utf8(buf.into_inner()?)?;
   assert_eq!(
     output,
-    r#"<ul>
+    r##"<ul>
   <li>
     <p>This</p>
   </li>
@@ -62,7 +62,7 @@ fn bullet_list_with_dashes() -> Result<()> {
     <p>Next normal point</p>
   </li>
 </ul>
-"#
+"##
   );
 
   Ok(())
@@ -70,7 +70,7 @@ fn bullet_list_with_dashes() -> Result<()> {
 
 #[test]
 fn bullet_list() -> Result<()> {
-  let content = r#"
+  let content = r##"
 * This
 * is
 * a
@@ -79,7 +79,7 @@ fn bullet_list() -> Result<()> {
 *** and deeper
 **** nested subpoints
 * Next normal point
-"#;
+"##;
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
@@ -93,7 +93,7 @@ fn bullet_list() -> Result<()> {
   let output = String::from_utf8(buf.into_inner()?)?;
   assert_eq!(
     output,
-    r#"<ul>
+    r##"<ul>
   <li>
     <p>This</p>
   </li>
@@ -125,7 +125,7 @@ fn bullet_list() -> Result<()> {
     <p>Next normal point</p>
   </li>
 </ul>
-"#
+"##
   );
 
   Ok(())
@@ -133,12 +133,12 @@ fn bullet_list() -> Result<()> {
 
 #[test]
 fn collapsible_blocks() -> Result<()> {
-  let content = r#"
+  let content = r##"
 [%collapsible]
 ====
 Additional Information, that will only be shown on demand.
 ====
-"#;
+"##;
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
@@ -152,7 +152,7 @@ Additional Information, that will only be shown on demand.
   let output = String::from_utf8(buf.into_inner()?)?;
   assert_eq!(
     output,
-    r#"<details>
+    r##"<details>
   <summary class="title">Details</summary>
   <div class="content">
     <div class="paragraph">
@@ -160,7 +160,7 @@ Additional Information, that will only be shown on demand.
     </div>
   </div>
 </details>
-"#
+"##
   );
 
   Ok(())
@@ -168,12 +168,12 @@ Additional Information, that will only be shown on demand.
 
 #[test]
 fn collapsible_blocks_open() -> Result<()> {
-  let content = r#"
+  let content = r##"
 [%collapsible%open]
 ====
 This Information is visible by default.
 ====
-"#;
+"##;
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
@@ -187,7 +187,7 @@ This Information is visible by default.
   let output = String::from_utf8(buf.into_inner()?)?;
   assert_eq!(
     output,
-    r#"<details open>
+    r##"<details open>
   <summary class="title">Details</summary>
   <div class="content">
     <div class="paragraph">
@@ -195,7 +195,7 @@ This Information is visible by default.
     </div>
   </div>
 </details>
-"#
+"##
   );
 
   Ok(())
@@ -203,7 +203,7 @@ This Information is visible by default.
 
 #[test]
 fn formated_table() -> Result<()> {
-  let content = r#"
+  let content = r##"
 [cols="1,a"]
 |===
 |
@@ -224,7 +224,7 @@ We can even have multiple paragraphs
 ** multiple
 * entries
 |===
-"#;
+"##;
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
@@ -238,7 +238,7 @@ We can even have multiple paragraphs
   let output = String::from_utf8(buf.into_inner()?)?;
   assert_eq!(
     output,
-    r#"<table class="tableblock frame-all grid-all stretch">
+    r##"<table class="tableblock frame-all grid-all stretch">
   <colgroup>
     <col style="width: 50%;">
     <col style="width: 50%;">
@@ -275,7 +275,7 @@ But paragraphs
     </tr>
   </tbody>
 </table>
-"#
+"##
   );
 
   Ok(())
@@ -283,7 +283,7 @@ But paragraphs
 
 #[test]
 fn atx_headers() -> Result<()> {
-  let content = r#"
+  let content = r##"
 = This is a header
 
 == This is a subheader
@@ -291,7 +291,7 @@ fn atx_headers() -> Result<()> {
 === This is a subsubheader
 
 ==== This is a subsubsubheader
-"#;
+"##;
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
@@ -305,11 +305,11 @@ fn atx_headers() -> Result<()> {
   let output = String::from_utf8(buf.into_inner()?)?;
   assert_eq!(
     output,
-    r#"<h1>This is a header</h1>
+    r##"<h1>This is a header</h1>
 <h2 id="_this_is_a_subheader">This is a subheader</h2>
 <h3 id="_this_is_a_subsubheader">This is a subsubheader</h3>
 <h4 id="_this_is_a_subsubsubheader">This is a subsubsubheader</h4>
-"#
+"##
   );
 
   Ok(())
@@ -317,7 +317,7 @@ fn atx_headers() -> Result<()> {
 
 #[test]
 fn setext_headers() -> Result<()> {
-  let content = r#"
+  let content = r##"
 This is a header
 ================
 
@@ -329,7 +329,7 @@ This is a subsubheader
 
 This is a subsubsubheader
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-"#;
+"##;
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
@@ -343,11 +343,11 @@ This is a subsubsubheader
   let output = String::from_utf8(buf.into_inner()?)?;
   assert_eq!(
     output,
-    r#"<h1>This is a header</h1>
+    r##"<h1>This is a header</h1>
 <h2 id="_this_is_a_subheader">This is a subheader</h2>
 <h3 id="_this_is_a_subsubheader">This is a subsubheader</h3>
 <h4 id="_this_is_a_subsubsubheader">This is a subsubsubheader</h4>
-"#
+"##
   );
 
   Ok(())
@@ -355,9 +355,9 @@ This is a subsubsubheader
 
 #[test]
 fn include_macro() -> Result<()> {
-  let content = r#"
+  let content = r##"
 include::included_document.adoc[]
-"#;
+"##;
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
@@ -371,8 +371,8 @@ include::included_document.adoc[]
   let output = String::from_utf8(buf.into_inner()?)?;
   assert_eq!(
     output,
-    r#"<p>Some text in another file.</p>
-"#
+    r##"<p>Some text in another file.</p>
+"##
   );
 
   Ok(())
@@ -380,9 +380,9 @@ include::included_document.adoc[]
 
 #[test]
 fn include_macro_nested() -> Result<()> {
-  let content = r#"
+  let content = r##"
 include::nested/included_document.adoc[]
-"#;
+"##;
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
@@ -398,9 +398,9 @@ include::nested/included_document.adoc[]"#)?;env.write("nested/nested/included_d
   let output = String::from_utf8(buf.into_inner()?)?;
   assert_eq!(
     output,
-    r#"<p>Some text in another file. Will include a nested file.</p>
+    r##"<p>Some text in another file. Will include a nested file.</p>
 <p>This one is nested. It is relative to the included document.</p>
-"#
+"##
   );
 
   Ok(())
@@ -408,9 +408,9 @@ include::nested/included_document.adoc[]"#)?;env.write("nested/nested/included_d
 
 #[test]
 fn inline_bold() -> Result<()> {
-  let content = r#"
+  let content = r##"
 Some text is *bold*.
-"#;
+"##;
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
@@ -424,8 +424,8 @@ Some text is *bold*.
   let output = String::from_utf8(buf.into_inner()?)?;
   assert_eq!(
     output,
-    r#"<p>Some text is <strong>bold</strong>.</p>
-"#
+    r##"<p>Some text is <strong>bold</strong>.</p>
+"##
   );
 
   Ok(())
@@ -433,9 +433,9 @@ Some text is *bold*.
 
 #[test]
 fn inline_italic() -> Result<()> {
-  let content = r#"
+  let content = r##"
 Some text is _italic_.
-"#;
+"##;
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
@@ -449,8 +449,8 @@ Some text is _italic_.
   let output = String::from_utf8(buf.into_inner()?)?;
   assert_eq!(
     output,
-    r#"<p>Some text is <em>italic</em>.</p>
-"#
+    r##"<p>Some text is <em>italic</em>.</p>
+"##
   );
 
   Ok(())
@@ -458,9 +458,9 @@ Some text is _italic_.
 
 #[test]
 fn inline_monospaced() -> Result<()> {
-  let content = r#"
+  let content = r##"
 Some text is `monospaced`.
-"#;
+"##;
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
@@ -474,8 +474,8 @@ Some text is `monospaced`.
   let output = String::from_utf8(buf.into_inner()?)?;
   assert_eq!(
     output,
-    r#"<p>Some text is <code>monospaced</code>.</p>
-"#
+    r##"<p>Some text is <code>monospaced</code>.</p>
+"##
   );
 
   Ok(())
@@ -483,12 +483,12 @@ Some text is `monospaced`.
 
 #[test]
 fn links() -> Result<()> {
-  let content = r#"
+  let content = r##"
 This paragraph has links. A raw link
 https://kober-systems.github.io/literate_programming_toolsuite/
 and a link to
 https://github.com/kober-systems/literate_programming_toolsuite/tree/master/asciidoctrine[Asciidocrine].
-"#;
+"##;
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
@@ -502,11 +502,11 @@ https://github.com/kober-systems/literate_programming_toolsuite/tree/master/asci
   let output = String::from_utf8(buf.into_inner()?)?;
   assert_eq!(
     output,
-    r#"<p>This paragraph has links. A raw link
+    r##"<p>This paragraph has links. A raw link
 <a href="https://kober-systems.github.io/literate_programming_toolsuite/"/>
 and a link to
 <a href="https://github.com/kober-systems/literate_programming_toolsuite/tree/master/asciidoctrine">Asciidocrine</a>.</p>
-"#
+"##
   );
 
   Ok(())
@@ -514,13 +514,13 @@ and a link to
 
 #[test]
 fn numbered_list() -> Result<()> {
-  let content = r#"
+  let content = r##"
 . This
 . is
 . a
 .. nested
 . numbered list
-"#;
+"##;
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
@@ -534,7 +534,7 @@ fn numbered_list() -> Result<()> {
   let output = String::from_utf8(buf.into_inner()?)?;
   assert_eq!(
     output,
-    r#"<ol class="arabic">
+    r##"<ol class="arabic">
   <li>
     <p>This</p>
   </li>
@@ -553,7 +553,7 @@ fn numbered_list() -> Result<()> {
     <p>numbered list</p>
   </li>
 </ol>
-"#
+"##
   );
 
   Ok(())
@@ -561,13 +561,13 @@ fn numbered_list() -> Result<()> {
 
 #[test]
 fn simple_table() -> Result<()> {
-  let content = r#"
+  let content = r##"
 |===
 | Col1 | Col2
 | Cel1 | Cel2
 | Cel3 | Cel4
 |===
-"#;
+"##;
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
@@ -581,7 +581,7 @@ fn simple_table() -> Result<()> {
   let output = String::from_utf8(buf.into_inner()?)?;
   assert_eq!(
     output,
-    r#"<table class="tableblock frame-all grid-all stretch">
+    r##"<table class="tableblock frame-all grid-all stretch">
   <colgroup>
     <col style="width: 50%;">
     <col style="width: 50%;">
@@ -601,7 +601,7 @@ fn simple_table() -> Result<()> {
     </tr>
   </tbody>
 </table>
-"#
+"##
   );
 
   Ok(())
@@ -609,7 +609,7 @@ fn simple_table() -> Result<()> {
 
 #[test]
 fn sourcecode_blocks() -> Result<()> {
-  let content = r#"
+  let content = r##"
 [source, bash]
 ----
 echo "hello world!"
@@ -618,7 +618,7 @@ echo "hello world!"
 ....
 echo "hello world!"
 ....
-"#;
+"##;
   let reader = AsciidocReader::new();
   let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
   let mut env = util::Env::Cache(util::Cache::new());
@@ -632,13 +632,42 @@ echo "hello world!"
   let output = String::from_utf8(buf.into_inner()?)?;
   assert_eq!(
     output,
-    r#"<div class="listingblock">
+    r##"<div class="listingblock">
   <pre>echo "hello world!"</pre>
 </div>
 <div class="listingblock">
   <pre>echo "hello world!"</pre>
 </div>
-"#
+"##
+  );
+
+  Ok(())
+}
+
+#[test]
+fn cross_references() -> Result<()> {
+  let content = r##"
+This paragraph <<referenced_paragraph>> the other paragraph.
+
+[[referenced_paragraph]]
+This is the referenced paragraph
+"##;
+  let reader = AsciidocReader::new();
+  let opts = options::Opts::parse_from(vec!["asciidoctrine", "--template", "-"]);
+  let mut env = util::Env::Cache(util::Cache::new());
+
+  let ast = reader.parse(content, &opts, &mut env)?;
+
+  let mut buf = BufWriter::new(Vec::new());
+  let mut writer = HtmlWriter::new();
+  writer.write(ast, &opts, &mut buf)?;
+
+  let output = String::from_utf8(buf.into_inner()?)?;
+  assert_eq!(
+    output,
+    r##"<p>This paragraph <a href="#referenced_paragraph">referenced_paragraph</a> the other paragraph.</p>
+<p id="referenced_paragraph">This is the referenced paragraph</p>
+"##
   );
 
   Ok(())

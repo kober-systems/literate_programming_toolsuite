@@ -332,7 +332,19 @@ fn parse_paragraph<'a>(content: &'a str) -> Vec<ElementSpan<'a>> {
 fn process_paragraph<'a>(element: Pair<'a, asciidoc::Rule>) -> ElementSpan<'a> {
   let mut base = from_element(&element, Element::Paragraph);
 
-  base.children = parse_paragraph(element.as_str())
+  for subelement in element.clone().into_inner() {
+    match subelement.as_rule() {
+      Rule::anchor => base = process_anchor(subelement, base),
+      Rule::paragraph_content => {
+        let attributes = base.attributes;
+        base = from_element(&subelement, Element::Paragraph);
+        base.attributes = attributes;
+      }
+      _ => (),
+    }
+  }
+
+  base.children = parse_paragraph(base.content)
     .into_iter()
     .map(|child| child.add_offset(&base))
     .collect();

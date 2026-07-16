@@ -91,7 +91,11 @@ fn write_html<T: io::Write>(input: &ElementSpan, indent: usize, out: &mut T) -> 
       out.write_all(b"\n")?;
     }
     Element::Paragraph => {
-      write_tag("p", input, indent, out)?;
+      if let Some(id) = input.get_attribute("anchor") {
+        write_attribute_tag("p", &format!("id=\"{}\"", id), input, indent, out)?;
+      } else {
+        write_tag("p", input, indent, out)?;
+      }
       out.write_all(b"\n")?;
     }
     Element::List(list_type) => {
