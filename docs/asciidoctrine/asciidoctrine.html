@@ -2523,11 +2523,11 @@ labeled_list = { (label_bullet ~ list_element)+ }</code></pre>
 <div class="sect4">
 <h5 id="_links">Links</h5>
 <div class="paragraph">
-<p>TODO</p>
+<p>Links sind nützlich um auf andere Quelle zu verweisen.</p>
 </div>
 <div id="inline_elements" class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="pest"><span></span>link = ${ url ~ inline_attribute_list }
+<pre class="pygments highlight"><code data-lang="pest"><span></span>link = ${ url ~ inline_attribute_list? }
 url = ${proto ~ &quot;://&quot; ~ path}
 proto = ${ (&quot;http&quot; ~ &quot;s&quot;?) |
            &quot;mailto&quot; |
@@ -2535,6 +2535,47 @@ proto = ${ (&quot;http&quot; ~ &quot;s&quot;?) |
          }</code></pre>
 </div>
 </div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div id="unittest_links_input" class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="asciidoc"><div class="lineno"><table class="linenotable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span>This paragraph has links. A raw link
+https://kober-systems.github.io/literate_programming_toolsuite/
+and a link to
+https://github.com/kober-systems/literate_programming_toolsuite/tree/master/asciidoctrine[Asciidocrine].
+</pre></div></td></tr></table></div></code></pre>
+</div>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>This paragraph has links. A raw link
+<a href="https://kober-systems.github.io/literate_programming_toolsuite/" class="bare">https://kober-systems.github.io/literate_programming_toolsuite/</a>
+and a link to
+<a href="https://github.com/kober-systems/literate_programming_toolsuite/tree/master/asciidoctrine">Asciidocrine</a>.</p>
+</div>
+<details>
+<summary class="title">Html Output</summary>
+<div class="content">
+<div id="links_html_output" class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="html"><span></span><span class="tok-p">&lt;</span><span class="tok-nt">p</span><span class="tok-p">&gt;</span>This paragraph has links. A raw link
+<span class="tok-p">&lt;</span><span class="tok-nt">a</span> <span class="tok-na">href</span><span class="tok-o">=</span><span class="tok-s">&quot;https://kober-systems.github.io/literate_programming_toolsuite/&quot;</span><span class="tok-p">/&gt;</span>
+and a link to
+<span class="tok-p">&lt;</span><span class="tok-nt">a</span> <span class="tok-na">href</span><span class="tok-o">=</span><span class="tok-s">&quot;https://github.com/kober-systems/literate_programming_toolsuite/tree/master/asciidoctrine&quot;</span><span class="tok-p">&gt;</span>Asciidocrine<span class="tok-p">&lt;/</span><span class="tok-nt">a</span><span class="tok-p">&gt;</span>.<span class="tok-p">&lt;/</span><span class="tok-nt">p</span><span class="tok-p">&gt;</span></code></pre>
+</div>
+</div>
+</div>
+</details></div></td>
+</tr>
+</tbody>
+</table>
 <details>
 <summary class="title">Details</summary>
 <div class="content">
