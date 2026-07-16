@@ -10,7 +10,7 @@ fn oauth_happy_path_ascii_art_writer() -> Result<()> {
   let mut output = Vec::new();
   writer.write(ast, &mut output)?;
 
-  let actual = String::from_utf8(output)?;
+  let actual = String::from_utf8(output)?.replace('\r', "");
   assert_eq!(actual, OAUTH_HAPPY_PATH_ASCII);
 
   Ok(())
@@ -24,7 +24,7 @@ fn service_discovery_ascii_art_writer() -> Result<()> {
   let mut output = Vec::new();
   writer.write(ast, &mut output)?;
 
-  let actual = String::from_utf8(output)?;
+  let actual = String::from_utf8(output)?.replace('\r', "");
 
   // Verify structure rather than exact formatting
   // Should contain box drawing characters
