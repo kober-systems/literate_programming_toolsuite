@@ -1,4 +1,15 @@
+use ansicht::*;
 use pretty_assertions::assert_eq;
+
+pub fn sequence_diagram_elements(input: Vec<ElementSpan>) -> Vec<SequenceDiagramElement> {
+  input
+    .into_iter()
+    .map(|e| match e.element {
+      Element::Sequence(e) => e,
+      _ => panic!("element {:#?} is no sequence diagram element", e),
+    })
+    .collect()
+}
 
 /// helper macro for more ergonimic tests
 macro_rules! assert_element_matches {
