@@ -820,7 +820,17 @@ fn parse_sequence_diagram(elements: &[Element], input: &str) -> Vec<ElementSpan>
   if participants.is_empty() {
     return vec![];
   }
-  extract_messages(elements, &lines, &participants)
+
+  let mut result = extract_checked_states(elements, &lines, &participants);
+  result.extend(extract_messages(elements, &lines, &participants));
+  result.sort_by(|a, b| match (&a.position, &b.position) {
+    (
+      TextPosition::Slice(Slice { start: a_start, .. }),
+      TextPosition::Slice(Slice { start: b_start, .. }),
+    ) => a_start.cmp(&b_start),
+    _ => Ordering::Equal,
+  });
+  result
 }
 
 fn extract_participants(elements: &[Element], lines: &[&str]) -> Vec<Participant> {
@@ -842,6 +852,10 @@ fn participant_from_block(element: &Element, lines: &[&str]) -> Option<Participa
   else {
     return None;
   };
+
+  if is_checked_state_block(element, lines) {
+    return None;
+  }
 
   let bounds = element.get_bounds();
   let lifeline_col = border.iter().find_map(|token| match token {
@@ -881,6 +895,78 @@ fn participant_from_block(element: &Element, lines: &[&str]) -> Option<Participa
       lifeline_col,
     })
   }
+}
+
+fn extract_checked_states(
+  elements: &[Element],
+  lines: &[&str],
+  participants: &[Participant],
+) -> Vec<ElementSpan> {
+  let mut result: Vec<ElementSpan> = elements
+    .iter()
+    .filter_map(|element| {
+      let Element::Block {
+        inner_elements,
+        border: _,
+        ..
+      } = element
+      else {
+        return None;
+      };
+
+      if !is_checked_state_block(element, lines) {
+        return None;
+      }
+
+      let bounds = element.get_bounds();
+      let name_line = inner_elements.iter().find_map(|element| match element {
+        Element::Text { tokens, .. } => tokens.first().and_then(|token| match token {
+          Token::Text { line, .. } => Some(*line),
+          _ => None,
+        }),
+        _ => None,
+      })?;
+
+      let name = text_between(lines, name_line, bounds.start.column + 1, bounds.end.column - 1)
+        .trim()
+        .to_string();
+
+      if name.is_empty() {
+        return None;
+      }
+
+      Some(ElementSpan {
+        source: None,
+        position: TextPosition::Slice(Slice {
+          start: bounds.start.line,
+          end: bounds.end.line,
+        }),
+        element: AstElement::Sequence(SequenceDiagramElement::CheckedState {
+          name,
+          participants: participants.iter().map(|p| p.name.clone()).collect(),
+        }),
+        children: vec![],
+        attrs: vec![],
+      })
+    })
+    .collect();
+  result
+}
+
+fn is_checked_state_block(element: &Element, lines: &[&str]) -> bool {
+  let bounds = element.get_bounds();
+  let top = lines.get(bounds.start.line);
+  let bottom = lines.get(bounds.end.line);
+
+  let top_left = top.and_then(|line| line.chars().nth(bounds.start.column));
+  let top_right = top.and_then(|line| line.chars().nth(bounds.end.column));
+  let bottom_left = bottom.and_then(|line| line.chars().nth(bounds.start.column));
+  let bottom_right = bottom.and_then(|line| line.chars().nth(bounds.end.column));
+
+  matches!(top_left, Some('╔'))
+    && matches!(top_right, Some('╗'))
+    && matches!(bottom_left, Some('╚'))
+    && matches!(bottom_right, Some('╝'))
 }
 
 fn extract_messages(
