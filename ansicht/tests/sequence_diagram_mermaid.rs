@@ -21,3 +21,18 @@ fn service_discovery_happy_path() -> Result<()> {
   Ok(())
 }
 
+#[test]
+fn oauth_happy_path_mermaid_fixture() -> Result<()> {
+  let content = read_example("oauth.happy_path.mermaid")?;
+
+  let reader = reader::MermaidReader::new();
+  let ast = reader.parse(&content)?;
+
+  assert_eq!(
+    sequence_diagram_elements(ast.elements),
+    sequence_diagram_fixtures::oauth_happy_path_elements(),
+  );
+
+  Ok(())
+}
+
