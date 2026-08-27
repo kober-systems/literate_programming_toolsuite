@@ -14,7 +14,7 @@ fn service_discovery_cucumber() -> Result<()> {
 
   let mut writer = writer::cucumber::CucumberWriter {
     feature_name: "Service Discovery".to_string(),
-    perspective: "Client".to_string(),
+    perspective: "Device".to_string(),
   };
 
   let mut output = Vec::new();

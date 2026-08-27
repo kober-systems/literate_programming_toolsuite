@@ -2,27 +2,27 @@ Feature: OAuth happy path
 
   Scenario: Initial Redirect for Authorization
     Given Initial Redirect for Authorization
-    When End User requests access
-    And User's Browser requests access from Client Application
-    And Client Application redirects User's Browser to Authorization Server with client_id, response_type=code, redirect_uri, and scope
-    And User's Browser follows the redirect to Authorization Server
-    Then User Grants Consent
+    When End User sends "Request Access" to User's Browser
+    Then User's Browser responds with "Request Access" to Client Application
+    When Client Application sends "Redirect to AuthServer (client_id, response_type=code, redirect_uri, scope)" to User's Browser
+    Then User's Browser responds with "Follow Redirect" to Authorization Server
+    And User Grants Consent
 
   Scenario: User Grants Consent
     Given User Grants Consent
-    When Authorization Server displays the consent form
-    And User's Browser displays the consent form to End User
-    And End User grants consent
-    And User's Browser sends the consent to Authorization Server
-    And Authorization Server redirects with an authorization code
-    And User's Browser follows the redirect to Client Application with the code
-    Then Token Exchange and Resource Access
+    When Authorization Server sends "Display Consent Form" to User's Browser
+    Then User's Browser responds with "Display Consent Form" to End User
+    When End User sends "Grant Consent" to User's Browser
+    Then User's Browser responds with "Grant Consent" to Authorization Server
+    When Authorization Server sends "Redirect with Authorization Code" to User's Browser
+    Then User's Browser responds with "Follow Redirect with Code" to Client Application
+    And Token Exchange and Resource Access
 
   Scenario: Token Exchange and Resource Access
     Given Token Exchange and Resource Access
-    When Client Application exchanges the code for an access token
-    And Authorization Server responds with an access token
-    And Client Application requests the protected resource with the access token
-    And Resource Server responds with the protected resource
-    And Client Application displays the resource to User's Browser
-    Then User's Browser displays the resource to End User
+    When Client Application sends "Exchange Code for Token" to Authorization Server
+    And Authorization Server sends "Respond with Access Token" to Client Application
+    And Client Application sends "Request Protected Resource (with Access Token)" to Resource Server
+    And Resource Server sends "Respond with Protected Resource" to Client Application
+    And Client Application sends "Display Resource" to User's Browser
+    Then User's Browser responds with "Display Resource" to End User
