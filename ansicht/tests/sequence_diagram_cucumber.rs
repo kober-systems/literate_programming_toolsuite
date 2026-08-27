@@ -1,9 +1,13 @@
 use anyhow::Result;
 use ansicht::*;
 
+mod sequence_diagram_fixtures;
+use sequence_diagram_fixtures::read_example;
+
 #[test]
 fn service_discovery_cucumber() -> Result<()> {
-  let ast = reader::AsciiArtReader::new().parse(SERVICE_DISCOVERY_ASCII);
+  let content = read_example("service_discovery.ascii")?;
+  let ast = reader::AsciiArtReader::new().parse(&content);
 
   let mut writer = writer::cucumber::CucumberWriter {
     feature_name: "Service Discovery".to_string(),
@@ -14,13 +18,8 @@ fn service_discovery_cucumber() -> Result<()> {
   writer.write(ast, &mut output)?;
 
   let actual = String::from_utf8(output)?;
-  assert_eq!(actual, SERVICE_DISCOVERY_FEATURE.replace('\r', ""));
+  assert_eq!(actual, read_example("service_discovery.feature")?.replace('\r', ""));
 
   Ok(())
 }
 
-const SERVICE_DISCOVERY_ASCII: &str =
-  include_str!("examples/sequence-diagram/service_discovery.ascii");
-
-const SERVICE_DISCOVERY_FEATURE: &str =
-  include_str!("examples/sequence-diagram/service_discovery.feature");
