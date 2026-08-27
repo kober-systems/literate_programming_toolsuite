@@ -22,7 +22,7 @@ fn service_discovery_happy_path() -> Result<()> {
 }
 
 #[test]
-fn oauth_happy_path_mermaid_fixture() -> Result<()> {
+fn oauth_happy_path_mermaid() -> Result<()> {
   let content = read_example("oauth.happy_path.mermaid")?;
 
   let reader = reader::MermaidReader::new();
