@@ -21,7 +21,6 @@ impl crate::Reader for MermaidReader {
     let mut aliases: HashMap<String, String> = HashMap::new();
     let mut participants_list = Vec::new();
     let mut elements = Vec::new();
-    let mut has_checked_state = false;
 
     for pair in ast {
       parse_pair(
@@ -29,14 +28,6 @@ impl crate::Reader for MermaidReader {
         &mut aliases,
         &mut participants_list,
         &mut elements,
-        &mut has_checked_state,
-      );
-    }
-
-    if !has_checked_state {
-      elements.insert(
-        0,
-        create_checked_state("Service Discovery".to_string(), participants_list),
       );
     }
 
@@ -56,12 +47,11 @@ fn parse_pair<'a>(
   aliases: &mut HashMap<String, String>,
   participants: &mut Vec<String>,
   elements: &mut Vec<ElementSpan>,
-  has_checked_state: &mut bool,
 ) {
   match pair.as_rule() {
     Rule::mermaid | Rule::sequence_diagram => {
       for inner in pair.into_inner() {
-        parse_pair(inner, aliases, participants, elements, has_checked_state);
+        parse_pair(inner, aliases, participants, elements);
       }
     }
     Rule::participant_declaration => {
@@ -73,7 +63,6 @@ fn parse_pair<'a>(
     Rule::note => {
       if let Some(name) = parse_note(pair) {
         elements.push(create_checked_state(name, participants.clone()));
-        *has_checked_state = true;
       }
     }
     Rule::message => {
@@ -86,7 +75,7 @@ fn parse_pair<'a>(
     Rule::activation | Rule::deactivation | Rule::blank_line => {}
     _ => {
       for inner in pair.into_inner() {
-        parse_pair(inner, aliases, participants, elements, has_checked_state);
+        parse_pair(inner, aliases, participants, elements);
       }
     }
   }

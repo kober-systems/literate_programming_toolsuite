@@ -5,10 +5,6 @@ use std::path::PathBuf;
 
 pub fn service_discovery_happy_path_elements() -> Vec<SequenceDiagramElement> {
   vec![
-    SequenceDiagramElement::CheckedState {
-      name: "Service Discovery".to_string(),
-      participants: vec!["Client".to_string(), "Device".to_string(),],
-    },
     SequenceDiagramElement::message("Client", "Device", "get_hashes"),
     SequenceDiagramElement::message("Device", "Client", "current hash"),
     SequenceDiagramElement::message("Client", "Device", "get_number_protocols"),

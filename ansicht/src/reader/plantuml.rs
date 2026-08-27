@@ -26,17 +26,7 @@ impl crate::Reader for PlantUmlReader {
       parse_pair(pair, &mut aliases, &mut participants, &mut events);
     }
 
-    let has_checked_state = events
-      .iter()
-      .any(|event| matches!(event, PlantUmlEvent::CheckedState(_)));
-
     let mut elements = Vec::new();
-    if !has_checked_state {
-      elements.push(create_checked_state(
-        "Service Discovery".to_string(),
-        participants.clone(),
-      ));
-    }
 
     for event in events {
       match event {
