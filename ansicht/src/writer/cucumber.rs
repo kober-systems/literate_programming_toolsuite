@@ -44,9 +44,7 @@ impl<T: Write> Writer<T> for CucumberWriter {
               .map_err(|e| crate::Error::ParseError(format!("Failed to write step: {}", e)))?;
           }
         }
-        _ => {
-          // Ignore non-sequence elements
-        }
+        other => todo!("not implemented {:?}", other)
       }
     }
 
