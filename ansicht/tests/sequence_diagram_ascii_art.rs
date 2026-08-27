@@ -20,6 +20,32 @@ fn oauth_happy_path() -> Result<()> {
   Ok(())
 }
 
+#[test]
+fn single_checked_state() -> Result<()> {
+  let content = r"
+     ┌─────┐      ┌─────┐
+     │Alice│      │ Bob │
+     └──┬──┘      └──┬──┘
+    ╔═══╧════════════╧═══╗
+    ║My State            ║
+    ╚═══╤════════════╤═══╝
+     ┌──┴──┐      ┌──┴──┐
+     │Alice│      │ Bob │
+     └─────┘      └─────┘
+  ";
+  let reader = reader::AsciiArtReader::new();
+  let ast = reader.parse(content);
+
+  assert_eq!(
+    sequence_diagram_elements(ast.elements),
+    vec![SequenceDiagramElement::CheckedState {
+      name: "My State".to_string(),
+      participants: vec!["Alice".to_string(), "Bob".to_string()],
+    }]
+  );
+
+  Ok(())
+}
 
 #[test]
 fn service_discovery_flow() -> Result<()> {
