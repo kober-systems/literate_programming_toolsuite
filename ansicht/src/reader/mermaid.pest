@@ -1,14 +1,23 @@
-mermaid = _{ "sequenceDiagram" ~ NEWLINE ~ (interaction ~ NEWLINE)* ~ EOI }
+mermaid = _{ SOI ~ sequence_diagram ~ line* ~ EOI }
 
-interaction = {
-  whitespace* ~ participant ~ whitespace* ~ arrow ~ whitespace* ~ participant ~ ":" ~ message
-}
+sequence_diagram = { "sequenceDiagram" ~ NEWLINE? }
+line = _{ blank_line | participant_declaration | note | activation | deactivation | message }
+blank_line = { NEWLINE }
+participant_declaration = @{ ws* ~ "participant" ~ ws+ ~ participant_alias ~ ws+ ~ "as" ~ ws+ ~ participant_display_name ~ ws* ~ NEWLINE? }
+participant_alias = @{ (ASCII_ALPHANUMERIC | "_")+ }
+participant_display_name = @{ (!NEWLINE ~ ANY)+ }
 
+note = @{ ws* ~ "Note" ~ ws+ ~ "over" ~ (!":" ~ !NEWLINE ~ ANY)* ~ ":" ~ ws* ~ note_text ~ ws* ~ NEWLINE? }
+note_text = @{ (!NEWLINE ~ ANY)* }
+
+activation = @{ ws* ~ "activate" ~ (!NEWLINE ~ ANY)* ~ ws* ~ NEWLINE? }
+deactivation = @{ ws* ~ "deactivate" ~ (!NEWLINE ~ ANY)* ~ ws* ~ NEWLINE? }
+
+message = @{ ws* ~ participant ~ ws* ~ arrow ~ ws* ~ participant ~ ":" ~ ws* ~ message_text ~ ws* ~ NEWLINE? }
+participant = @{ (ASCII_ALPHANUMERIC | "_" | "'")+ }
 arrow = @{ "->>" | "-->>" }
+message_text = @{ (!NEWLINE ~ ANY)* }
 
-participant = @{ (ASCII_ALPHANUMERIC | "_" | " ")+ }
-message = @{ ((!NEWLINE) ~ ANY)* }
-
-whitespace = _{ " " | "\t" }
+ws = _{ " " | "\t" }
 
 WHITESPACE = _{ " " | "\t" }
