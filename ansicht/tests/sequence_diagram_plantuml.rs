@@ -2,11 +2,14 @@ use anyhow::Result;
 use ansicht::*;
 use pretty_assertions::assert_eq;
 
+mod sequence_diagram_fixtures;
+use sequence_diagram_fixtures::read_example;
+
 #[test]
 fn oauth_happy_path() -> Result<()> {
-  let content = OAUTH_HAPPY_PATH_PLANTUML;
+  let content = read_example("oauth.happy_path.plantuml")?;
   let reader = reader::PlantUmlReader::new();
-  let ast = reader.parse(content)?;
+  let ast = reader.parse(&content)?;
 
   let participants = vec![
     "End User".to_string(),
@@ -87,9 +90,9 @@ fn oauth_happy_path() -> Result<()> {
 
 #[test]
 fn service_discovery_happy_path() -> Result<()> {
-  let content = SERVICE_DISCOVERY_PLANTUML;
+  let content = read_example("service_discovery.plantuml")?;
   let reader = reader::PlantUmlReader::new();
-  let ast = reader.parse(content)?;
+  let ast = reader.parse(&content)?;
 
   assert_eq!(
     sequence_diagram_elements(ast.elements),
@@ -120,8 +123,3 @@ fn sequence_diagram_elements(input: Vec<ElementSpan>) -> Vec<SequenceDiagramElem
     .collect()
 }
 
-const SERVICE_DISCOVERY_PLANTUML: &str =
-  include_str!("examples/sequence-diagram/service_discovery.plantuml");
-
-const OAUTH_HAPPY_PATH_PLANTUML: &str =
-  include_str!("examples/sequence-diagram/oauth.happy_path.plantuml");

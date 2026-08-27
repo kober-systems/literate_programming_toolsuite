@@ -2,11 +2,14 @@ use anyhow::Result;
 use ansicht::*;
 use pretty_assertions::assert_eq;
 
+mod sequence_diagram_fixtures;
+use sequence_diagram_fixtures::read_example;
+
 #[test]
 fn service_discovery_happy_path() -> Result<()> {
-  let content = SERVICE_DISCOVERY_MERMAID;
+  let content = read_example("service_discovery.mermaid")?;
   let reader = reader::MermaidReader::new();
-  let ast = reader.parse(content)?;
+  let ast = reader.parse(&content)?;
 
   assert_eq!(
     sequence_diagram_elements(ast.elements),
@@ -37,5 +40,3 @@ fn sequence_diagram_elements(input: Vec<ElementSpan>) -> Vec<SequenceDiagramElem
     .collect()
 }
 
-const SERVICE_DISCOVERY_MERMAID: &str =
-  include_str!("examples/sequence-diagram/service_discovery.mermaid");
