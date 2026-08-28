@@ -585,12 +585,12 @@ fn parse_tokens(input: &str) -> Vec<Token> {
             line: line_number,
             column: col,
           }),
-          '-' | '─' => Some(HLine {
+          '-' | '─' | '═' | '=' => Some(HLine {
             line: line_number,
             column_start: col,
             column_end: col,
           }),
-          '|' | '│' => Some(VLine {
+          '|' | '│' | '║' => Some(VLine {
             column: col,
             line_start: line_number,
             line_end: line_number,
