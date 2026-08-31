@@ -30,6 +30,7 @@ struct Participant {
   id: usize,
   name: String,
   lifeline_col: usize,
+  bounds: BoundingBox,
 }
 
 fn parse_sequence_diagram(elements: &[Element], input: &str) -> Vec<ElementSpan> {
@@ -39,8 +40,8 @@ fn parse_sequence_diagram(elements: &[Element], input: &str) -> Vec<ElementSpan>
     return vec![];
   }
 
-  let mut result = extract_checked_states(elements, &lines, &participants);
-  result.extend(extract_messages(elements, &lines, &participants));
+  let mut result = extract_checked_states(elements, &lines, input, &participants);
+  result.extend(extract_messages(elements, &lines, input, &participants));
   result.sort_by(|a, b| match (&a.position, &b.position) {
     (
       TextPosition::Slice(Slice { start: a_start, .. }),
@@ -111,6 +112,7 @@ fn participant_from_block(element: &Element, lines: &[&str]) -> Option<Participa
       id: *id,
       name,
       lifeline_col,
+      bounds,
     })
   }
 }
@@ -118,6 +120,7 @@ fn participant_from_block(element: &Element, lines: &[&str]) -> Option<Participa
 fn extract_checked_states(
   elements: &[Element],
   lines: &[&str],
+  input: &str,
   participants: &[Participant],
 ) -> Vec<ElementSpan> {
   let result: Vec<ElementSpan> = elements
@@ -129,7 +132,7 @@ fn extract_checked_states(
         ..
       } = element
       else {
-        eprintln!("element {:?} not supported", element);
+        eprintln!("element not supported:\n{}\n", element.render_ascii(input));
         return None;
       };
 
@@ -188,9 +191,143 @@ fn is_checked_state_block(element: &Element, lines: &[&str]) -> bool {
     && matches!(bottom_right, Some('╝'))
 }
 
+fn participant_at_lifeline_col<'a>(
+  participants: &'a [Participant],
+  column: usize,
+) -> Option<&'a Participant> {
+  participants.iter().find(|participant| participant.lifeline_col == column)
+}
+
+fn participant_inside_bounds(participant: &Participant, bounds: &BoundingBox) -> bool {
+  bounds.start.column <= participant.lifeline_col && participant.lifeline_col <= bounds.end.column
+}
+
+fn scoped_participants_by_checked_state<'a>(
+  participants: &'a [Participant],
+  bounds: &BoundingBox,
+) -> Vec<&'a Participant> {
+  participants
+    .iter()
+    .filter(|participant| participant_inside_bounds(participant, bounds))
+    .collect()
+}
+
+fn resolve_participants_by_ids<'a>(
+  participants: &'a [Participant],
+  from: usize,
+  to: usize,
+) -> Option<(&'a Participant, &'a Participant)> {
+  let from = participants.iter().find(|participant| participant.id == from)?;
+  let to = participants.iter().find(|participant| participant.id == to)?;
+  Some((from, to))
+}
+
+fn resolve_participants_by_columns<'a>(
+  participants: &'a [Participant],
+  from_column: usize,
+  to_column: usize,
+) -> Option<(&'a Participant, &'a Participant)> {
+  let from = participant_at_lifeline_col(participants, from_column)?;
+  let to = participant_at_lifeline_col(participants, to_column)?;
+  Some((from, to))
+}
+
+fn checked_state_bounds_for_element(
+  element: &Element,
+  elements: &[Element],
+  lines: &[&str],
+) -> Option<BoundingBox> {
+  elements
+    .iter()
+    .filter(|candidate| {
+      matches!(candidate, Element::Block { .. })
+        && is_checked_state_block(candidate, lines)
+        && element.is_inside_bounds_of(candidate)
+    })
+    .map(|candidate| candidate.get_bounds())
+    .min_by_key(|bounds| {
+      (
+        bounds.end.line - bounds.start.line,
+        bounds.end.column - bounds.start.column,
+      )
+    })
+}
+
+fn connection_endpoint_columns(tokens: &[Token]) -> Option<(usize, usize)> {
+  let (line, column_start, column_end) = tokens.iter().find_map(|token| match token {
+    Token::HLine {
+      line,
+      column_start,
+      column_end,
+    } => Some((*line, *column_start, *column_end)),
+    _ => None,
+  })?;
+
+  let arrow_column = tokens.iter().find_map(|token| match token {
+    Token::Arrow { line: arrow_line, column } if *arrow_line == line => Some(*column),
+    _ => None,
+  })?;
+
+  if column_end + 1 == arrow_column {
+    Some((column_start.checked_sub(1)?, column_end.checked_add(2)?))
+  } else if column_start == arrow_column + 1 {
+    Some((column_end.checked_add(1)?, column_start.checked_sub(2)?))
+  } else {
+    None
+  }
+}
+
+fn resolve_message_participants<'a>(
+  element: &Element,
+  elements: &[Element],
+  lines: &[&str],
+  participants: &'a [Participant],
+  from: usize,
+  to: usize,
+  tokens: &[Token],
+) -> Option<(&'a Participant, &'a Participant)> {
+  resolve_message_participants_in_checked_state(element, elements, lines, participants, tokens)
+    .or_else(|| resolve_message_participants_by_id_or_columns(participants, from, to, tokens))
+}
+
+fn resolve_message_participants_in_checked_state<'a>(
+  element: &Element,
+  elements: &[Element],
+  lines: &[&str],
+  participants: &'a [Participant],
+  tokens: &[Token],
+) -> Option<(&'a Participant, &'a Participant)> {
+  let bounds = checked_state_bounds_for_element(element, elements, lines)?;
+  let (from_column, to_column) = connection_endpoint_columns(tokens)?;
+  let scoped_participants = scoped_participants_by_checked_state(participants, &bounds);
+  let from = scoped_participants
+    .iter()
+    .copied()
+    .find(|participant| participant.lifeline_col == from_column)?;
+  let to = scoped_participants
+    .iter()
+    .copied()
+    .find(|participant| participant.lifeline_col == to_column)?;
+  Some((from, to))
+}
+
+fn resolve_message_participants_by_id_or_columns<'a>(
+  participants: &'a [Participant],
+  from: usize,
+  to: usize,
+  tokens: &[Token],
+) -> Option<(&'a Participant, &'a Participant)> {
+  resolve_participants_by_ids(participants, from, to).or_else(|| {
+    connection_endpoint_columns(tokens).and_then(|(from_column, to_column)| {
+      resolve_participants_by_columns(participants, from_column, to_column)
+    })
+  })
+}
+
 fn extract_messages(
   elements: &[Element],
   lines: &[&str],
+  input: &str,
   participants: &[Participant],
 ) -> Vec<ElementSpan> {
   let mut result = vec![];
@@ -215,19 +352,21 @@ fn extract_messages(
           pending_text = Some(text);
         }
       }
-      Element::Connection {
-        from, to, tokens, ..
-      } if tokens
-        .iter()
-        .any(|token| matches!(token, Token::Arrow { .. }))
-        && tokens
-          .iter()
-          .any(|token| matches!(token, Token::HLine { .. })) =>
+      Element::Connection { from, to, tokens, .. }
+        if tokens.iter().any(|token| matches!(token, Token::Arrow { .. }))
+          && tokens.iter().any(|token| matches!(token, Token::HLine { .. })) =>
       {
-        let from = participants.iter().find(|p| p.id == *from);
-        let to = participants.iter().find(|p| p.id == *to);
+        let resolved = resolve_message_participants(
+          element,
+          elements,
+          lines,
+          participants,
+          *from,
+          *to,
+          tokens,
+        );
 
-        if let (Some(from), Some(to)) = (from, to) {
+        if let Some((from, to)) = resolved {
           let bounds = element.get_bounds();
           let message = pending_text.take().unwrap_or_default();
           result.push(ElementSpan {
@@ -245,10 +384,12 @@ fn extract_messages(
             children: vec![],
             attrs: vec![],
           });
+        } else {
+          eprintln!("Connection not found:\n{:?}\n{}\n", element, element.render_ascii(input));
         }
       }
       _ => {
-        eprintln!("Not a message {:?}\n", element);
+        eprintln!("Not a message:\n{:?}\n{}\n", element, element.render_ascii(input));
       }
     }
   }

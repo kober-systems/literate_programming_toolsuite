@@ -110,6 +110,42 @@ impl Element {
       Unknown { id: _, tokens: _ } => {} // TODO
     }
   }
+
+  pub fn render_ascii(&self, source: &str) -> String {
+    let bounds = self.render_bounds();
+    let lines: Vec<&str> = source.lines().collect();
+
+    (bounds.start.line..=bounds.end.line)
+      .map(|line_idx| {
+        lines
+          .get(line_idx)
+          .map(|line| {
+            line
+              .chars()
+              .skip(bounds.start.column)
+              .take(bounds.end.column - bounds.start.column + 1)
+              .collect::<String>()
+          })
+          .unwrap_or_default()
+      })
+      .collect::<Vec<_>>()
+      .join("\n")
+  }
+
+  fn render_bounds(&self) -> BoundingBox {
+    let mut bounds = self.get_bounds();
+
+    match self {
+      Element::Block { inner_elements, .. } | Element::Connection { inner_elements, .. } => {
+        for inner in inner_elements {
+          bounds = union_bounds(bounds, inner.render_bounds());
+        }
+      }
+      _ => {}
+    }
+
+    bounds
+  }
 }
 
 pub fn parse_elements(input: &str) -> Vec<Element> {
@@ -124,6 +160,7 @@ fn elements_from_tokens(input: Vec<Token>, text: &str) -> Vec<Element> {
   let mut texts = vec![];
   let mut blocks = vec![];
   let mut next_id = 0;
+
   for token in input.into_iter() {
     match token {
       Token::Text {
@@ -141,18 +178,20 @@ fn elements_from_tokens(input: Vec<Token>, text: &str) -> Vec<Element> {
           possible_blocks = possible_blocks
             .into_iter()
             .filter_map(|mut started_block| {
-              if started_block.can_continue_block(&token, text) {
-                token_used = true;
-                if started_block.add_token(token) {
-                  blocks.push(Block {
-                    id: next_id,
-                    inner_elements: vec![],
-                    border: started_block.tokens,
-                  });
-                  next_id += 1;
-                  return None;
-                }
+              if !started_block.can_continue_block(&token, text) {
+                // No block can be continued -> it must be a new one
                 return Some(started_block);
+              }
+
+              token_used = true;
+              if started_block.add_token(token) {
+                blocks.push(Block {
+                  id: next_id,
+                  inner_elements: vec![],
+                  border: started_block.tokens,
+                });
+                next_id += 1;
+                return None;
               }
               Some(started_block)
             })
@@ -168,6 +207,8 @@ fn elements_from_tokens(input: Vec<Token>, text: &str) -> Vec<Element> {
   }
 
   let mut out = vec![];
+
+  // Find if the texts belong into a block
   for text in texts.into_iter() {
     let text = Text {
       id: next_id,
@@ -191,6 +232,7 @@ fn elements_from_tokens(input: Vec<Token>, text: &str) -> Vec<Element> {
       }
     }
   }
+
   let mut connections = connections_between_blocks(&all_tokens, &blocks, &mut next_id);
 
   out.append(&mut blocks);
@@ -215,127 +257,180 @@ fn connections_between_blocks(
 ) -> Vec<Element> {
   let mut connections = vec![];
 
-  for token in tokens {
-    let Token::VLine {
-      column,
-      line_start,
-      line_end,
-    } = token
-    else {
-      continue;
-    };
+  connections.extend(
+    tokens
+      .iter()
+      .filter_map(|token| vline_connection_between_blocks(token, blocks, next_id)),
+  );
 
-    if blocks.iter().any(|block| match block {
-      Element::Block { border, .. } => border.contains(token),
-      _ => false,
-    }) {
-      continue;
-    }
+  // TODO this should be removed. We do not have lifelines here
+  let arrow_connections: Vec<_> = tokens
+    .iter()
+    .filter_map(|token| arrow_connection_between_lifelines(token, tokens, &connections, next_id))
+    .collect();
+  connections.extend(arrow_connections);
 
-    let from = blocks.iter().find_map(|block| match block {
-      Element::Block { id, border, .. }
-        if border.contains(&Token::ConnectionSign {
-          line: line_start - 1,
-          column: *column,
-        }) =>
-      {
-        Some(*id)
-      }
-      _ => None,
-    });
+  connections
+}
 
-    let to = blocks.iter().find_map(|block| match block {
-      Element::Block { id, border, .. }
-        if border.contains(&Token::ConnectionSign {
-          line: line_end + 1,
-          column: *column,
-        }) =>
-      {
-        Some(*id)
-      }
-      _ => None,
-    });
+// TODO We need an equvalent hline_connection_between_blocks
+fn vline_connection_between_blocks(
+  token: &Token,
+  blocks: &[Element],
+  next_id: &mut usize,
+) -> Option<Element> {
+  let Token::VLine {
+    column,
+    line_start,
+    line_end,
+  } = token
+  else {
+    return None;
+  };
 
-    if let (Some(from), Some(to)) = (from, to) {
-      connections.push(Element::Connection {
+  if blocks.iter().any(|block| match block {
+    Element::Block { border, .. } => border.contains(token),
+    _ => false,
+  }) {
+    return None;
+  }
+
+  let from = element_with_connection_sign(blocks, line_start - 1, *column);
+  let to = element_with_connection_sign(blocks, line_end + 1, *column);
+
+  match (from, to) {
+    (Some(from), Some(to)) => {
+      let connection = Element::Connection {
         id: *next_id,
         from,
         to,
         inner_elements: vec![],
         tokens: vec![*token],
-      });
+      };
       *next_id += 1;
+      Some(connection)
     }
+    _ => None,
   }
-
-  for token in tokens {
-    let Token::Arrow { line, column } = token else {
-      continue;
-    };
-
-    if let Some(hline) = tokens.iter().find_map(|token| match token {
-      Token::HLine {
-        line: hline_line,
-        column_start,
-        column_end,
-      } if hline_line == line && *column_end + 1 == *column => {
-        Some((*column_start, *column_end, *token))
-      }
-      _ => None,
-    }) {
-      let (column_start, column_end, hline) = hline;
-      let from = lifeline_from_at(&connections, column_start - 1, *line);
-      let to = lifeline_from_at(&connections, column_end + 2, *line);
-
-      if let (Some(from), Some(to)) = (from, to) {
-        connections.push(Element::Connection {
-          id: *next_id,
-          from,
-          to,
-          inner_elements: vec![],
-          tokens: vec![hline, *token],
-        });
-        *next_id += 1;
-      }
-    } else if let Some(hline) = tokens.iter().find_map(|token| match token {
-      Token::HLine {
-        line: hline_line,
-        column_start,
-        column_end,
-      } if hline_line == line && *column_start == *column + 1 => {
-        Some((*column_start, *column_end, *token))
-      }
-      _ => None,
-    }) {
-      let (column_start, column_end, hline) = hline;
-      let from = lifeline_from_at(&connections, column_end + 1, *line);
-      let to = lifeline_from_at(&connections, column_start - 2, *line);
-
-      if let (Some(from), Some(to)) = (from, to) {
-        connections.push(Element::Connection {
-          id: *next_id,
-          from,
-          to,
-          inner_elements: vec![],
-          tokens: vec![*token, hline],
-        });
-        *next_id += 1;
-      }
-    }
-  }
-
-  connections
 }
 
-fn lifeline_from_at(connections: &[Element], column: usize, line: usize) -> Option<usize> {
+enum ArrowDirection {
+  Forward,
+  Reverse,
+}
+
+struct ArrowHLine {
+  column_start: usize,
+  column_end: usize,
+  token: Token,
+  direction: ArrowDirection,
+}
+
+fn arrow_hline_at(tokens: &[Token], line: usize, column: usize) -> Option<ArrowHLine> {
+  tokens.iter().find_map(|token| match token {
+    Token::HLine {
+      line: hline_line,
+      column_start,
+      column_end,
+    } if hline_line == &line && *column_end + 1 == column => Some(ArrowHLine {
+      column_start: *column_start,
+      column_end: *column_end,
+      token: *token,
+      direction: ArrowDirection::Forward,
+    }),
+    Token::HLine {
+      line: hline_line,
+      column_start,
+      column_end,
+    } if hline_line == &line && *column_start == column + 1 => Some(ArrowHLine {
+      column_start: *column_start,
+      column_end: *column_end,
+      token: *token,
+      direction: ArrowDirection::Reverse,
+    }),
+    _ => None,
+  })
+}
+
+// TODO entfernen
+fn arrow_connection_between_lifelines(
+  token: &Token,
+  tokens: &[Token],
+  connections: &[Element],
+  next_id: &mut usize,
+) -> Option<Element> {
+  let Token::Arrow { line, column } = token else {
+    return None;
+  };
+
+  let ArrowHLine {
+    column_start,
+    column_end,
+    token: hline,
+    direction,
+  } = arrow_hline_at(tokens, *line, *column)?;
+
+  let (from, to, tokens) = match direction {
+    ArrowDirection::Forward => (
+      lifeline_connection_at(connections, column_start - 1, *line),
+      lifeline_connection_at(connections, column_end + 2, *line),
+      vec![hline, *token],
+    ),
+    ArrowDirection::Reverse => (
+      lifeline_connection_at(connections, column_end + 1, *line),
+      lifeline_connection_at(connections, column_start - 2, *line),
+      vec![*token, hline],
+    ),
+  };
+
+  match (from, to) {
+    (Some(from), Some(to)) => {
+      let connection = Element::Connection {
+        id: *next_id,
+        from,
+        to,
+        inner_elements: vec![],
+        tokens,
+      };
+      *next_id += 1;
+      Some(connection)
+    }
+    _ => None,
+  }
+}
+
+fn element_with_connection_sign(
+  elements: &[Element],
+  line: usize,
+  column: usize,
+) -> Option<usize> {
+  elements.iter().find_map(|element| match element {
+    Element::Block { id, border, .. }
+      if border.contains(&Token::ConnectionSign { line, column }) =>
+    {
+      Some(*id)
+    }
+    Element::Connection { id, tokens, .. }
+      if tokens.iter().any(|token| {
+        matches!(token, Token::ConnectionSign { line: token_line, column: token_column }
+          if *token_line == line && *token_column == column)
+      }) =>
+    {
+      Some(*id)
+    }
+    _ => None,
+  })
+}
+
+fn lifeline_connection_at(connections: &[Element], column: usize, line: usize) -> Option<usize> {
   connections.iter().find_map(|connection| match connection {
-    Element::Connection { from, tokens, .. }
+    Element::Connection { id, tokens, .. }
       if tokens.iter().any(|token| {
         matches!(token, Token::VLine { column: vline_column, line_start, line_end }
           if *vline_column == column && *line_start <= line && *line_end >= line)
       }) =>
     {
-      Some(*from)
+      Some(*id)
     }
     _ => None,
   })
@@ -430,6 +525,19 @@ impl PartialElement {
 
     self.clock_cycle_end.line == self.counter_clock_cycle_end.line
       && self.clock_cycle_end.column == self.counter_clock_cycle_end.column + 1
+  }
+}
+
+fn union_bounds(a: BoundingBox, b: BoundingBox) -> BoundingBox {
+  BoundingBox {
+    start: Coordinate {
+      line: a.start.line.min(b.start.line),
+      column: a.start.column.min(b.start.column),
+    },
+    end: Coordinate {
+      line: a.end.line.max(b.end.line),
+      column: a.end.column.max(b.end.column),
+    },
   }
 }
 
@@ -648,8 +756,8 @@ mod tests {
         },
         Element::Connection {
           id: 11,
-          from: 0,
-          to: 1,
+          from: 9,
+          to: 10,
           inner_elements: vec![],
           tokens: vec![
             HLine {
