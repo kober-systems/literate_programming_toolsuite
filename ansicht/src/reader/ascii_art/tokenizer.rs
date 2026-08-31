@@ -20,12 +20,14 @@ pub fn parse_tokens(input: &str) -> Vec<Token> {
             Some(ConnectionSign {
               line: line_number,
               column: col,
+              sign,
             })
           }
           sign if is_arrow(sign, line_number, col, &lines) => {
             Some(Arrow {
               line: line_number,
               column: col,
+              sign,
             })
           }
           sign if is_hline_sign(sign) => Some(HLine {
@@ -211,8 +213,8 @@ fn condense_vertical(input: Vec<Token>) -> Vec<Token> {
         use Token::*;
 
         let (line, column_start) = match token {
-          ConnectionSign { line, column } => (line, column),
-          Arrow { line, column } => (line, column),
+          ConnectionSign { line, column, .. } => (line, column),
+          Arrow { line, column, .. } => (line, column),
           HLine {
             line,
             column_start,
@@ -345,10 +347,12 @@ pub enum Token {
   ConnectionSign {
     line: usize,
     column: usize,
+    sign: char,
   },
   Arrow {
     line: usize,
     column: usize,
+    sign: char,
   },
 }
 
@@ -357,7 +361,7 @@ impl Token {
     use Token::*;
 
     match self {
-      ConnectionSign { line, column } => BoundingBox {
+      ConnectionSign { line, column, .. } => BoundingBox {
         start: Coordinate {
           line: *line,
           column: *column,
@@ -367,7 +371,7 @@ impl Token {
           column: *column,
         },
       },
-      Arrow { line, column } => BoundingBox {
+      Arrow { line, column, .. } => BoundingBox {
         start: Coordinate {
           line: *line,
           column: *column,
@@ -460,7 +464,7 @@ mod tests {
     assert_eq!(
       tokens,
       vec![
-        ConnectionSign { line: 2, column: 4 },
+        ConnectionSign { line: 2, column: 4, sign: '+' },
         HLine {
           line: 2,
           column_start: 5,
@@ -468,7 +472,8 @@ mod tests {
         },
         ConnectionSign {
           line: 2,
-          column: 10
+          column: 10,
+          sign: '+',
         },
         VLine {
           column: 4,
@@ -485,7 +490,7 @@ mod tests {
           line_start: 3,
           line_end: 3
         },
-        ConnectionSign { line: 4, column: 4 },
+        ConnectionSign { line: 4, column: 4, sign: '+' },
         HLine {
           line: 4,
           column_start: 5,
@@ -493,7 +498,8 @@ mod tests {
         },
         ConnectionSign {
           line: 4,
-          column: 10
+          column: 10,
+          sign: '+'
         },
       ]
     );
@@ -506,7 +512,7 @@ mod tests {
     assert_eq!(
       tokens,
       vec![
-        ConnectionSign { line: 1, column: 4 },
+        ConnectionSign { line: 1, column: 4, sign: '+' },
         HLine {
           line: 1,
           column_start: 5,
@@ -514,7 +520,8 @@ mod tests {
         },
         ConnectionSign {
           line: 1,
-          column: 20
+          column: 20,
+          sign: '+',
         },
         VLine {
           column: 4,
@@ -541,7 +548,7 @@ mod tests {
           column_start: 6,
           column_end: 11
         },
-        ConnectionSign { line: 5, column: 4 },
+        ConnectionSign { line: 5, column: 4, sign: '+' },
         HLine {
           line: 5,
           column_start: 5,
@@ -549,7 +556,8 @@ mod tests {
         },
         ConnectionSign {
           line: 5,
-          column: 20
+          column: 20,
+          sign: '+',
         },
       ]
     );
@@ -562,7 +570,7 @@ mod tests {
     assert_eq!(
       tokens,
       vec![
-        ConnectionSign { line: 1, column: 4 },
+        ConnectionSign { line: 1, column: 4, sign: '+' },
         HLine {
           line: 1,
           column_start: 5,
@@ -570,11 +578,13 @@ mod tests {
         },
         ConnectionSign {
           line: 1,
-          column: 10
+          column: 10,
+          sign: '+',
         },
         ConnectionSign {
           line: 1,
-          column: 19
+          column: 19,
+          sign: '+'
         },
         HLine {
           line: 1,
@@ -583,7 +593,8 @@ mod tests {
         },
         ConnectionSign {
           line: 1,
-          column: 25
+          column: 25,
+          sign: '+',
         },
         VLine {
           column: 4,
@@ -615,7 +626,7 @@ mod tests {
           line_start: 2,
           line_end: 2
         },
-        ConnectionSign { line: 3, column: 4 },
+        ConnectionSign { line: 3, column: 4, sign: '+' },
         HLine {
           line: 3,
           column_start: 5,
@@ -623,11 +634,13 @@ mod tests {
         },
         ConnectionSign {
           line: 3,
-          column: 10
+          column: 10,
+          sign: '+',
         },
         ConnectionSign {
           line: 3,
-          column: 19
+          column: 19,
+          sign: '+',
         },
         HLine {
           line: 3,
@@ -636,7 +649,8 @@ mod tests {
         },
         ConnectionSign {
           line: 3,
-          column: 25
+          column: 25,
+          sign: '+',
         },
       ]
     );
@@ -649,7 +663,7 @@ mod tests {
     assert_eq!(
       tokens,
       vec![
-        ConnectionSign { line: 1, column: 4 },
+        ConnectionSign { line: 1, column: 4, sign: '+' },
         HLine {
           line: 1,
           column_start: 5,
@@ -657,7 +671,8 @@ mod tests {
         },
         ConnectionSign {
           line: 1,
-          column: 10
+          column: 10,
+          sign: '+',
         },
         VLine {
           column: 4,
@@ -674,7 +689,7 @@ mod tests {
           line_start: 2,
           line_end: 2
         },
-        ConnectionSign { line: 3, column: 4 },
+        ConnectionSign { line: 3, column: 4, sign: '+' },
         HLine {
           line: 3,
           column_start: 5,
@@ -682,9 +697,10 @@ mod tests {
         },
         ConnectionSign {
           line: 3,
-          column: 10
+          column: 10,
+          sign: '+',
         },
-        ConnectionSign { line: 5, column: 4 },
+        ConnectionSign { line: 5, column: 4, sign: '+' },
         HLine {
           line: 5,
           column_start: 5,
@@ -692,7 +708,8 @@ mod tests {
         },
         ConnectionSign {
           line: 5,
-          column: 10
+          column: 10,
+          sign: '+'
         },
         VLine {
           column: 4,
@@ -709,7 +726,7 @@ mod tests {
           line_start: 6,
           line_end: 6
         },
-        ConnectionSign { line: 7, column: 4 },
+        ConnectionSign { line: 7, column: 4, sign: '+' },
         HLine {
           line: 7,
           column_start: 5,
@@ -717,7 +734,8 @@ mod tests {
         },
         ConnectionSign {
           line: 7,
-          column: 10
+          column: 10,
+          sign: '+'
         },
       ]
     );
@@ -730,7 +748,7 @@ mod tests {
     assert_eq!(
       tokens,
       vec![
-        ConnectionSign { line: 1, column: 4 },
+        ConnectionSign { line: 1, column: 4, sign: '+' },
         HLine {
           line: 1,
           column_start: 5,
@@ -738,7 +756,8 @@ mod tests {
         },
         ConnectionSign {
           line: 1,
-          column: 10
+          column: 10,
+          sign: '+'
         },
         VLine {
           column: 4,
@@ -762,9 +781,10 @@ mod tests {
         },
         ConnectionSign {
           line: 2,
-          column: 13
+          column: 13,
+          sign: '+'
         },
-        ConnectionSign { line: 3, column: 4 },
+        ConnectionSign { line: 3, column: 4, sign: '+' },
         HLine {
           line: 3,
           column_start: 5,
@@ -772,7 +792,8 @@ mod tests {
         },
         ConnectionSign {
           line: 3,
-          column: 10
+          column: 10,
+          sign: '+'
         },
         VLine {
           column: 13,
@@ -781,7 +802,8 @@ mod tests {
         },
         ConnectionSign {
           line: 5,
-          column: 17
+          column: 17,
+          sign: '+'
         },
         HLine {
           line: 5,
@@ -790,11 +812,13 @@ mod tests {
         },
         ConnectionSign {
           line: 5,
-          column: 23
+          column: 23,
+          sign: '+'
         },
         ConnectionSign {
           line: 6,
-          column: 13
+          column: 13,
+          sign: '+'
         },
         HLine {
           line: 6,
@@ -804,6 +828,7 @@ mod tests {
         Arrow {
           line: 6,
           column: 16,
+          sign: '>',
         },
         VLine {
           column: 17,
@@ -822,7 +847,8 @@ mod tests {
         },
         ConnectionSign {
           line: 7,
-          column: 17
+          column: 17,
+          sign: '+'
         },
         HLine {
           line: 7,
@@ -831,7 +857,8 @@ mod tests {
         },
         ConnectionSign {
           line: 7,
-          column: 23
+          column: 23,
+          sign: '+'
         },
       ]
     );
@@ -844,7 +871,7 @@ mod tests {
     assert_eq!(
       tokens,
       vec![
-        ConnectionSign { line: 2, column: 4 },
+        ConnectionSign { line: 2, column: 4, sign: '┌' },
         HLine {
           line: 2,
           column_start: 5,
@@ -852,7 +879,8 @@ mod tests {
         },
         ConnectionSign {
           line: 2,
-          column: 10
+          column: 10,
+          sign: '┐'
         },
         VLine {
           column: 4,
@@ -869,7 +897,7 @@ mod tests {
           line_start: 3,
           line_end: 3
         },
-        ConnectionSign { line: 4, column: 4 },
+        ConnectionSign { line: 4, column: 4, sign: '└' },
         HLine {
           line: 4,
           column_start: 5,
@@ -877,7 +905,8 @@ mod tests {
         },
         ConnectionSign {
           line: 4,
-          column: 10
+          column: 10,
+          sign: '┘'
         },
       ]
     );

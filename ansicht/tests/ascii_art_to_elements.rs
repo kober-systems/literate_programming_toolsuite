@@ -155,7 +155,7 @@ fn two_boxes_side_by_side() {
         ..
       }],
       border: [
-        ConnectionSign { line: 1, column: 4 },
+        ConnectionSign { line: 1, column: 4, sign: '+' },
         HLine {
           line: 1,
           column_start: 5,
@@ -163,7 +163,8 @@ fn two_boxes_side_by_side() {
         },
         ConnectionSign {
           line: 1,
-          column: 10
+          column: 10,
+          sign: '+'
         },
         VLine {
           column: 4,
@@ -175,7 +176,7 @@ fn two_boxes_side_by_side() {
           line_start: 2,
           line_end: 2
         },
-        ConnectionSign { line: 3, column: 4 },
+        ConnectionSign { line: 3, column: 4, sign: '+' },
         HLine {
           line: 3,
           column_start: 5,
@@ -183,7 +184,8 @@ fn two_boxes_side_by_side() {
         },
         ConnectionSign {
           line: 3,
-          column: 10
+          column: 10,
+          sign: '+'
         },
       ]
     }
@@ -204,7 +206,8 @@ fn two_boxes_side_by_side() {
       border: [
         ConnectionSign {
           line: 1,
-          column: 19
+          column: 19,
+          sign: '+'
         },
         HLine {
           line: 1,
@@ -213,7 +216,8 @@ fn two_boxes_side_by_side() {
         },
         ConnectionSign {
           line: 1,
-          column: 25
+          column: 25,
+          sign: '+'
         },
         VLine {
           column: 19,
@@ -227,7 +231,8 @@ fn two_boxes_side_by_side() {
         },
         ConnectionSign {
           line: 3,
-          column: 19
+          column: 19,
+          sign: '+'
         },
         HLine {
           line: 3,
@@ -236,8 +241,9 @@ fn two_boxes_side_by_side() {
         },
         ConnectionSign {
           line: 3,
-          column: 25
-        },
+          column: 25,
+          sign: '+'
+        }
       ]
     }
   );
@@ -386,13 +392,13 @@ fn three_boxes_in_row() {
           },],
         },],
         border: vec![
-          Token::ConnectionSign { line: 1, column: 4 },
+          Token::ConnectionSign { line: 1, column: 4, sign: '+' },
           Token::HLine {
             line: 1,
             column_start: 5,
             column_end: 7,
           },
-          Token::ConnectionSign { line: 1, column: 8 },
+          Token::ConnectionSign { line: 1, column: 8, sign: '+' },
           Token::VLine {
             column: 4,
             line_start: 2,
@@ -403,13 +409,13 @@ fn three_boxes_in_row() {
             line_start: 2,
             line_end: 2,
           },
-          Token::ConnectionSign { line: 3, column: 4 },
+          Token::ConnectionSign { line: 3, column: 4, sign: '+' },
           Token::HLine {
             line: 3,
             column_start: 5,
             column_end: 7,
           },
-          Token::ConnectionSign { line: 3, column: 8 },
+          Token::ConnectionSign { line: 3, column: 8, sign: '+' },
         ],
       },
       Element::Block {
@@ -425,7 +431,8 @@ fn three_boxes_in_row() {
         border: vec![
           Token::ConnectionSign {
             line: 1,
-            column: 11
+            column: 11,
+            sign: '+'
           },
           Token::HLine {
             line: 1,
@@ -434,7 +441,8 @@ fn three_boxes_in_row() {
           },
           Token::ConnectionSign {
             line: 1,
-            column: 15
+            column: 15,
+            sign: '+'
           },
           Token::VLine {
             column: 11,
@@ -448,7 +456,8 @@ fn three_boxes_in_row() {
           },
           Token::ConnectionSign {
             line: 3,
-            column: 11
+            column: 11,
+            sign: '+'
           },
           Token::HLine {
             line: 3,
@@ -457,7 +466,8 @@ fn three_boxes_in_row() {
           },
           Token::ConnectionSign {
             line: 3,
-            column: 15
+            column: 15,
+            sign: '+'
           },
         ],
       },
@@ -474,7 +484,8 @@ fn three_boxes_in_row() {
         border: vec![
           Token::ConnectionSign {
             line: 1,
-            column: 18
+            column: 18,
+            sign: '+'
           },
           Token::HLine {
             line: 1,
@@ -483,7 +494,8 @@ fn three_boxes_in_row() {
           },
           Token::ConnectionSign {
             line: 1,
-            column: 22
+            column: 22,
+            sign: '+'
           },
           Token::VLine {
             column: 18,
@@ -497,7 +509,8 @@ fn three_boxes_in_row() {
           },
           Token::ConnectionSign {
             line: 3,
-            column: 18
+            column: 18,
+            sign: '+'
           },
           Token::HLine {
             line: 3,
@@ -506,7 +519,8 @@ fn three_boxes_in_row() {
           },
           Token::ConnectionSign {
             line: 3,
-            column: 22
+            column: 22,
+            sign: '+'
           },
         ],
       },
@@ -533,6 +547,7 @@ fn minimal_box() {
             ConnectionSign {
                 line: 1,
                 column: 4,
+                sign: '+',
             },
             HLine {
                 line: 1,
@@ -542,6 +557,7 @@ fn minimal_box() {
             ConnectionSign {
                 line: 1,
                 column: 6,
+                sign: '+',
             },
             VLine {
                 column: 4,
@@ -556,6 +572,7 @@ fn minimal_box() {
             ConnectionSign {
                 line: 3,
                 column: 4,
+                sign: '+',
             },
             HLine {
                 line: 3,
@@ -565,7 +582,8 @@ fn minimal_box() {
             ConnectionSign {
                 line: 3,
                 column: 6,
-            },
+                sign: '+',
+            }
         ],
     },
     ]
@@ -688,6 +706,7 @@ fn oauth_happy_path() -> Result<()> {
         }],
         border: block_resource_server_border(),
       },
+      // TODO Connections to first state
       Element::Block {
         id: 5,
         inner_elements: vec![Element::Text {

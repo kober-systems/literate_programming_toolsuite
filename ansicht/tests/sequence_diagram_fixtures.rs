@@ -165,6 +165,7 @@ pub fn block_end_user_border() -> Vec<Token> {
     ConnectionSign {
         line: 0,
         column: 5,
+        sign: '┌',
     },
     HLine {
         line: 0,
@@ -174,6 +175,7 @@ pub fn block_end_user_border() -> Vec<Token> {
     ConnectionSign {
         line: 0,
         column: 14,
+        sign: '┐',
     },
     VLine {
         column: 5,
@@ -188,6 +190,7 @@ pub fn block_end_user_border() -> Vec<Token> {
     ConnectionSign {
         line: 2,
         column: 5,
+        sign: '└',
     },
     HLine {
         line: 2,
@@ -197,6 +200,7 @@ pub fn block_end_user_border() -> Vec<Token> {
     ConnectionSign {
         line: 2,
         column: 9,
+        sign: '┬',
     },
     HLine {
         line: 2,
@@ -206,6 +210,7 @@ pub fn block_end_user_border() -> Vec<Token> {
     ConnectionSign {
         line: 2,
         column: 14,
+        sign: '┘',
     },
   ]
 }
@@ -229,6 +234,7 @@ pub fn block_users_browser_border() -> Vec<Token> {
     ConnectionSign {
         line: 0,
         column: 23,
+        sign: '┌',
     },
     HLine {
         line: 0,
@@ -238,6 +244,7 @@ pub fn block_users_browser_border() -> Vec<Token> {
     ConnectionSign {
         line: 0,
         column: 38,
+        sign: '┐',
     },
     VLine {
         column: 23,
@@ -252,6 +259,7 @@ pub fn block_users_browser_border() -> Vec<Token> {
     ConnectionSign {
         line: 2,
         column: 23,
+        sign: '└',
     },
     HLine {
         line: 2,
@@ -261,6 +269,7 @@ pub fn block_users_browser_border() -> Vec<Token> {
     ConnectionSign {
         line: 2,
         column: 30,
+        sign: '┬',
     },
     HLine {
         line: 2,
@@ -270,6 +279,7 @@ pub fn block_users_browser_border() -> Vec<Token> {
     ConnectionSign {
         line: 2,
         column: 38,
+        sign: '┘',
     },
   ]
 }
@@ -293,6 +303,7 @@ pub fn block_client_application_border() -> Vec<Token> {
     ConnectionSign {
         line: 0,
         column: 97,
+        sign: '┌',
     },
     HLine {
         line: 0,
@@ -302,6 +313,7 @@ pub fn block_client_application_border() -> Vec<Token> {
     ConnectionSign {
         line: 0,
         column: 116,
+        sign: '┐',
     },
     VLine {
         column: 97,
@@ -316,6 +328,7 @@ pub fn block_client_application_border() -> Vec<Token> {
     ConnectionSign {
         line: 2,
         column: 97,
+        sign: '└',
     },
     HLine {
         line: 2,
@@ -325,6 +338,7 @@ pub fn block_client_application_border() -> Vec<Token> {
     ConnectionSign {
         line: 2,
         column: 106,
+        sign: '┬',
     },
     HLine {
         line: 2,
@@ -334,6 +348,7 @@ pub fn block_client_application_border() -> Vec<Token> {
     ConnectionSign {
         line: 2,
         column: 116,
+        sign: '┘',
     },
   ]
 }
@@ -357,6 +372,7 @@ pub fn block_authorisation_server_border() -> Vec<Token> {
     ConnectionSign {
         line: 0,
         column: 122,
+        sign: '┌',
     },
     HLine {
         line: 0,
@@ -366,6 +382,7 @@ pub fn block_authorisation_server_border() -> Vec<Token> {
     ConnectionSign {
         line: 0,
         column: 143,
+        sign: '┐',
     },
     VLine {
         column: 122,
@@ -380,6 +397,7 @@ pub fn block_authorisation_server_border() -> Vec<Token> {
     ConnectionSign {
         line: 2,
         column: 122,
+        sign: '└',
     },
     HLine {
         line: 2,
@@ -389,6 +407,7 @@ pub fn block_authorisation_server_border() -> Vec<Token> {
     ConnectionSign {
         line: 2,
         column: 132,
+        sign: '┬',
     },
     HLine {
         line: 2,
@@ -398,6 +417,7 @@ pub fn block_authorisation_server_border() -> Vec<Token> {
     ConnectionSign {
         line: 2,
         column: 143,
+        sign: '┘',
     },
   ]
 }
@@ -421,6 +441,7 @@ pub fn block_resource_server_border() -> Vec<Token> {
     ConnectionSign {
         line: 0,
         column: 147,
+        sign: '┌',
     },
     HLine {
         line: 0,
@@ -430,6 +451,7 @@ pub fn block_resource_server_border() -> Vec<Token> {
     ConnectionSign {
         line: 0,
         column: 163,
+        sign: '┐',
     },
     VLine {
         column: 147,
@@ -444,6 +466,7 @@ pub fn block_resource_server_border() -> Vec<Token> {
     ConnectionSign {
         line: 2,
         column: 147,
+        sign: '└',
     },
     HLine {
         line: 2,
@@ -453,6 +476,7 @@ pub fn block_resource_server_border() -> Vec<Token> {
     ConnectionSign {
         line: 2,
         column: 154,
+        sign: '┬',
     },
     HLine {
         line: 2,
@@ -462,6 +486,7 @@ pub fn block_resource_server_border() -> Vec<Token> {
     ConnectionSign {
         line: 2,
         column: 163,
+        sign: '┘',
     },
   ]
 }
@@ -485,6 +510,7 @@ pub fn block_state1_initial_redirect_border() -> Vec<Token> {
     ConnectionSign {
         line: 3,
         column: 5,
+        sign: '╔',
     },
     HLine {
         line: 3,
@@ -494,6 +520,7 @@ pub fn block_state1_initial_redirect_border() -> Vec<Token> {
     ConnectionSign {
         line: 3,
         column: 9,
+        sign: '╧',
     },
     HLine {
         line: 3,
@@ -503,6 +530,7 @@ pub fn block_state1_initial_redirect_border() -> Vec<Token> {
     ConnectionSign {
         line: 3,
         column: 30,
+        sign: '╧',
     },
     HLine {
         line: 3,
@@ -512,6 +540,7 @@ pub fn block_state1_initial_redirect_border() -> Vec<Token> {
     ConnectionSign {
         line: 3,
         column: 106,
+        sign: '╧',
     },
     HLine {
         line: 3,
@@ -521,6 +550,7 @@ pub fn block_state1_initial_redirect_border() -> Vec<Token> {
     ConnectionSign {
         line: 3,
         column: 132,
+        sign: '╧',
     },
     HLine {
         line: 3,
@@ -530,6 +560,7 @@ pub fn block_state1_initial_redirect_border() -> Vec<Token> {
     ConnectionSign {
         line: 3,
         column: 154,
+        sign: '╧',
     },
     HLine {
         line: 3,
@@ -539,6 +570,7 @@ pub fn block_state1_initial_redirect_border() -> Vec<Token> {
     ConnectionSign {
         line: 3,
         column: 163,
+        sign: '╗',
     },
     VLine {
         column: 5,
@@ -553,6 +585,7 @@ pub fn block_state1_initial_redirect_border() -> Vec<Token> {
     ConnectionSign {
         line: 5,
         column: 5,
+        sign: '╚',
     },
     HLine {
         line: 5,
@@ -562,6 +595,7 @@ pub fn block_state1_initial_redirect_border() -> Vec<Token> {
     ConnectionSign {
         line: 5,
         column: 9,
+        sign: '╤',
     },
     HLine {
         line: 5,
@@ -571,6 +605,7 @@ pub fn block_state1_initial_redirect_border() -> Vec<Token> {
     ConnectionSign {
         line: 5,
         column: 30,
+        sign: '╤',
     },
     HLine {
         line: 5,
@@ -580,6 +615,7 @@ pub fn block_state1_initial_redirect_border() -> Vec<Token> {
     ConnectionSign {
         line: 5,
         column: 106,
+        sign: '╤',
     },
     HLine {
         line: 5,
@@ -589,6 +625,7 @@ pub fn block_state1_initial_redirect_border() -> Vec<Token> {
     ConnectionSign {
         line: 5,
         column: 132,
+        sign: '╤',
     },
     HLine {
         line: 5,
@@ -598,6 +635,7 @@ pub fn block_state1_initial_redirect_border() -> Vec<Token> {
     ConnectionSign {
         line: 5,
         column: 154,
+        sign: '╤',
     },
     HLine {
         line: 5,
@@ -607,6 +645,7 @@ pub fn block_state1_initial_redirect_border() -> Vec<Token> {
     ConnectionSign {
         line: 5,
         column: 163,
+        sign: '╝',
     },
   ]
 }
@@ -712,6 +751,7 @@ pub fn con_enduser_users_browser_msg_request_access() -> Vec<Token> {
     Arrow {
         line: 8,
         column: 29,
+        sign: '>',
     },
   ]
 }
@@ -740,6 +780,7 @@ pub fn con_users_browser_client_application_msg_request_access() -> Vec<Token> {
     Arrow {
         line: 11,
         column: 105,
+        sign: '>',
     },
   ]
 }
@@ -753,6 +794,7 @@ pub fn con_client_application_users_browser_msg_redirect_to_authserver_text() ->
         column_start: 31,
         column_end: 78,
     },
+    // TODO Filter Hline
     HLine {
         line: 13,
         column_start: 79,
@@ -773,6 +815,7 @@ pub fn con_client_application_users_browser_msg_redirect_to_authserver() -> Vec<
     Arrow {
         line: 14,
         column: 31,
+        sign: '<',
     },
     HLine {
         line: 14,
@@ -806,6 +849,7 @@ pub fn con_users_browser_authorisation_server_msg_follow_redirect() -> Vec<Token
     Arrow {
         line: 17,
         column: 131,
+        sign: '>',
     },
   ]
 }
@@ -829,6 +873,7 @@ pub fn con_authorization_server_users_browser_msg_display_consent_form() -> Vec<
     Arrow {
         line: 24,
         column: 31,
+        sign: '<',
     },
     HLine {
         line: 24,
@@ -857,6 +902,7 @@ pub fn con_users_browser_end_user_msg_display_consent_form() -> Vec<Token> {
     Arrow {
         line: 27,
         column: 10,
+        sign: '<',
     },
     HLine {
         line: 27,
@@ -890,6 +936,7 @@ pub fn con_end_user_users_browser_msg_grant_consent() -> Vec<Token> {
     Arrow {
         line: 30,
         column: 29,
+        sign: '>',
     },
   ]
 }
@@ -901,6 +948,7 @@ pub fn block_state2_user_grants_consent_border() -> Vec<Token> {
     ConnectionSign {
         line: 19,
         column: 5,
+        sign: '╔',
     },
     HLine {
         line: 19,
@@ -910,6 +958,7 @@ pub fn block_state2_user_grants_consent_border() -> Vec<Token> {
     ConnectionSign {
         line: 19,
         column: 9,
+        sign: '╧',
     },
     HLine {
         line: 19,
@@ -919,6 +968,7 @@ pub fn block_state2_user_grants_consent_border() -> Vec<Token> {
     ConnectionSign {
         line: 19,
         column: 30,
+        sign: '╧',
     },
     HLine {
         line: 19,
@@ -928,6 +978,7 @@ pub fn block_state2_user_grants_consent_border() -> Vec<Token> {
     ConnectionSign {
         line: 19,
         column: 106,
+        sign: '╧',
     },
     HLine {
         line: 19,
@@ -937,6 +988,7 @@ pub fn block_state2_user_grants_consent_border() -> Vec<Token> {
     ConnectionSign {
         line: 19,
         column: 132,
+        sign: '╧',
     },
     HLine {
         line: 19,
@@ -946,6 +998,7 @@ pub fn block_state2_user_grants_consent_border() -> Vec<Token> {
     ConnectionSign {
         line: 19,
         column: 154,
+        sign: '╧',
     },
     HLine {
         line: 19,
@@ -955,6 +1008,7 @@ pub fn block_state2_user_grants_consent_border() -> Vec<Token> {
     ConnectionSign {
         line: 19,
         column: 163,
+        sign: '╗',
     },
     VLine {
         column: 5,
@@ -969,6 +1023,7 @@ pub fn block_state2_user_grants_consent_border() -> Vec<Token> {
     ConnectionSign {
         line: 21,
         column: 5,
+        sign: '╚',
     },
     HLine {
         line: 21,
@@ -978,6 +1033,7 @@ pub fn block_state2_user_grants_consent_border() -> Vec<Token> {
     ConnectionSign {
         line: 21,
         column: 9,
+        sign: '╤',
     },
     HLine {
         line: 21,
@@ -987,6 +1043,7 @@ pub fn block_state2_user_grants_consent_border() -> Vec<Token> {
     ConnectionSign {
         line: 21,
         column: 30,
+        sign: '╤',
     },
     HLine {
         line: 21,
@@ -996,6 +1053,7 @@ pub fn block_state2_user_grants_consent_border() -> Vec<Token> {
     ConnectionSign {
         line: 21,
         column: 106,
+        sign: '╤',
     },
     HLine {
         line: 21,
@@ -1005,6 +1063,7 @@ pub fn block_state2_user_grants_consent_border() -> Vec<Token> {
     ConnectionSign {
         line: 21,
         column: 132,
+        sign: '╤',
     },
     HLine {
         line: 21,
@@ -1014,6 +1073,7 @@ pub fn block_state2_user_grants_consent_border() -> Vec<Token> {
     ConnectionSign {
         line: 21,
         column: 154,
+        sign: '╤',
     },
     HLine {
         line: 21,
@@ -1023,6 +1083,7 @@ pub fn block_state2_user_grants_consent_border() -> Vec<Token> {
     ConnectionSign {
         line: 21,
         column: 163,
+        sign: '╝',
     },
   ]
 }
@@ -1133,6 +1194,7 @@ pub fn con_client_application_users_browser_msg_display_consent_form() -> Vec<To
     Arrow {
         line: 24,
         column: 31,
+        sign: '<',
     },
     HLine {
         line: 24,
@@ -1161,6 +1223,7 @@ pub fn con_users_browser_enduser_msg_display_consent_form() -> Vec<Token> {
     Arrow {
         line: 27,
         column: 10,
+        sign: '<',
     },
     HLine {
         line: 27,
@@ -1194,6 +1257,7 @@ pub fn con_enduser_users_browser_msg_grant_consent() -> Vec<Token> {
     Arrow {
         line: 30,
         column: 29,
+        sign: '>',
     },
   ]
 }
@@ -1222,6 +1286,7 @@ pub fn con_users_browser_authorisation_server_msg_grant_consent() -> Vec<Token> 
     Arrow {
         line: 33,
         column: 131,
+        sign: '>',
     },
   ]
 }
@@ -1245,6 +1310,7 @@ pub fn con_authorisation_server_users_browser_msg_redirect_authorisation_code() 
     Arrow {
         line: 36,
         column: 31,
+        sign: '<',
     },
     HLine {
         line: 36,
@@ -1278,6 +1344,7 @@ pub fn con_users_browser_client_application_msg_follow_redirect() -> Vec<Token> 
     Arrow {
         line: 39,
         column: 105,
+        sign: '>',
     },
   ]
 }
@@ -1289,6 +1356,7 @@ pub fn block_state3_token_exchange_border() -> Vec<Token> {
     ConnectionSign {
         line: 41,
         column: 5,
+        sign: '╔',
     },
     HLine {
         line: 41,
@@ -1298,6 +1366,7 @@ pub fn block_state3_token_exchange_border() -> Vec<Token> {
     ConnectionSign {
         line: 41,
         column: 9,
+        sign: '╧',
     },
     HLine {
         line: 41,
@@ -1307,6 +1376,7 @@ pub fn block_state3_token_exchange_border() -> Vec<Token> {
     ConnectionSign {
         line: 41,
         column: 30,
+        sign: '╧',
     },
     HLine {
         line: 41,
@@ -1316,6 +1386,7 @@ pub fn block_state3_token_exchange_border() -> Vec<Token> {
     ConnectionSign {
         line: 41,
         column: 106,
+        sign: '╧',
     },
     HLine {
         line: 41,
@@ -1325,6 +1396,7 @@ pub fn block_state3_token_exchange_border() -> Vec<Token> {
     ConnectionSign {
         line: 41,
         column: 132,
+        sign: '╧',
     },
     HLine {
         line: 41,
@@ -1334,6 +1406,7 @@ pub fn block_state3_token_exchange_border() -> Vec<Token> {
     ConnectionSign {
         line: 41,
         column: 154,
+        sign: '╧',
     },
     HLine {
         line: 41,
@@ -1343,6 +1416,7 @@ pub fn block_state3_token_exchange_border() -> Vec<Token> {
     ConnectionSign {
         line: 41,
         column: 163,
+        sign: '╗',
     },
     VLine {
         column: 5,
@@ -1357,6 +1431,7 @@ pub fn block_state3_token_exchange_border() -> Vec<Token> {
     ConnectionSign {
         line: 43,
         column: 5,
+        sign: '╚',
     },
     HLine {
         line: 43,
@@ -1366,6 +1441,7 @@ pub fn block_state3_token_exchange_border() -> Vec<Token> {
     ConnectionSign {
         line: 43,
         column: 9,
+        sign: '╤',
     },
     HLine {
         line: 43,
@@ -1375,6 +1451,7 @@ pub fn block_state3_token_exchange_border() -> Vec<Token> {
     ConnectionSign {
         line: 43,
         column: 30,
+        sign: '╤',
     },
     HLine {
         line: 43,
@@ -1384,6 +1461,7 @@ pub fn block_state3_token_exchange_border() -> Vec<Token> {
     ConnectionSign {
         line: 43,
         column: 106,
+        sign: '╤',
     },
     HLine {
         line: 43,
@@ -1393,6 +1471,7 @@ pub fn block_state3_token_exchange_border() -> Vec<Token> {
     ConnectionSign {
         line: 43,
         column: 132,
+        sign: '╤',
     },
     HLine {
         line: 43,
@@ -1402,6 +1481,7 @@ pub fn block_state3_token_exchange_border() -> Vec<Token> {
     ConnectionSign {
         line: 43,
         column: 154,
+        sign: '╤',
     },
     HLine {
         line: 43,
@@ -1411,6 +1491,7 @@ pub fn block_state3_token_exchange_border() -> Vec<Token> {
     ConnectionSign {
         line: 43,
         column: 163,
+        sign: '╝',
     },
   ]
 }
@@ -1521,6 +1602,7 @@ pub fn con_client_application_authorisation_server_msg_exchange_code() -> Vec<To
     Arrow {
         line: 46,
         column: 131,
+        sign: '>',
     },
   ]
 }
@@ -1544,6 +1626,7 @@ pub fn con_authorisation_server_client_application_msg_respond_with_access_token
     Arrow {
         line: 49,
         column: 107,
+        sign: '<',
     },
     HLine {
         line: 49,
@@ -1577,6 +1660,7 @@ pub fn con_client_application_resource_server_msg_request_resource() -> Vec<Toke
     Arrow {
         line: 52,
         column: 153,
+        sign: '>',
     },
   ]
 }
@@ -1600,6 +1684,7 @@ pub fn con_resource_server_client_application_msg_send_resource() -> Vec<Token> 
     Arrow {
         line: 55,
         column: 107,
+        sign: '<',
     },
     HLine {
         line: 55,
@@ -1628,6 +1713,7 @@ pub fn con_client_application_users_browser_msg_display_resource() -> Vec<Token>
     Arrow {
         line: 58,
         column: 31,
+        sign: '<',
     },
     HLine {
         line: 58,
@@ -1656,6 +1742,7 @@ pub fn con_users_browser_enduser_msg_display_resource() -> Vec<Token> {
     Arrow {
         line: 61,
         column: 10,
+        sign: '<',
     },
     HLine {
         line: 61,
@@ -1672,6 +1759,7 @@ pub fn block_end_user_border2() -> Vec<Token> {
     ConnectionSign {
         line: 62,
         column: 5,
+        sign: '┌',
     },
     HLine {
         line: 62,
@@ -1681,6 +1769,7 @@ pub fn block_end_user_border2() -> Vec<Token> {
     ConnectionSign {
         line: 62,
         column: 9,
+        sign: '┴',
     },
     HLine {
         line: 62,
@@ -1690,6 +1779,7 @@ pub fn block_end_user_border2() -> Vec<Token> {
     ConnectionSign {
         line: 62,
         column: 14,
+        sign: '┐',
     },
     VLine {
         column: 5,
@@ -1704,6 +1794,7 @@ pub fn block_end_user_border2() -> Vec<Token> {
     ConnectionSign {
         line: 64,
         column: 5,
+        sign: '└',
     },
     HLine {
         line: 64,
@@ -1713,6 +1804,7 @@ pub fn block_end_user_border2() -> Vec<Token> {
     ConnectionSign {
         line: 64,
         column: 14,
+        sign: '┘',
     },
   ]
 }
@@ -1736,6 +1828,7 @@ pub fn block_users_browser_border2() -> Vec<Token> {
     ConnectionSign {
         line: 62,
         column: 23,
+        sign: '┌',
     },
     HLine {
         line: 62,
@@ -1745,6 +1838,7 @@ pub fn block_users_browser_border2() -> Vec<Token> {
     ConnectionSign {
         line: 62,
         column: 30,
+        sign: '┴',
     },
     HLine {
         line: 62,
@@ -1754,6 +1848,7 @@ pub fn block_users_browser_border2() -> Vec<Token> {
     ConnectionSign {
         line: 62,
         column: 38,
+        sign: '┐',
     },
     VLine {
         column: 23,
@@ -1768,6 +1863,7 @@ pub fn block_users_browser_border2() -> Vec<Token> {
     ConnectionSign {
         line: 64,
         column: 23,
+        sign: '└',
     },
     HLine {
         line: 64,
@@ -1777,6 +1873,7 @@ pub fn block_users_browser_border2() -> Vec<Token> {
     ConnectionSign {
         line: 64,
         column: 38,
+        sign: '┘',
     },
   ]
 }
@@ -1800,6 +1897,7 @@ pub fn block_client_application_border2() -> Vec<Token> {
     ConnectionSign {
         line: 62,
         column: 97,
+        sign: '┌',
     },
     HLine {
         line: 62,
@@ -1809,6 +1907,7 @@ pub fn block_client_application_border2() -> Vec<Token> {
     ConnectionSign {
         line: 62,
         column: 106,
+        sign: '┴',
     },
     HLine {
         line: 62,
@@ -1818,6 +1917,7 @@ pub fn block_client_application_border2() -> Vec<Token> {
     ConnectionSign {
         line: 62,
         column: 116,
+        sign: '┐',
     },
     VLine {
         column: 97,
@@ -1832,6 +1932,7 @@ pub fn block_client_application_border2() -> Vec<Token> {
     ConnectionSign {
         line: 64,
         column: 97,
+        sign: '└',
     },
     HLine {
         line: 64,
@@ -1841,6 +1942,7 @@ pub fn block_client_application_border2() -> Vec<Token> {
     ConnectionSign {
         line: 64,
         column: 116,
+        sign: '┘',
     },
   ]
 }
@@ -1864,6 +1966,7 @@ pub fn block_authorisation_server_border2() -> Vec<Token> {
     ConnectionSign {
         line: 62,
         column: 122,
+        sign: '┌',
     },
     HLine {
         line: 62,
@@ -1873,6 +1976,7 @@ pub fn block_authorisation_server_border2() -> Vec<Token> {
     ConnectionSign {
         line: 62,
         column: 132,
+        sign: '┴',
     },
     HLine {
         line: 62,
@@ -1882,6 +1986,7 @@ pub fn block_authorisation_server_border2() -> Vec<Token> {
     ConnectionSign {
         line: 62,
         column: 143,
+        sign: '┐',
     },
     VLine {
         column: 122,
@@ -1896,6 +2001,7 @@ pub fn block_authorisation_server_border2() -> Vec<Token> {
     ConnectionSign {
         line: 64,
         column: 122,
+        sign: '└',
     },
     HLine {
         line: 64,
@@ -1905,6 +2011,7 @@ pub fn block_authorisation_server_border2() -> Vec<Token> {
     ConnectionSign {
         line: 64,
         column: 143,
+        sign: '┘',
     },
   ]
 }
@@ -1928,6 +2035,7 @@ pub fn block_resource_server_border2() -> Vec<Token> {
     ConnectionSign {
         line: 62,
         column: 147,
+        sign: '┌',
     },
     HLine {
         line: 62,
@@ -1937,6 +2045,7 @@ pub fn block_resource_server_border2() -> Vec<Token> {
     ConnectionSign {
         line: 62,
         column: 154,
+        sign: '┴',
     },
     HLine {
         line: 62,
@@ -1946,6 +2055,7 @@ pub fn block_resource_server_border2() -> Vec<Token> {
     ConnectionSign {
         line: 62,
         column: 163,
+        sign: '┐',
     },
     VLine {
         column: 147,
@@ -1960,6 +2070,7 @@ pub fn block_resource_server_border2() -> Vec<Token> {
     ConnectionSign {
         line: 64,
         column: 147,
+        sign: '└',
     },
     HLine {
         line: 64,
@@ -1969,6 +2080,7 @@ pub fn block_resource_server_border2() -> Vec<Token> {
     ConnectionSign {
         line: 64,
         column: 163,
+        sign: '┘',
     },
   ]
 }

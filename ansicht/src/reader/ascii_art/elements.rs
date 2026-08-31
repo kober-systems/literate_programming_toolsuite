@@ -375,6 +375,7 @@ impl PartialConnection {
             Token::Arrow {
               line: candidate_line,
               column: candidate_column,
+              ..
             } => *candidate_line == line && *candidate_column == *column,
             _ => false,
           }) || text_crosses(elements, line, *column)
@@ -398,6 +399,7 @@ impl PartialConnection {
             Token::Arrow {
               line: candidate_line,
               column: candidate_column,
+              ..
             } => *candidate_line == *line && *candidate_column == column,
             _ => false,
           }) || vertical_connection_crosses(elements, *line, column)
@@ -440,7 +442,7 @@ fn vline_connection_between_blocks(
       line_start,
       ..
     } => (column, line_start),
-    Token::Arrow { line, column } => (column, line),
+    Token::Arrow { line, column, .. } => (column, line),
     _ => return None,
   };
 
@@ -486,12 +488,12 @@ fn hline_connection_between_blocks(
       column_start,
       ..
     } => (line, column_start),
-    Token::Arrow { line, column } => (column, line),
+    Token::Arrow { line, column, .. } => (column, line),
     _ => return None,
   };
 
   let (from, to, tokens) = if let Some(arrow) = all_tokens.iter().find(|candidate| {
-    matches!(candidate, Token::Arrow { line: arrow_line, column } if arrow_line == line && *column + 1 == *column_start)
+    matches!(candidate, Token::Arrow { line: arrow_line, column, .. } if arrow_line == line && *column + 1 == *column_start)
   }) {
     // A left-pointing arrow starts a right-to-left connection. Its source is
     // known only after following the complete horizontal path.
@@ -510,7 +512,7 @@ fn hline_connection_between_blocks(
       to
     } else {
       let arrow = all_tokens.iter().copied().find(|candidate| {
-        matches!(candidate, Token::Arrow { line: arrow_line, column } if arrow_line == line && *column == path.current_end.column + 1)
+        matches!(candidate, Token::Arrow { line: arrow_line, column, .. } if arrow_line == line && *column == path.current_end.column + 1)
       })?;
       let Token::Arrow { column, .. } = arrow else { unreachable!() };
       let to = element_with_connection_sign(elements, *line, column + 1)?;
@@ -590,13 +592,17 @@ fn element_with_connection_sign(
 ) -> Option<usize> {
   elements.iter().find_map(|element| match element {
     Element::Block { id, border, .. }
-      if border.contains(&Token::ConnectionSign { line, column }) =>
+      if border.iter().any(|token| matches!(
+        token,
+        Token::ConnectionSign { line: token_line, column: token_column, .. }
+          if *token_line == line && *token_column == column
+      )) =>
     {
       Some(*id)
     }
     Element::Connection { id, tokens, .. }
       if tokens.iter().any(|token| {
-        matches!(token, Token::ConnectionSign { line: token_line, column: token_column }
+        matches!(token, Token::ConnectionSign { line: token_line, column: token_column, .. }
           if *token_line == line && *token_column == column)
           || matches!(token, Token::VLine { column: token_column, line_start, line_end }
             if *token_column == column && *line_start <= line && line <= *line_end)
@@ -640,14 +646,14 @@ impl PartialElement {
         {
           true
         } else if self.tokens.iter().any(|token| {
-          matches!(token, ConnectionSign { line: sign_line, column } if sign_line == line && *column + 1 == *column_start)
+          matches!(token, ConnectionSign { line: sign_line, column, .. } if sign_line == line && *column + 1 == *column_start)
         }) {
           true
         } else {
           false
         }
       }
-      ConnectionSign { line, column } => {
+      ConnectionSign { line, column, .. } => {
         if self.clock_cycle_end.line == *line && self.clock_cycle_end.column + 1 == *column {
           true
         } else if self.clock_cycle_end.line + 1 == *line && self.clock_cycle_end.column == *column {
@@ -846,7 +852,7 @@ mod tests {
             }],
           }],
           border: vec![
-            ConnectionSign { line: 1, column: 4 },
+            ConnectionSign { line: 1, column: 4, sign: '┌' },
             HLine {
               line: 1,
               column_start: 5,
@@ -854,7 +860,8 @@ mod tests {
             },
             ConnectionSign {
               line: 1,
-              column: 11
+              column: 11,
+              sign: '┐',
             },
             VLine {
               column: 4,
@@ -866,13 +873,13 @@ mod tests {
               line_start: 2,
               line_end: 2
             },
-            ConnectionSign { line: 3, column: 4 },
+            ConnectionSign { line: 3, column: 4, sign: '└' },
             HLine {
               line: 3,
               column_start: 5,
               column_end: 6
             },
-            ConnectionSign { line: 3, column: 7 },
+            ConnectionSign { line: 3, column: 7, sign: '┬' },
             HLine {
               line: 3,
               column_start: 8,
@@ -880,7 +887,8 @@ mod tests {
             },
             ConnectionSign {
               line: 3,
-              column: 11
+              column: 11,
+              sign: '┘'
             },
           ],
         },
@@ -897,7 +905,8 @@ mod tests {
           border: vec![
             ConnectionSign {
               line: 1,
-              column: 17
+              column: 17,
+              sign: '┌'
             },
             HLine {
               line: 1,
@@ -906,7 +915,8 @@ mod tests {
             },
             ConnectionSign {
               line: 1,
-              column: 24
+              column: 24,
+              sign: '┐'
             },
             VLine {
               column: 17,
@@ -920,7 +930,8 @@ mod tests {
             },
             ConnectionSign {
               line: 3,
-              column: 17
+              column: 17,
+              sign: '└'
             },
             HLine {
               line: 3,
@@ -929,7 +940,8 @@ mod tests {
             },
             ConnectionSign {
               line: 3,
-              column: 20
+              column: 20,
+              sign: '┬'
             },
             HLine {
               line: 3,
@@ -938,7 +950,8 @@ mod tests {
             },
             ConnectionSign {
               line: 3,
-              column: 24
+              column: 24,
+              sign: '┘'
             },
           ],
         },
@@ -985,7 +998,8 @@ mod tests {
             },
             Arrow {
               line: 6,
-              column: 19
+              column: 19,
+              sign: '>'
             },
           ],
         },
@@ -1000,13 +1014,13 @@ mod tests {
             }],
           }],
           border: vec![
-            ConnectionSign { line: 8, column: 4 },
+            ConnectionSign { line: 8, column: 4, sign: '┌' },
             HLine {
               line: 8,
               column_start: 5,
               column_end: 6
             },
-            ConnectionSign { line: 8, column: 7 },
+            ConnectionSign { line: 8, column: 7, sign: '┴' },
             HLine {
               line: 8,
               column_start: 8,
@@ -1014,7 +1028,8 @@ mod tests {
             },
             ConnectionSign {
               line: 8,
-              column: 11
+              column: 11,
+              sign: '┐'
             },
             VLine {
               column: 4,
@@ -1028,7 +1043,8 @@ mod tests {
             },
             ConnectionSign {
               line: 10,
-              column: 4
+              column: 4,
+              sign: '└'
             },
             HLine {
               line: 10,
@@ -1037,7 +1053,8 @@ mod tests {
             },
             ConnectionSign {
               line: 10,
-              column: 11
+              column: 11,
+              sign: '┘'
             },
           ],
         },
@@ -1054,7 +1071,8 @@ mod tests {
           border: vec![
             ConnectionSign {
               line: 8,
-              column: 17
+              column: 17,
+              sign: '┌'
             },
             HLine {
               line: 8,
@@ -1063,7 +1081,8 @@ mod tests {
             },
             ConnectionSign {
               line: 8,
-              column: 20
+              column: 20,
+              sign: '┴'
             },
             HLine {
               line: 8,
@@ -1072,7 +1091,8 @@ mod tests {
             },
             ConnectionSign {
               line: 8,
-              column: 24
+              column: 24,
+              sign: '┐'
             },
             VLine {
               column: 17,
@@ -1086,7 +1106,8 @@ mod tests {
             },
             ConnectionSign {
               line: 10,
-              column: 17
+              column: 17,
+              sign: '└'
             },
             HLine {
               line: 10,
@@ -1095,8 +1116,9 @@ mod tests {
             },
             ConnectionSign {
               line: 10,
-              column: 24
-            },
+              column: 24,
+              sign: '┘'
+            }
           ],
         },
       ]
@@ -1132,7 +1154,7 @@ mod tests {
             },],
           }],
           border: vec![
-            ConnectionSign { line: 1, column: 4 },
+            ConnectionSign { line: 1, column: 4, sign: '┌' },
             HLine {
               line: 1,
               column_start: 5,
@@ -1140,7 +1162,8 @@ mod tests {
             },
             ConnectionSign {
               line: 1,
-              column: 11
+              column: 11,
+              sign: '┐'
             },
             VLine {
               column: 4,
@@ -1152,13 +1175,13 @@ mod tests {
               line_start: 2,
               line_end: 2
             },
-            ConnectionSign { line: 3, column: 4 },
+            ConnectionSign { line: 3, column: 4, sign: '└' },
             HLine {
               line: 3,
               column_start: 5,
               column_end: 6
             },
-            ConnectionSign { line: 3, column: 7 },
+            ConnectionSign { line: 3, column: 7, sign: '┬' },
             HLine {
               line: 3,
               column_start: 8,
@@ -1166,7 +1189,8 @@ mod tests {
             },
             ConnectionSign {
               line: 3,
-              column: 11
+              column: 11,
+              sign: '┘'
             },
           ],
         },
@@ -1192,13 +1216,13 @@ mod tests {
             },],
           }],
           border: vec![
-            ConnectionSign { line: 5, column: 4 },
+            ConnectionSign { line: 5, column: 4, sign: '┌' },
             HLine {
               line: 5,
               column_start: 5,
               column_end: 6
             },
-            ConnectionSign { line: 5, column: 7 },
+            ConnectionSign { line: 5, column: 7, sign: '┴' },
             HLine {
               line: 5,
               column_start: 8,
@@ -1206,7 +1230,8 @@ mod tests {
             },
             ConnectionSign {
               line: 5,
-              column: 11
+              column: 11,
+              sign: '┐'
             },
             VLine {
               column: 4,
@@ -1218,7 +1243,7 @@ mod tests {
               line_start: 6,
               line_end: 6
             },
-            ConnectionSign { line: 7, column: 4 },
+            ConnectionSign { line: 7, column: 4, sign: '└' },
             HLine {
               line: 7,
               column_start: 5,
@@ -1226,7 +1251,8 @@ mod tests {
             },
             ConnectionSign {
               line: 7,
-              column: 11
+              column: 11,
+              sign: '┘'
             },
           ],
         },
@@ -1251,7 +1277,7 @@ mod tests {
           },],
         }],
         border: vec![
-          ConnectionSign { line: 2, column: 4 },
+          ConnectionSign { line: 2, column: 4, sign: '+' },
           HLine {
             line: 2,
             column_start: 5,
@@ -1259,7 +1285,8 @@ mod tests {
           },
           ConnectionSign {
             line: 2,
-            column: 10
+            column: 10,
+            sign: '+'
           },
           VLine {
             column: 4,
@@ -1271,7 +1298,7 @@ mod tests {
             line_start: 3,
             line_end: 3
           },
-          ConnectionSign { line: 4, column: 4 },
+          ConnectionSign { line: 4, column: 4, sign: '+' },
           HLine {
             line: 4,
             column_start: 5,
@@ -1279,8 +1306,9 @@ mod tests {
           },
           ConnectionSign {
             line: 4,
-            column: 10
-          },
+            column: 10,
+            sign: '+'
+          }
         ],
       },]
     );
@@ -1300,6 +1328,10 @@ mod tests {
       true
     );
     assert_eq!(started_block.add_token(next_token), false);
+    //assert_eq!(
+    //  started_block.print_ascii(SINGLE_BOX), r"
+    //
+    //+-----";
 
     // ConnectionSign
     let next_token = tokens.pop().unwrap();
@@ -1312,6 +1344,10 @@ mod tests {
     assert_eq!(started_block.clock_cycle_end.column, 10);
     assert_eq!(started_block.counter_clock_cycle_end.line, 2);
     assert_eq!(started_block.counter_clock_cycle_end.column, 4);
+    //assert_eq!(
+    //  started_block.print_ascii(SINGLE_BOX), r"
+    //
+    //+-----+";
 
     // VLine
     let next_token = tokens.pop().unwrap();
@@ -1324,6 +1360,11 @@ mod tests {
     assert_eq!(started_block.clock_cycle_end.column, 10);
     assert_eq!(started_block.counter_clock_cycle_end.line, 3);
     assert_eq!(started_block.counter_clock_cycle_end.column, 4);
+    //assert_eq!(
+    //  started_block.print_ascii(SINGLE_BOX), r"
+    //
+    //+-----+
+    //|";
 
     // Text
     let next_token = tokens.pop().unwrap();
@@ -1343,6 +1384,11 @@ mod tests {
     assert_eq!(started_block.clock_cycle_end.column, 10);
     assert_eq!(started_block.counter_clock_cycle_end.line, 3);
     assert_eq!(started_block.counter_clock_cycle_end.column, 4);
+    //assert_eq!(
+    //  started_block.print_ascii(SINGLE_BOX), r"
+    //
+    //+-----+
+    //|     |";
 
     // ConnectionSign
     let next_token = tokens.pop().unwrap();
@@ -1355,6 +1401,12 @@ mod tests {
     assert_eq!(started_block.clock_cycle_end.column, 10);
     assert_eq!(started_block.counter_clock_cycle_end.line, 4);
     assert_eq!(started_block.counter_clock_cycle_end.column, 4);
+    //assert_eq!(
+    //  started_block.print_ascii(SINGLE_BOX), r"
+    //
+    //+-----+
+    //|     |
+    //+";
 
     // HLine
     let next_token = tokens.pop().unwrap();
@@ -1367,6 +1419,12 @@ mod tests {
     assert_eq!(started_block.clock_cycle_end.column, 10);
     assert_eq!(started_block.counter_clock_cycle_end.line, 4);
     assert_eq!(started_block.counter_clock_cycle_end.column, 9);
+    //assert_eq!(
+    //  started_block.print_ascii(SINGLE_BOX), r"
+    //
+    //+-----+
+    //|     |
+    //+-----";
 
     // ConnectionSign
     let next_token = tokens.pop().unwrap();
@@ -1379,6 +1437,13 @@ mod tests {
     assert_eq!(started_block.clock_cycle_end.column, 10);
     assert_eq!(started_block.counter_clock_cycle_end.line, 4);
     assert_eq!(started_block.counter_clock_cycle_end.column, 9);
+    //assert_eq!(
+    //  started_block.print_ascii(SINGLE_BOX), r"
+    //
+    //+-----+
+    //|     |
+    //+-----+";
+    // TODO Add a print for PartialElement, so dass man es wachsen sehen kann
   }
 
   const SINGLE_BOX: &str = r"
@@ -1387,4 +1452,16 @@ mod tests {
     | Box |
     +-----+
   ";
+
+  // Nächste Tests
+  // 1. Boxes werden erkannt
+  // 2. HLine Verbindungen zwischen Boxes werden erkannt
+  // 3. VLine Verbindungen zwischen Boxes werden erkannt
+  // 4. Verbindungen, welche nur an Verbindungen grenzen werden erkannt
+  // 5. Frei im Raum schwebende Verbindungen werden mit einer Warnung angegeben
+  //
+  // Es muss überprüft werden, dass nach und nach ein volleres Bild entsteht
+  //
+  // Jedes Mal wenn eine Verbindung gefunden wurde müssen ihre Tokens aus dem Pool
+  // entfernt werden. Am Ende dürfen keine Tokens mehr übrig sein
 }

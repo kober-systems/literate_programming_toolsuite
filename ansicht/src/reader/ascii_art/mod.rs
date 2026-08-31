@@ -91,7 +91,7 @@ fn participant_from_block(element: &Element, lines: &[&str]) -> Option<Participa
 
   let bounds = element.get_bounds();
   let lifeline_col = border.iter().find_map(|token| match token {
-    Token::ConnectionSign { line, column }
+    Token::ConnectionSign { line, column, .. }
       if *line == bounds.end.line
         && *column > bounds.start.column
         && *column < bounds.end.column =>
