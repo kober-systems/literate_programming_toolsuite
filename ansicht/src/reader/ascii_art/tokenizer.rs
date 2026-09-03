@@ -48,7 +48,12 @@ pub fn parse_tokens(input: &str) -> Vec<Token> {
     .collect();
 
   let tokens = condense_horizontal(tokens);
-  let mut tokens = condense_vertical(tokens);
+  let tokens = condense_vertical(tokens);
+  sort_tokens(tokens)
+}
+
+pub fn sort_tokens(input: Vec<Token>) -> Vec<Token> {
+  let mut tokens = input;
   tokens.sort_by(|a, b| {
     let a = a.get_bounds();
     let b = b.get_bounds();

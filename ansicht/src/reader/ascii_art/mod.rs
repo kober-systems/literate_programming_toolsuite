@@ -4,7 +4,7 @@ use crate::{
   ast::{Element as AstElement, ElementSpan, Slice, TextPosition},
   SequenceDiagramElement, AST,
 };
-mod tokenizer;
+pub mod tokenizer;
 pub use tokenizer::Token;
 mod elements;
 pub use elements::*;
