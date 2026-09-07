@@ -3,8 +3,12 @@ use std::{cmp::Ordering, collections::HashMap};
 pub fn parse_tokens(input: &str) -> Vec<Token> {
   use Token::*;
 
-  let tokens: Vec<_> = input
-    .lines()
+  let lines: Vec<_> = input.lines().collect();
+  let lines = lines;
+  let lines: &[&str] = &lines;
+
+  let tokens: Vec<_> = lines
+    .iter()
     .enumerate()
     .flat_map(|(line_number, line)| {
       line
@@ -18,16 +22,18 @@ pub fn parse_tokens(input: &str) -> Vec<Token> {
               column: col,
             })
           }
-          '>' | '<' | 'v' | '^' => Some(Arrow {
-            line: line_number,
-            column: col,
-          }),
-          '-' | '─' | '═' | '=' => Some(HLine {
+          sign if is_arrow(sign, line_number, col, &lines) => {
+            Some(Arrow {
+              line: line_number,
+              column: col,
+            })
+          }
+          sign if is_hline_sign(sign) => Some(HLine {
             line: line_number,
             column_start: col,
             column_end: col,
           }),
-          '|' | '│' | '║' => Some(VLine {
+          sign if is_vline_sign(sign) => Some(VLine {
             column: col,
             line_start: line_number,
             line_end: line_number,
@@ -243,6 +249,78 @@ fn condense_vertical(input: Vec<Token>) -> Vec<Token> {
       });
   out.append(&mut after);
   out
+}
+
+fn is_arrow(sign: char, line: usize, column: usize, lines: &[&str]) -> bool {
+  if !is_arrow_sign(sign) {
+    return false;
+  }
+  let (line, column) = match sign {
+    sign if can_extend_up(sign) && line > 0 => (line - 1, column),
+    sign if can_extend_down(sign) => (line + 1, column),
+    sign if can_extend_right(sign) => (line, column + 1),
+    sign if can_extend_left(sign) && column > 0 => (line, column - 1),
+    _ => return false,
+  };
+
+  match lines.get(line).and_then(|line| line.chars().nth(column)) {
+    Some(neigbor) => {
+      match sign {
+        'v'|'^' => is_vline_sign(neigbor),
+        '<'|'>' => is_hline_sign(neigbor),
+        _ => false,
+      }
+    }
+    None => false,
+  }
+}
+
+fn is_arrow_sign(sign: char) -> bool {
+  matches!(sign, '>' | '<' | 'v' | '^')
+}
+
+fn is_hline_sign(sign: char) -> bool {
+  matches!(sign, '-' | '─' | '═' | '=')
+}
+
+fn is_vline_sign(sign: char) -> bool {
+  matches!(sign, '|' | '│' | '║')
+}
+
+fn can_extend_left(sign: char) -> bool {
+  match sign {
+    '>' => true,
+    '+' | '┐' | '┘' | '┬' | '┴' | '╗' | '╝' | '╤' | '╧' => true,
+    x if is_hline_sign(x) => true,
+    _ => false,
+  }
+}
+
+fn can_extend_right(sign: char) -> bool {
+  match sign {
+    '<' => true,
+    '+' | '┌' | '└' | '┬' | '┴' | '╔' | '╚' | '╤' | '╧' => true,
+    x if is_hline_sign(x) => true,
+    _ => false,
+  }
+}
+
+fn can_extend_up(sign: char) -> bool {
+  match sign {
+    'v'|'V' => true,
+    '+' | '┘' | '└' | '┴' | '╝' | '╚' | '╧' => true,
+    x if is_vline_sign(x) => true,
+    _ => false,
+  }
+}
+
+fn can_extend_down(sign: char) -> bool {
+  match sign {
+    '^' => true,
+    '+' | '┌' | '┐' | '┬' | '╔' | '╗' | '╤' => true,
+    x if is_vline_sign(x) => true,
+    _ => false,
+  }
 }
 
 #[derive(Debug, PartialEq, Copy, Clone)]
