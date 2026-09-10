@@ -336,16 +336,16 @@ fn extract_messages(
   for element in elements {
     match element {
       Element::Text { tokens, .. } => {
-        let Some(Token::Text {
-          line,
-          column_start,
-          column_end,
-        }) = tokens.first()
-        else {
+        let Some(first) = tokens.first() else {
           continue;
         };
+        let Some(last) = tokens.last() else {
+          continue;
+        };
+        let first = first.get_bounds();
+        let last = last.get_bounds();
 
-        let text = text_between(lines, *line, *column_start, *column_end)
+        let text = text_between(lines, first.start.line, first.start.column, last.end.column)
           .trim()
           .to_string();
         if !text.is_empty() {

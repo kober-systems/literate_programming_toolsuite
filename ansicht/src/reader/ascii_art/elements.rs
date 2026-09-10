@@ -157,51 +157,53 @@ fn elements_from_tokens(input: Vec<Token>, text: &str) -> Vec<Element> {
 
   let all_tokens = input.clone();
   let mut possible_blocks: Vec<PartialElement> = vec![];
-  let mut texts = vec![];
+  let mut texts: Vec<Vec<Token>> = vec![];
   let mut blocks = vec![];
   let mut next_id = 0;
 
-  for token in input.into_iter() {
-    match token {
-      Token::Text {
-        line: _,
-        column_start: _,
-        column_end: _,
-      } => {
-        texts.push(token);
-      }
-      token => {
-        if possible_blocks.is_empty() {
-          possible_blocks.push(PartialElement::new(token));
-        } else {
-          let mut token_used = false;
-          possible_blocks = possible_blocks
-            .into_iter()
-            .filter_map(|mut started_block| {
-              if !started_block.can_continue_block(&token, text) {
-                // No block can be continued -> it must be a new one
-                return Some(started_block);
-              }
-
-              token_used = true;
-              if started_block.add_token(token) {
-                blocks.push(Block {
-                  id: next_id,
-                  inner_elements: vec![],
-                  border: started_block.tokens,
-                });
-                next_id += 1;
-                return None;
-              }
-              Some(started_block)
-            })
-            .collect();
-
-          // If token wasn't used to continue any existing block, start a new one
-          if !token_used {
-            possible_blocks.push(PartialElement::new(token));
-          }
+  for (index, token) in input.into_iter().enumerate() {
+    if matches!(token, Token::Text { .. })
+      || is_hline_embedded_in_text(&all_tokens, index)
+    {
+      if let Some(previous) = texts.last_mut() {
+        if tokens_are_adjacent(previous.last().unwrap(), &token) {
+          previous.push(token);
+          continue;
         }
+      }
+      texts.push(vec![token]);
+      continue;
+    }
+
+    if possible_blocks.is_empty() {
+      possible_blocks.push(PartialElement::new(token));
+    } else {
+      let mut token_used = false;
+      possible_blocks = possible_blocks
+        .into_iter()
+        .filter_map(|mut started_block| {
+          if !started_block.can_continue_block(&token, text) {
+            // No block can be continued -> it must be a new one
+            return Some(started_block);
+          }
+
+          token_used = true;
+          if started_block.add_token(token) {
+            blocks.push(Block {
+              id: next_id,
+              inner_elements: vec![],
+              border: started_block.tokens,
+            });
+            next_id += 1;
+            return None;
+          }
+          Some(started_block)
+        })
+        .collect();
+
+      // If token wasn't used to continue any existing block, start a new one
+      if !token_used {
+        possible_blocks.push(PartialElement::new(token));
       }
     }
   }
@@ -209,10 +211,10 @@ fn elements_from_tokens(input: Vec<Token>, text: &str) -> Vec<Element> {
   let mut out = vec![];
 
   // Find if the texts belong into a block
-  for text in texts.into_iter() {
+  for text_tokens in texts.into_iter() {
     let text = Text {
       id: next_id,
-      tokens: vec![text],
+      tokens: text_tokens,
     };
     next_id += 1;
 
@@ -527,6 +529,35 @@ impl PartialElement {
       && self.clock_cycle_end.column == self.counter_clock_cycle_end.column + 1
       && self.tokens.iter().any(|token| matches!(token, Token::VLine { .. }))
   }
+}
+
+fn is_hline_embedded_in_text(tokens: &[Token], index: usize) -> bool {
+  let Token::HLine {
+    line,
+    column_start,
+    column_end,
+  } = tokens[index]
+  else {
+    return false;
+  };
+
+  let Some(previous) = index.checked_sub(1).and_then(|i| tokens.get(i)) else {
+    return false;
+  };
+  let Some(next) = tokens.get(index + 1) else {
+    return false;
+  };
+
+  matches!(previous, Token::Text { line: previous_line, column_end: previous_end, .. }
+    if *previous_line == line && *previous_end + 1 == column_start)
+    && matches!(next, Token::Text { line: next_line, column_start: next_start, .. }
+      if *next_line == line && column_end + 1 == *next_start)
+}
+
+fn tokens_are_adjacent(previous: &Token, next: &Token) -> bool {
+  let previous = previous.get_bounds();
+  let next = next.get_bounds();
+  previous.end.line == next.start.line && previous.end.column + 1 == next.start.column
 }
 
 fn union_bounds(a: BoundingBox, b: BoundingBox) -> BoundingBox {
