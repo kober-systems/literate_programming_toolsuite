@@ -450,7 +450,8 @@ fn arrow_connection_between_lifelines(
       vec![hline, *token],
     ),
     ArrowDirection::Reverse => (
-      lifeline_connection_at(connections, column_end + 1, *line),
+      lifeline_connection_at(connections, column_end + 1, *line)
+        .or_else(|| lifeline_connection_at(connections, column_end + 2, *line)),
       lifeline_connection_at(connections, column_start - 2, *line),
       vec![*token, hline],
     ),

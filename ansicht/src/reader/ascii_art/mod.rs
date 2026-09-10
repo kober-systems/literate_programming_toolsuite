@@ -27,10 +27,8 @@ impl AsciiArtReader {
 }
 
 struct Participant {
-  id: usize,
   name: String,
   lifeline_col: usize,
-  bounds: BoundingBox,
 }
 
 fn parse_sequence_diagram(elements: &[Element], input: &str) -> Vec<ElementSpan> {
@@ -64,9 +62,9 @@ fn extract_participants(elements: &[Element], lines: &[&str]) -> Vec<Participant
 
 fn participant_from_block(element: &Element, lines: &[&str]) -> Option<Participant> {
   let Element::Block {
-    id,
     inner_elements,
     border,
+    ..
   } = element
   else {
     return None;
@@ -108,12 +106,7 @@ fn participant_from_block(element: &Element, lines: &[&str]) -> Option<Participa
   if name.is_empty() {
     None
   } else {
-    Some(Participant {
-      id: *id,
-      name,
-      lifeline_col,
-      bounds,
-    })
+    Some(Participant { name, lifeline_col })
   }
 }
 
@@ -198,30 +191,6 @@ fn participant_at_lifeline_col<'a>(
   participants.iter().find(|participant| participant.lifeline_col == column)
 }
 
-fn participant_inside_bounds(participant: &Participant, bounds: &BoundingBox) -> bool {
-  bounds.start.column <= participant.lifeline_col && participant.lifeline_col <= bounds.end.column
-}
-
-fn scoped_participants_by_checked_state<'a>(
-  participants: &'a [Participant],
-  bounds: &BoundingBox,
-) -> Vec<&'a Participant> {
-  participants
-    .iter()
-    .filter(|participant| participant_inside_bounds(participant, bounds))
-    .collect()
-}
-
-fn resolve_participants_by_ids<'a>(
-  participants: &'a [Participant],
-  from: usize,
-  to: usize,
-) -> Option<(&'a Participant, &'a Participant)> {
-  let from = participants.iter().find(|participant| participant.id == from)?;
-  let to = participants.iter().find(|participant| participant.id == to)?;
-  Some((from, to))
-}
-
 fn resolve_participants_by_columns<'a>(
   participants: &'a [Participant],
   from_column: usize,
@@ -232,96 +201,54 @@ fn resolve_participants_by_columns<'a>(
   Some((from, to))
 }
 
-fn checked_state_bounds_for_element(
-  element: &Element,
+fn lifeline_column_for_connection(
   elements: &[Element],
-  lines: &[&str],
-) -> Option<BoundingBox> {
-  elements
-    .iter()
-    .filter(|candidate| {
-      matches!(candidate, Element::Block { .. })
-        && is_checked_state_block(candidate, lines)
-        && element.is_inside_bounds_of(candidate)
-    })
-    .map(|candidate| candidate.get_bounds())
-    .min_by_key(|bounds| {
-      (
-        bounds.end.line - bounds.start.line,
-        bounds.end.column - bounds.start.column,
-      )
-    })
+  connection_id: usize,
+) -> Option<usize> {
+  let Element::Connection { tokens, .. } = elements.iter().find(|element| {
+    matches!(element, Element::Connection { id, .. } if *id == connection_id)
+  })?
+  else {
+    return None;
+  };
+
+  if tokens.is_empty()
+    || !tokens
+      .iter()
+      .all(|token| matches!(token, Token::VLine { .. }))
+  {
+    return None;
+  }
+
+  let mut columns = tokens.iter().map(|token| match token {
+    Token::VLine { column, .. } => *column,
+    _ => unreachable!(),
+  });
+
+  let column = columns.next()?;
+
+  columns.all(|other_column| other_column == column).then_some(column)
 }
 
-fn connection_endpoint_columns(tokens: &[Token]) -> Option<(usize, usize)> {
-  let (line, column_start, column_end) = tokens.iter().find_map(|token| match token {
-    Token::HLine {
-      line,
-      column_start,
-      column_end,
-    } => Some((*line, *column_start, *column_end)),
-    _ => None,
-  })?;
+fn resolve_message_participants_by_connection_ids<'a>(
+  elements: &[Element],
+  participants: &'a [Participant],
+  from: usize,
+  to: usize,
+) -> Option<(&'a Participant, &'a Participant)> {
+  let from_column = lifeline_column_for_connection(elements, from)?;
+  let to_column = lifeline_column_for_connection(elements, to)?;
 
-  let arrow_column = tokens.iter().find_map(|token| match token {
-    Token::Arrow { line: arrow_line, column } if *arrow_line == line => Some(*column),
-    _ => None,
-  })?;
-
-  if column_end + 1 == arrow_column {
-    Some((column_start.checked_sub(1)?, column_end.checked_add(2)?))
-  } else if column_start == arrow_column + 1 {
-    Some((column_end.checked_add(1)?, column_start.checked_sub(2)?))
-  } else {
-    None
-  }
+  resolve_participants_by_columns(participants, from_column, to_column)
 }
 
 fn resolve_message_participants<'a>(
-  element: &Element,
   elements: &[Element],
-  lines: &[&str],
   participants: &'a [Participant],
   from: usize,
   to: usize,
-  tokens: &[Token],
 ) -> Option<(&'a Participant, &'a Participant)> {
-  resolve_message_participants_in_checked_state(element, elements, lines, participants, tokens)
-    .or_else(|| resolve_message_participants_by_id_or_columns(participants, from, to, tokens))
-}
-
-fn resolve_message_participants_in_checked_state<'a>(
-  element: &Element,
-  elements: &[Element],
-  lines: &[&str],
-  participants: &'a [Participant],
-  tokens: &[Token],
-) -> Option<(&'a Participant, &'a Participant)> {
-  let bounds = checked_state_bounds_for_element(element, elements, lines)?;
-  let (from_column, to_column) = connection_endpoint_columns(tokens)?;
-  let scoped_participants = scoped_participants_by_checked_state(participants, &bounds);
-  let from = scoped_participants
-    .iter()
-    .copied()
-    .find(|participant| participant.lifeline_col == from_column)?;
-  let to = scoped_participants
-    .iter()
-    .copied()
-    .find(|participant| participant.lifeline_col == to_column)?;
-  Some((from, to))
-}
-
-fn resolve_message_participants_by_id_or_columns<'a>(
-  participants: &'a [Participant],
-  from: usize,
-  to: usize,
-  tokens: &[Token],
-) -> Option<(&'a Participant, &'a Participant)> {
-  resolve_participants_by_ids(participants, from, to).or_else(|| {
-    connection_endpoint_columns(tokens).and_then(|(from_column, to_column)| {
-      resolve_participants_by_columns(participants, from_column, to_column)
-    })
-  })
+  resolve_message_participants_by_connection_ids(elements, participants, from, to)
 }
 
 fn extract_messages(
@@ -356,15 +283,7 @@ fn extract_messages(
         if tokens.iter().any(|token| matches!(token, Token::Arrow { .. }))
           && tokens.iter().any(|token| matches!(token, Token::HLine { .. })) =>
       {
-        let resolved = resolve_message_participants(
-          element,
-          elements,
-          lines,
-          participants,
-          *from,
-          *to,
-          tokens,
-        );
+        let resolved = resolve_message_participants(elements, participants, *from, *to);
 
         if let Some((from, to)) = resolved {
           let bounds = element.get_bounds();
