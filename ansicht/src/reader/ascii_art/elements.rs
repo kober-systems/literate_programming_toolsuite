@@ -240,6 +240,19 @@ fn elements_from_tokens(input: Vec<Token>, text: &str) -> Vec<Element> {
   out.append(&mut blocks);
   out.append(&mut connections);
 
+  // Keep every structural token that was not consumed by a recognized
+  // element. Previously these tokens, including incomplete block candidates,
+  // disappeared silently.
+  for token in all_tokens {
+    if !element_owns_token(&out, &token) {
+      out.push(Unknown {
+        id: next_id,
+        tokens: vec![token],
+      });
+      next_id += 1;
+    }
+  }
+
   out.sort_by(|a, b| {
     let a = a.get_bounds();
     let b = b.get_bounds();
@@ -587,6 +600,22 @@ impl PartialElement {
       && self.clock_cycle_end.column == self.counter_clock_cycle_end.column + 1
       && self.tokens.iter().any(|token| matches!(token, Token::VLine { .. }))
   }
+}
+
+fn element_owns_token(elements: &[Element], token: &Token) -> bool {
+  elements.iter().any(|element| match element {
+    Element::Block {
+      inner_elements,
+      border,
+      ..
+    } => border.contains(token) || element_owns_token(inner_elements, token),
+    Element::Connection {
+      inner_elements,
+      tokens,
+      ..
+    } => tokens.contains(token) || element_owns_token(inner_elements, token),
+    Element::Text { tokens, .. } | Element::Unknown { tokens, .. } => tokens.contains(token),
+  })
 }
 
 fn is_hline_embedded_in_text(tokens: &[Token], index: usize) -> bool {
