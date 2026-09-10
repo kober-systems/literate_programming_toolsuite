@@ -154,8 +154,7 @@ fn condense_vertical(input: Vec<Token>) -> Vec<Token> {
                 _ => unreachable!(),
               };
               if old_column == column && line_start <= old_line_end + 1 && line_end > old_line_end {
-                vlines_on_column.insert(
-                  0,
+                vlines_on_column.push(
                   VLine {
                     column,
                     line_start: old_line_start,
@@ -163,16 +162,14 @@ fn condense_vertical(input: Vec<Token>) -> Vec<Token> {
                   },
                 );
               } else {
-                vlines_on_column.insert(
-                  0,
+                vlines_on_column.push(
                   VLine {
                     column: old_column,
                     line_start: old_line_start,
                     line_end: old_line_end,
                   },
                 );
-                vlines_on_column.insert(
-                  0,
+                vlines_on_column.push(
                   VLine {
                     column,
                     line_start,
