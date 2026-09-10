@@ -508,14 +508,12 @@ fn three_boxes_in_row() {
       },
     ]
   );
-  assert_eq!(elements.len(), 3);
-  assert!(matches!(elements[0], Element::Block { .. }));
-  assert!(matches!(elements[1], Element::Block { .. }));
-  assert!(matches!(elements[2], Element::Block { .. }));
 }
 
 #[test]
 fn minimal_box() {
+  use Token::*;
+
   let input = r"
     +-+
     | |
@@ -523,8 +521,51 @@ fn minimal_box() {
   ";
   let elements = parse_elements(input);
 
-  assert_eq!(elements.len(), 1);
-  assert!(matches!(elements[0], Element::Block { .. }));
+  assert_eq!(elements, vec![
+    Element::Block {
+        id: 0,
+        inner_elements: vec![],
+        border: vec![
+            ConnectionSign {
+                line: 1,
+                column: 4,
+            },
+            HLine {
+                line: 1,
+                column_start: 5,
+                column_end: 5,
+            },
+            ConnectionSign {
+                line: 1,
+                column: 6,
+            },
+            VLine {
+                column: 4,
+                line_start: 2,
+                line_end: 2,
+            },
+            VLine {
+                column: 6,
+                line_start: 2,
+                line_end: 2,
+            },
+            ConnectionSign {
+                line: 3,
+                column: 4,
+            },
+            HLine {
+                line: 3,
+                column_start: 5,
+                column_end: 5,
+            },
+            ConnectionSign {
+                line: 3,
+                column: 6,
+            },
+        ],
+    },
+    ]
+  );
 }
 
 #[test]

@@ -525,6 +525,7 @@ impl PartialElement {
 
     self.clock_cycle_end.line == self.counter_clock_cycle_end.line
       && self.clock_cycle_end.column == self.counter_clock_cycle_end.column + 1
+      && self.tokens.iter().any(|token| matches!(token, Token::VLine { .. }))
   }
 }
 
