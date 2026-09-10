@@ -1,11 +1,11 @@
 use anyhow::Result;
 use ansicht::reader::ascii_art::{parse_elements, Element, Token};
 use pretty_assertions::assert_eq;
+#[path = "common/test_helpers.rs"]
 mod test_helpers;
 use test_helpers::assert_element_matches;
 
 mod sequence_diagram_fixtures;
-use sequence_diagram_fixtures::read_example;
 
 #[test]
 fn empty_input() {

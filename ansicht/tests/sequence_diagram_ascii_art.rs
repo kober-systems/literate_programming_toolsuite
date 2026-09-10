@@ -3,6 +3,8 @@ use ansicht::*;
 use pretty_assertions::assert_eq;
 
 mod sequence_diagram_fixtures;
+use sequence_diagram_fixtures::read_example;
+#[path = "common/test_helpers.rs"]
 mod test_helpers;
 use test_helpers::sequence_diagram_elements;
 

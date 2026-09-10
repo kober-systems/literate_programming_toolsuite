@@ -2,6 +2,7 @@ use anyhow::Result;
 use ansicht::*;
 use pretty_assertions::assert_eq;
 
+#[path = "common/test_helpers.rs"]
 mod test_helpers;
 use test_helpers::sequence_diagram_elements;
 mod sequence_diagram_fixtures;

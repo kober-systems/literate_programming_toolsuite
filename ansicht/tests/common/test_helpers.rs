@@ -1,3 +1,5 @@
+#![allow(dead_code, unused_imports, unused_macros)]
+
 use ansicht::*;
 use pretty_assertions::assert_eq;
 

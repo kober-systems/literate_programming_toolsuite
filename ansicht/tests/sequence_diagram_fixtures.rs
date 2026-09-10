@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use anyhow::Result;
 use ansicht::*;
 use ansicht::reader::ascii_art::tokenizer::{sort_tokens, Token};
