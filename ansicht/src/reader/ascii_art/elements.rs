@@ -262,7 +262,7 @@ fn connections_between_blocks(
   connections.extend(
     tokens
       .iter()
-      .filter_map(|token| vline_connection_between_blocks(token, blocks, next_id)),
+      .filter_map(|token| vline_connection_between_blocks(token, tokens, blocks, next_id)),
   );
 
   // TODO this should be removed. We do not have lifelines here
@@ -278,13 +278,14 @@ fn connections_between_blocks(
 // TODO We need an equvalent hline_connection_between_blocks
 fn vline_connection_between_blocks(
   token: &Token,
+  all_tokens: &[Token],
   blocks: &[Element],
   next_id: &mut usize,
 ) -> Option<Element> {
   let Token::VLine {
     column,
     line_start,
-    line_end,
+    ..
   } = token
   else {
     return None;
@@ -297,23 +298,80 @@ fn vline_connection_between_blocks(
     return None;
   }
 
-  let from = element_with_connection_sign(blocks, line_start - 1, *column);
-  let to = element_with_connection_sign(blocks, line_end + 1, *column);
+  // Only the first fragment can start a connection. Later fragments will
+  // have no connection sign directly above them and are therefore ignored.
+  let from = element_with_connection_sign(blocks, line_start - 1, *column)?;
+  let mut lifeline_tokens = vec![*token];
+  let mut current_end = token.get_bounds().end.line;
 
-  match (from, to) {
-    (Some(from), Some(to)) => {
-      let connection = Element::Connection {
-        id: *next_id,
-        from,
-        to,
-        inner_elements: vec![],
-        tokens: vec![*token],
-      };
-      *next_id += 1;
-      Some(connection)
+  let mut fragments: Vec<Token> = all_tokens
+    .iter()
+    .copied()
+    .filter(|candidate| {
+      matches!(candidate, Token::VLine { column: candidate_column, .. } if candidate_column == column)
+    })
+    .collect();
+  fragments.sort_by_key(|candidate| candidate.get_bounds().start.line);
+
+  for fragment in fragments {
+    let Token::VLine {
+      line_start: fragment_start,
+      line_end: fragment_end,
+      ..
+    } = fragment
+    else {
+      unreachable!();
+    };
+
+    if fragment_start <= current_end {
+      continue;
     }
-    _ => None,
+
+    let gap_is_crossed = (current_end + 1..fragment_start).all(|line| {
+      all_tokens.iter().any(|candidate| match candidate {
+        Token::HLine {
+          line: candidate_line,
+          column_start,
+          column_end,
+        } => {
+          *candidate_line == line && *column_start <= *column && *column <= *column_end
+        }
+        Token::Arrow {
+          line: candidate_line,
+          column: candidate_column,
+        } => *candidate_line == line && *candidate_column == *column,
+        Token::Text {
+          line: candidate_line,
+          column_start,
+          column_end,
+        } => {
+          *candidate_line == line
+            && *column_start <= *column
+            && *column <= *column_end
+        }
+        _ => false,
+      })
+    });
+
+    if !gap_is_crossed {
+      break;
+    }
+
+    lifeline_tokens.push(fragment);
+    current_end = fragment_end;
   }
+
+  let to = element_with_connection_sign(blocks, current_end + 1, *column)?;
+
+  let connection = Element::Connection {
+    id: *next_id,
+    from,
+    to,
+    inner_elements: vec![],
+    tokens: lifeline_tokens,
+  };
+  *next_id += 1;
+  Some(connection)
 }
 
 enum ArrowDirection {
