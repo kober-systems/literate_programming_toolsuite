@@ -18,7 +18,7 @@ impl AsciiArtReader {
 
   pub fn parse<'a>(&self, input: &'a str) -> AST<'a> {
     let ascii_elements = parse_elements(input);
-    let elements = parse_sequence_diagram(&ascii_elements, input);
+    let elements = parse_sequence_diagram(ascii_elements, input);
     AST {
       content: input,
       elements,
@@ -31,15 +31,21 @@ struct Participant {
   lifeline_col: usize,
 }
 
-fn parse_sequence_diagram(elements: &[Element], input: &str) -> Vec<ElementSpan> {
+fn parse_sequence_diagram(elements: Vec<Element>, input: &str) -> Vec<ElementSpan> {
   let lines: Vec<&str> = input.lines().collect();
-  let participants = extract_participants(elements, &lines);
+  let (elements, participants) = extract_participants(elements, &lines);
   if participants.is_empty() {
     return vec![];
   }
 
-  let mut result = extract_checked_states(elements, &lines, input, &participants);
-  result.extend(extract_messages(elements, &lines, input, &participants));
+  let (elements, mut result) = extract_checked_states(elements, &lines, &participants);
+  let (remaining, messages) = extract_messages(elements, &lines, input, &participants);
+  result.extend(messages);
+
+  for element in remaining {
+    eprintln!("element not supported:\n{}\n", element.render_ascii(input));
+  }
+
   result.sort_by(|a, b| match (&a.position, &b.position) {
     (
       TextPosition::Slice(Slice { start: a_start, .. }),
@@ -50,14 +56,23 @@ fn parse_sequence_diagram(elements: &[Element], input: &str) -> Vec<ElementSpan>
   result
 }
 
-fn extract_participants(elements: &[Element], lines: &[&str]) -> Vec<Participant> {
-  let mut participants: Vec<Participant> = elements
-    .iter()
-    .filter_map(|element| participant_from_block(element, lines))
-    .collect();
+fn extract_participants(
+  elements: Vec<Element>,
+  lines: &[&str],
+) -> (Vec<Element>, Vec<Participant>) {
+  let mut remaining = vec![];
+  let mut participants = vec![];
+
+  for element in elements {
+    if let Some(participant) = participant_from_block(&element, lines) {
+      participants.push(participant);
+    } else {
+      remaining.push(element);
+    }
+  }
 
   participants.sort_by_key(|p| p.lifeline_col);
-  participants
+  (remaining, participants)
 }
 
 fn participant_from_block(element: &Element, lines: &[&str]) -> Option<Participant> {
@@ -111,61 +126,59 @@ fn participant_from_block(element: &Element, lines: &[&str]) -> Option<Participa
 }
 
 fn extract_checked_states(
-  elements: &[Element],
+  elements: Vec<Element>,
   lines: &[&str],
-  input: &str,
   participants: &[Participant],
-) -> Vec<ElementSpan> {
-  let result: Vec<ElementSpan> = elements
-    .iter()
-    .filter_map(|element| {
-      let Element::Block {
-        inner_elements,
-        border: _,
-        ..
-      } = element
-      else {
-        eprintln!("element not supported:\n{}\n", element.render_ascii(input));
-        return None;
-      };
+) -> (Vec<Element>, Vec<ElementSpan>) {
+  let mut remaining = vec![];
+  let mut result = vec![];
 
-      if !is_checked_state_block(element, lines) {
-        return None;
-      }
+  for element in elements {
+    let Element::Block { inner_elements, .. } = &element else {
+      remaining.push(element);
+      continue;
+    };
 
-      let bounds = element.get_bounds();
-      let name_line = inner_elements.iter().find_map(|element| match element {
-        Element::Text { tokens, .. } => tokens.first().and_then(|token| match token {
-          Token::Text { line, .. } => Some(*line),
-          _ => None,
-        }),
+    if !is_checked_state_block(&element, lines) {
+      remaining.push(element);
+      continue;
+    }
+
+    let bounds = element.get_bounds();
+    let name_line = inner_elements.iter().find_map(|element| match element {
+      Element::Text { tokens, .. } => tokens.first().and_then(|token| match token {
+        Token::Text { line, .. } => Some(*line),
         _ => None,
-      })?;
+      }),
+      _ => None,
+    });
 
-      let name = text_between(lines, name_line, bounds.start.column + 1, bounds.end.column - 1)
-        .trim()
-        .to_string();
+    let Some(name_line) = name_line else {
+      continue;
+    };
+    let name = text_between(lines, name_line, bounds.start.column + 1, bounds.end.column - 1)
+      .trim()
+      .to_string();
+    if name.is_empty() {
+      continue;
+    }
 
-      if name.is_empty() {
-        return None;
-      }
+    result.push(ElementSpan {
+      source: None,
+      position: TextPosition::Slice(Slice {
+        start: bounds.start.line,
+        end: bounds.end.line,
+      }),
+      element: AstElement::Sequence(SequenceDiagramElement::CheckedState {
+        name,
+        participants: participants.iter().map(|p| p.name.clone()).collect(),
+      }),
+      children: vec![],
+      attrs: vec![],
+    });
+  }
 
-      Some(ElementSpan {
-        source: None,
-        position: TextPosition::Slice(Slice {
-          start: bounds.start.line,
-          end: bounds.end.line,
-        }),
-        element: AstElement::Sequence(SequenceDiagramElement::CheckedState {
-          name,
-          participants: participants.iter().map(|p| p.name.clone()).collect(),
-        }),
-        children: vec![],
-        attrs: vec![],
-      })
-    })
-    .collect();
-  result
+  (remaining, result)
 }
 
 fn is_checked_state_block(element: &Element, lines: &[&str]) -> bool {
@@ -252,15 +265,23 @@ fn resolve_message_participants<'a>(
 }
 
 fn extract_messages(
-  elements: &[Element],
+  elements: Vec<Element>,
   lines: &[&str],
   input: &str,
   participants: &[Participant],
-) -> Vec<ElementSpan> {
+) -> (Vec<Element>, Vec<ElementSpan>) {
   let mut result = vec![];
   let mut pending_text: Option<String> = None;
+  let mut consumed_ids = vec![];
 
-  for element in elements {
+  for element in &elements {
+    match element {
+      Element::Text { .. } | Element::Connection { .. } => {
+        consumed_ids.push(element_id(element));
+      }
+      _ => {}
+    }
+
     match element {
       Element::Text { tokens, .. } => {
         let Some(first) = tokens.first() else {
@@ -283,7 +304,7 @@ fn extract_messages(
         if tokens.iter().any(|token| matches!(token, Token::Arrow { .. }))
           && tokens.iter().any(|token| matches!(token, Token::HLine { .. })) =>
       {
-        let resolved = resolve_message_participants(elements, participants, *from, *to);
+        let resolved = resolve_message_participants(&elements, participants, *from, *to);
 
         if let Some((from, to)) = resolved {
           let bounds = element.get_bounds();
@@ -307,13 +328,25 @@ fn extract_messages(
           eprintln!("Connection not found:\n{:?}\n{}\n", element, element.render_ascii(input));
         }
       }
-      _ => {
-        eprintln!("Not a message:\n{:?}\n{}\n", element, element.render_ascii(input));
-      }
+      _ => {}
     }
   }
 
-  result
+  let remaining = elements
+    .into_iter()
+    .filter(|element| !consumed_ids.contains(&element_id(element)))
+    .collect();
+
+  (remaining, result)
+}
+
+fn element_id(element: &Element) -> usize {
+  match element {
+    Element::Block { id, .. }
+    | Element::Connection { id, .. }
+    | Element::Text { id, .. }
+    | Element::Unknown { id, .. } => *id,
+  }
 }
 
 fn text_between(lines: &[&str], line: usize, column_start: usize, column_end: usize) -> String {
