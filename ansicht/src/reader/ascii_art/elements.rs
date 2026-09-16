@@ -155,60 +155,27 @@ pub fn parse_elements(input: &str) -> Vec<Element> {
 fn elements_from_tokens(input: Vec<Token>, text: &str) -> Vec<Element> {
   use Element::*;
 
-  let all_tokens = input.clone();
-  let mut possible_blocks: Vec<PartialElement> = vec![];
+  let (mut blocks, remaining_tokens) = blocks_from_tokens(input, text);
   let mut texts: Vec<Vec<Token>> = vec![];
-  let mut blocks = vec![];
-  let mut next_id = 0;
 
-  for (index, token) in input.into_iter().enumerate() {
-    if matches!(token, Token::Text { .. })
-      || is_hline_embedded_in_text(&all_tokens, index)
+  for (index, token) in remaining_tokens.iter().copied().enumerate() {
+    if !matches!(token, Token::Text { .. })
+      && !is_hline_embedded_in_text(&remaining_tokens, index)
     {
-      if let Some(previous) = texts.last_mut() {
-        if tokens_are_adjacent(previous.last().unwrap(), &token) {
-          previous.push(token);
-          continue;
-        }
-      }
-      texts.push(vec![token]);
       continue;
     }
 
-    if possible_blocks.is_empty() {
-      possible_blocks.push(PartialElement::new(token));
-    } else {
-      let mut token_used = false;
-      possible_blocks = possible_blocks
-        .into_iter()
-        .filter_map(|mut started_block| {
-          if !started_block.can_continue_block(&token, text) {
-            // No block can be continued -> it must be a new one
-            return Some(started_block);
-          }
-
-          token_used = true;
-          if started_block.add_token(token) {
-            blocks.push(Block {
-              id: next_id,
-              inner_elements: vec![],
-              border: started_block.tokens,
-            });
-            next_id += 1;
-            return None;
-          }
-          Some(started_block)
-        })
-        .collect();
-
-      // If token wasn't used to continue any existing block, start a new one
-      if !token_used {
-        possible_blocks.push(PartialElement::new(token));
+    if let Some(previous) = texts.last_mut() {
+      if tokens_are_adjacent(previous.last().unwrap(), &token) {
+        previous.push(token);
+        continue;
       }
     }
+    texts.push(vec![token]);
   }
 
   let mut out = vec![];
+  let mut next_id = blocks.len();
 
   // Find if the texts belong into a block
   for text_tokens in texts.into_iter() {
@@ -235,7 +202,7 @@ fn elements_from_tokens(input: Vec<Token>, text: &str) -> Vec<Element> {
     }
   }
 
-  let mut connections = connections_between_blocks(&all_tokens, &blocks, &mut next_id);
+  let mut connections = connections_between_blocks(&remaining_tokens, &blocks, &mut next_id);
 
   out.append(&mut blocks);
   out.append(&mut connections);
@@ -243,7 +210,7 @@ fn elements_from_tokens(input: Vec<Token>, text: &str) -> Vec<Element> {
   // Keep every structural token that was not consumed by a recognized
   // element. Previously these tokens, including incomplete block candidates,
   // disappeared silently.
-  for token in all_tokens {
+  for token in remaining_tokens {
     if !element_owns_token(&out, &token) {
       out.push(Unknown {
         id: next_id,
@@ -263,6 +230,61 @@ fn elements_from_tokens(input: Vec<Token>, text: &str) -> Vec<Element> {
   });
 
   out
+}
+
+/// Recognize closed block borders and return every token not used by one.
+fn blocks_from_tokens(input: Vec<Token>, text: &str) -> (Vec<Element>, Vec<Token>) {
+  use Element::Block;
+
+  let all_tokens = input.clone();
+  let mut possible_blocks: Vec<PartialElement> = vec![];
+  let mut blocks = vec![];
+  let mut next_id = 0;
+
+  for token in input {
+    if matches!(token, Token::Text { .. }) {
+      continue;
+    }
+
+    if possible_blocks.is_empty() {
+      possible_blocks.push(PartialElement::new(token));
+      continue;
+    }
+
+    let mut token_used = false;
+    possible_blocks = possible_blocks
+      .into_iter()
+      .filter_map(|mut started_block| {
+        if !started_block.can_continue_block(&token, text) {
+          return Some(started_block);
+        }
+
+        token_used = true;
+        if started_block.add_token(token) {
+          blocks.push(Block {
+            id: next_id,
+            inner_elements: vec![],
+            border: started_block.tokens,
+          });
+          next_id += 1;
+          None
+        } else {
+          Some(started_block)
+        }
+      })
+      .collect();
+
+    if !token_used {
+      possible_blocks.push(PartialElement::new(token));
+    }
+  }
+
+  let remaining_tokens = all_tokens
+    .into_iter()
+    .filter(|token| !blocks.iter().any(|block| matches!(block, Block { border, .. } if border.contains(token))))
+    .collect();
+
+  (blocks, remaining_tokens)
 }
 
 fn connections_between_blocks(
