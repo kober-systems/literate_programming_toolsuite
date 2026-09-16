@@ -158,33 +158,7 @@ fn elements_from_tokens(input: Vec<Token>, text: &str) -> Vec<Element> {
   let (mut blocks, remaining_tokens) = blocks_from_tokens(input, text);
   let (texts, remaining_tokens) = texts_from_tokens(remaining_tokens, blocks.len());
   let mut next_id = blocks.len() + texts.len();
-
-  let mut out = vec![];
-
-  // Find if the texts belong into a block
-  for text_tokens in texts.into_iter() {
-    let text = Text {
-      id: next_id,
-      tokens: text_tokens,
-    };
-    next_id += 1;
-
-    let mut owning_block = None;
-    for block in blocks.iter_mut() {
-      if text.is_inside_bounds_of(block) {
-        owning_block = Some(block);
-        break;
-      }
-    }
-    match owning_block {
-      Some(block) => {
-        block.add_inner_element(text);
-      }
-      None => {
-        out.push(text);
-      }
-    }
-  }
+  let mut out = assign_texts_to_blocks(texts, &mut blocks);
 
   let mut connections = connections_between_blocks(&remaining_tokens, &blocks, &out, &mut next_id);
 
@@ -214,6 +188,24 @@ fn elements_from_tokens(input: Vec<Token>, text: &str) -> Vec<Element> {
   });
 
   out
+}
+
+/// Move texts contained by a block into that block and return top-level texts.
+fn assign_texts_to_blocks(texts: Vec<Element>, blocks: &mut [Element]) -> Vec<Element> {
+  let mut top_level_texts = vec![];
+
+  for text in texts {
+    if let Some(block) = blocks
+      .iter_mut()
+      .find(|block| text.is_inside_bounds_of(block))
+    {
+      block.add_inner_element(text);
+    } else {
+      top_level_texts.push(text);
+    }
+  }
+
+  top_level_texts
 }
 
 /// Recognize closed block borders and return every token not used by one.
