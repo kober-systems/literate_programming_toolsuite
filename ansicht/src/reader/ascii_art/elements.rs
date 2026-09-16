@@ -156,26 +156,10 @@ fn elements_from_tokens(input: Vec<Token>, text: &str) -> Vec<Element> {
   use Element::*;
 
   let (mut blocks, remaining_tokens) = blocks_from_tokens(input, text);
-  let mut texts: Vec<Vec<Token>> = vec![];
-
-  for (index, token) in remaining_tokens.iter().copied().enumerate() {
-    if !matches!(token, Token::Text { .. })
-      && !is_hline_embedded_in_text(&remaining_tokens, index)
-    {
-      continue;
-    }
-
-    if let Some(previous) = texts.last_mut() {
-      if tokens_are_adjacent(previous.last().unwrap(), &token) {
-        previous.push(token);
-        continue;
-      }
-    }
-    texts.push(vec![token]);
-  }
+  let (texts, remaining_tokens) = texts_from_tokens(remaining_tokens, blocks.len());
+  let mut next_id = blocks.len() + texts.len();
 
   let mut out = vec![];
-  let mut next_id = blocks.len();
 
   // Find if the texts belong into a block
   for text_tokens in texts.into_iter() {
@@ -202,7 +186,7 @@ fn elements_from_tokens(input: Vec<Token>, text: &str) -> Vec<Element> {
     }
   }
 
-  let mut connections = connections_between_blocks(&remaining_tokens, &blocks, &mut next_id);
+  let mut connections = connections_between_blocks(&remaining_tokens, &blocks, &out, &mut next_id);
 
   out.append(&mut blocks);
   out.append(&mut connections);
@@ -287,9 +271,48 @@ fn blocks_from_tokens(input: Vec<Token>, text: &str) -> (Vec<Element>, Vec<Token
   (blocks, remaining_tokens)
 }
 
+/// Group text tokens and return every token not used by text.
+fn texts_from_tokens(
+  input: Vec<Token>,
+  next_id: usize,
+) -> (Vec<Element>, Vec<Token>) {
+  let mut texts: Vec<Vec<Token>> = vec![];
+  let mut remaining_tokens = vec![];
+
+  for (index, token) in input.iter().copied().enumerate() {
+    if !matches!(token, Token::Text { .. }) && !is_hline_embedded_in_text(&input, index) {
+      remaining_tokens.push(token);
+      continue;
+    }
+
+    if let Some(previous) = texts.last_mut() {
+      if tokens_are_adjacent(previous.last().unwrap(), &token) {
+        previous.push(token);
+        continue;
+      }
+    }
+    texts.push(vec![token]);
+  }
+
+  let texts = texts
+    .into_iter()
+    .enumerate()
+    .map(|(idx, tokens)| {
+      let text = Element::Text {
+        id: next_id + idx,
+        tokens,
+      };
+      text
+    })
+    .collect();
+
+  (texts, remaining_tokens)
+}
+
 fn connections_between_blocks(
   tokens: &[Token],
   blocks: &[Element],
+  top_level_elements: &[Element],
   next_id: &mut usize,
 ) -> Vec<Element> {
   let mut connections = vec![];
@@ -297,7 +320,9 @@ fn connections_between_blocks(
   connections.extend(
     tokens
       .iter()
-      .filter_map(|token| vline_connection_between_blocks(token, tokens, blocks, next_id)),
+      .filter_map(|token| {
+        vline_connection_between_blocks(token, tokens, blocks, top_level_elements, next_id)
+      }),
   );
 
   // TODO this should be removed. We do not have lifelines here
@@ -315,6 +340,7 @@ fn vline_connection_between_blocks(
   token: &Token,
   all_tokens: &[Token],
   blocks: &[Element],
+  top_level_elements: &[Element],
   next_id: &mut usize,
 ) -> Option<Element> {
   let Token::VLine {
@@ -375,17 +401,8 @@ fn vline_connection_between_blocks(
           line: candidate_line,
           column: candidate_column,
         } => *candidate_line == line && *candidate_column == *column,
-        Token::Text {
-          line: candidate_line,
-          column_start,
-          column_end,
-        } => {
-          *candidate_line == line
-            && *column_start <= *column
-            && *column <= *column_end
-        }
         _ => false,
-      })
+      }) || top_level_text_crosses(top_level_elements, line, *column)
     });
 
     if !gap_is_crossed {
@@ -419,6 +436,19 @@ struct ArrowHLine {
   column_end: usize,
   token: Token,
   direction: ArrowDirection,
+}
+
+fn top_level_text_crosses(elements: &[Element], line: usize, column: usize) -> bool {
+  elements.iter().any(|element| match element {
+    Element::Text { .. } => {
+      let bounds = element.get_bounds();
+      bounds.start.line <= line
+        && line <= bounds.end.line
+        && bounds.start.column <= column
+        && column <= bounds.end.column
+    }
+    _ => false,
+  })
 }
 
 fn arrow_hline_at(tokens: &[Token], line: usize, column: usize) -> Option<ArrowHLine> {
