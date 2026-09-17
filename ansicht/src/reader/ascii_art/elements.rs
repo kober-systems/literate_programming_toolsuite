@@ -317,13 +317,6 @@ fn connections_between_blocks(
     });
   elements.append(&mut connections);
 
-  // TODO this should be removed. We do not have lifelines here
-  let (mut connections, remaining_tokens) =
-    partition_recognized_connections(remaining_tokens, |token, all_tokens| {
-      arrow_connection_between_lifelines(token, all_tokens, &elements, next_id)
-    });
-  elements.append(&mut connections);
-
   (elements, remaining_tokens)
 }
 
@@ -346,6 +339,95 @@ where
   (connections, remaining_tokens)
 }
 
+struct PartialConnection {
+  from: usize,
+  tokens: Vec<Token>,
+  current_end: Coordinate,
+}
+
+impl PartialConnection {
+  fn new(from: usize, token: Token) -> Self {
+    Self {
+      from,
+      current_end: token.get_bounds().end,
+      tokens: vec![token],
+    }
+  }
+
+  /// Whether the current path token can extend to `next` through any gap.
+  fn can_continue(&self, next: &Token, all_tokens: &[Token], elements: &[Element]) -> bool {
+    match (self.tokens.last(), next) {
+      (
+        Some(Token::VLine { column, .. }),
+        Token::VLine {
+          column: next_column,
+          line_start,
+          ..
+        },
+      ) if column == next_column && *line_start > self.current_end.line => {
+        (self.current_end.line + 1..*line_start).all(|line| {
+          all_tokens.iter().any(|candidate| match candidate {
+            Token::HLine {
+              line: candidate_line,
+              column_start,
+              column_end,
+            } => *candidate_line == line && *column_start <= *column && *column <= *column_end,
+            Token::Arrow {
+              line: candidate_line,
+              column: candidate_column,
+            } => *candidate_line == line && *candidate_column == *column,
+            _ => false,
+          }) || text_crosses(elements, line, *column)
+        })
+      }
+      (
+        Some(Token::HLine { line, .. }),
+        Token::HLine {
+          line: next_line,
+          column_start,
+          ..
+        },
+      ) if line == next_line && *column_start > self.current_end.column => {
+        (self.current_end.column + 1..*column_start).all(|column| {
+          all_tokens.iter().any(|candidate| match candidate {
+            Token::VLine {
+              column: candidate_column,
+              line_start,
+              line_end,
+            } => *candidate_column == column && *line_start <= *line && *line <= *line_end,
+            Token::Arrow {
+              line: candidate_line,
+              column: candidate_column,
+            } => *candidate_line == *line && *candidate_column == column,
+            _ => false,
+          }) || vertical_connection_crosses(elements, *line, column)
+            || text_crosses(elements, *line, column)
+        })
+      }
+      _ => false,
+    }
+  }
+
+  /// Adds a path fragment and reports whether it now reaches a destination sign.
+  fn add_token(&mut self, token: Token, elements: &[Element]) -> bool {
+    self.current_end = token.get_bounds().end;
+    self.tokens.push(token);
+    self.destination(elements).is_some()
+  }
+
+  fn destination(&self, elements: &[Element]) -> Option<usize> {
+    match self.tokens.last()? {
+      Token::VLine { column, .. } => {
+        element_with_connection_sign(elements, self.current_end.line + 1, *column)
+      }
+      Token::HLine { line, .. } => {
+        element_with_connection_sign(elements, *line, self.current_end.column + 1)
+      }
+      _ => None,
+    }
+  }
+}
+
 fn vline_connection_between_blocks(
   token: &Token,
   all_tokens: &[Token],
@@ -365,9 +447,7 @@ fn vline_connection_between_blocks(
   // Only the first fragment can start a connection. Later fragments will
   // have no connection sign directly above them and are therefore ignored.
   let from = element_with_connection_sign(elements, line_start - 1, *column)?;
-  let mut connection_tokens = vec![*token];
-  let mut current_end = token.get_bounds().end.line;
-
+  let mut connection = PartialConnection::new(from, *token);
   let mut fragments: Vec<Token> = all_tokens
     .iter()
     .copied()
@@ -378,55 +458,20 @@ fn vline_connection_between_blocks(
   fragments.sort_by_key(|candidate| candidate.get_bounds().start.line);
 
   for fragment in fragments {
-    let Token::VLine {
-      line_start: fragment_start,
-      line_end: fragment_end,
-      ..
-    } = fragment
-    else {
-      unreachable!();
-    };
-
-    if fragment_start <= current_end {
+    if fragment.get_bounds().start.line <= connection.current_end.line {
       continue;
     }
-
-    let gap_is_crossed = (current_end + 1..fragment_start).all(|line| {
-      all_tokens.iter().any(|candidate| match candidate {
-        Token::HLine {
-          line: candidate_line,
-          column_start,
-          column_end,
-        } => {
-          *candidate_line == line && *column_start <= *column && *column <= *column_end
-        }
-        Token::Arrow {
-          line: candidate_line,
-          column: candidate_column,
-        } => *candidate_line == line && *candidate_column == *column,
-        _ => false,
-      }) || top_level_text_crosses(elements, line, *column)
-    });
-
-    if !gap_is_crossed {
+    if !connection.can_continue(&fragment, all_tokens, elements) {
       break;
     }
-
-    connection_tokens.push(fragment);
-    current_end = fragment_end;
+    if connection.add_token(fragment, elements) {
+      break;
+    }
   }
 
-  let to = element_with_connection_sign(elements, current_end + 1, *column)?;
+  let to = connection.destination(elements)?;
 
-  let connection = Element::Connection {
-    id: *next_id,
-    from,
-    to,
-    inner_elements: vec![],
-    tokens: connection_tokens,
-  };
-  *next_id += 1;
-  Some(connection)
+  connection_element(connection.from, to, connection.tokens, next_id)
 }
 
 fn hline_connection_between_blocks(
@@ -445,67 +490,68 @@ fn hline_connection_between_blocks(
     _ => return None,
   };
 
-  // Only the first fragment can start a connection. Later fragments will
-  // have no connection sign directly to their left and are therefore ignored.
-  let from = element_with_connection_sign(elements, *line, column_start - 1)?;
-  let mut connection_tokens = vec![*token];
-  let mut current_end = token.get_bounds().end.column;
-
-  let mut fragments: Vec<Token> = all_tokens
-    .iter()
-    .copied()
-    .filter(|candidate| {
-      matches!(candidate, Token::HLine { line: candidate_line, .. } if candidate_line == line)
-    })
-    .collect();
-  fragments.sort_by_key(|candidate| candidate.get_bounds().start.column);
-
-  for fragment in fragments {
-    let Token::HLine {
-      column_start: fragment_start,
-      column_end: fragment_end,
-      ..
-    } = fragment
-    else {
-      unreachable!();
+  let (from, to, tokens) = if let Some(arrow) = all_tokens.iter().find(|candidate| {
+    matches!(candidate, Token::Arrow { line: arrow_line, column } if arrow_line == line && *column + 1 == *column_start)
+  }) {
+    // A left-pointing arrow starts a right-to-left connection. Its source is
+    // known only after following the complete horizontal path.
+    let mut path = follow_hline_path(0, *token, all_tokens, elements);
+    let from = element_with_connection_sign(elements, *line, path.current_end.column + 1)
+      .or_else(|| element_with_connection_sign(elements, *line, path.current_end.column + 2))?;
+    let to = element_with_connection_sign(elements, *line, column_start.checked_sub(2)?)?;
+    path.tokens.insert(0, *arrow);
+    (from, to, path.tokens)
+  } else {
+    // Only the first fragment can start a left-to-right connection. Later
+    // fragments have no connection sign directly to their left.
+    let from = element_with_connection_sign(elements, *line, column_start.checked_sub(1)?)?;
+    let mut path = follow_hline_path(from, *token, all_tokens, elements);
+    let to = if let Some(to) = path.destination(elements) {
+      to
+    } else {
+      let arrow = all_tokens.iter().copied().find(|candidate| {
+        matches!(candidate, Token::Arrow { line: arrow_line, column } if arrow_line == line && *column == path.current_end.column + 1)
+      })?;
+      let Token::Arrow { column, .. } = arrow else { unreachable!() };
+      let to = element_with_connection_sign(elements, *line, column + 1)?;
+      path.tokens.push(arrow);
+      to
     };
+    (from, to, path.tokens)
+  };
 
-    if fragment_start <= current_end {
-      continue;
-    }
+  connection_element(from, to, tokens, next_id)
+}
 
-    let gap_is_crossed = (current_end + 1..fragment_start).all(|column| {
-      all_tokens.iter().any(|candidate| match candidate {
-        Token::VLine {
-          column: candidate_column,
-          line_start,
-          line_end,
-        } => *candidate_column == column && *line_start <= *line && *line <= *line_end,
-        Token::Arrow {
-          line: candidate_line,
-          column: candidate_column,
-        } => *candidate_line == *line && *candidate_column == column,
-        _ => false,
-      }) || vertical_connection_crosses(elements, *line, column)
-        || top_level_text_crosses(elements, *line, column)
-    });
+fn follow_hline_path(
+  from: usize,
+  first_fragment: Token,
+  all_tokens: &[Token],
+  elements: &[Element],
+) -> PartialConnection {
+  let mut path = PartialConnection::new(from, first_fragment);
 
-    if !gap_is_crossed {
+  for fragment in all_tokens {
+    if !path.can_continue(fragment, all_tokens, elements) || path.add_token(*fragment, elements) {
       break;
     }
-
-    connection_tokens.push(fragment);
-    current_end = fragment_end;
   }
 
-  let to = element_with_connection_sign(elements, *line, current_end + 1)?;
+  path
+}
 
+fn connection_element(
+  from: usize,
+  to: usize,
+  tokens: Vec<Token>,
+  next_id: &mut usize,
+) -> Option<Element> {
   let connection = Element::Connection {
     id: *next_id,
     from,
     to,
     inner_elements: vec![],
-    tokens: connection_tokens,
+    tokens,
   };
   *next_id += 1;
   Some(connection)
@@ -524,19 +570,7 @@ fn vertical_connection_crosses(connections: &[Element], line: usize, column: usi
   })
 }
 
-enum ArrowDirection {
-  Forward,
-  Reverse,
-}
-
-struct ArrowHLine {
-  column_start: usize,
-  column_end: usize,
-  token: Token,
-  direction: ArrowDirection,
-}
-
-fn top_level_text_crosses(elements: &[Element], line: usize, column: usize) -> bool {
+fn text_crosses(elements: &[Element], line: usize, column: usize) -> bool {
   elements.iter().any(|element| match element {
     Element::Text { .. } => {
       let bounds = element.get_bounds();
@@ -547,80 +581,6 @@ fn top_level_text_crosses(elements: &[Element], line: usize, column: usize) -> b
     }
     _ => false,
   })
-}
-
-fn arrow_hline_at(tokens: &[Token], line: usize, column: usize) -> Option<ArrowHLine> {
-  tokens.iter().find_map(|token| match token {
-    Token::HLine {
-      line: hline_line,
-      column_start,
-      column_end,
-    } if hline_line == &line && *column_end + 1 == column => Some(ArrowHLine {
-      column_start: *column_start,
-      column_end: *column_end,
-      token: *token,
-      direction: ArrowDirection::Forward,
-    }),
-    Token::HLine {
-      line: hline_line,
-      column_start,
-      column_end,
-    } if hline_line == &line && *column_start == column + 1 => Some(ArrowHLine {
-      column_start: *column_start,
-      column_end: *column_end,
-      token: *token,
-      direction: ArrowDirection::Reverse,
-    }),
-    _ => None,
-  })
-}
-
-// TODO entfernen
-fn arrow_connection_between_lifelines(
-  token: &Token,
-  tokens: &[Token],
-  connections: &[Element],
-  next_id: &mut usize,
-) -> Option<Element> {
-  let Token::Arrow { line, column } = token else {
-    return None;
-  };
-
-  let ArrowHLine {
-    column_start,
-    column_end,
-    token: hline,
-    direction,
-  } = arrow_hline_at(tokens, *line, *column)?;
-
-  let (from, to, tokens) = match direction {
-    ArrowDirection::Forward => (
-      lifeline_connection_at(connections, column_start - 1, *line),
-      lifeline_connection_at(connections, column_end + 2, *line),
-      vec![hline, *token],
-    ),
-    ArrowDirection::Reverse => (
-      lifeline_connection_at(connections, column_end + 1, *line)
-        .or_else(|| lifeline_connection_at(connections, column_end + 2, *line)),
-      lifeline_connection_at(connections, column_start - 2, *line),
-      vec![*token, hline],
-    ),
-  };
-
-  match (from, to) {
-    (Some(from), Some(to)) => {
-      let connection = Element::Connection {
-        id: *next_id,
-        from,
-        to,
-        inner_elements: vec![],
-        tokens,
-      };
-      *next_id += 1;
-      Some(connection)
-    }
-    _ => None,
-  }
 }
 
 fn element_with_connection_sign(
@@ -638,20 +598,8 @@ fn element_with_connection_sign(
       if tokens.iter().any(|token| {
         matches!(token, Token::ConnectionSign { line: token_line, column: token_column }
           if *token_line == line && *token_column == column)
-      }) =>
-    {
-      Some(*id)
-    }
-    _ => None,
-  })
-}
-
-fn lifeline_connection_at(connections: &[Element], column: usize, line: usize) -> Option<usize> {
-  connections.iter().find_map(|connection| match connection {
-    Element::Connection { id, tokens, .. }
-      if tokens.iter().any(|token| {
-        matches!(token, Token::VLine { column: vline_column, line_start, line_end }
-          if *vline_column == column && *line_start <= line && *line_end >= line)
+          || matches!(token, Token::VLine { column: token_column, line_start, line_end }
+            if *token_column == column && *line_start <= line && line <= *line_end)
       }) =>
     {
       Some(*id)
