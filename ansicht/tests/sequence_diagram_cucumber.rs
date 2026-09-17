@@ -9,7 +9,7 @@ mod test_helpers;
 
 #[test]
 fn service_discovery_cucumber() -> Result<()> {
-  let content = read_example("service_discovery.ascii")?;
+  let content = read_example("sequence-diagram/service_discovery.ascii")?;
   let ast = reader::AsciiArtReader::new().parse(&content);
 
   let mut writer = writer::cucumber::CucumberWriter {
@@ -21,14 +21,14 @@ fn service_discovery_cucumber() -> Result<()> {
   writer.write(ast, &mut output)?;
 
   let actual = String::from_utf8(output)?;
-  assert_eq!(actual, read_example("service_discovery.feature")?.replace('\r', ""));
+  assert_eq!(actual, read_example("sequence-diagram/service_discovery.feature")?.replace('\r', ""));
 
   Ok(())
 }
 
 #[test]
 fn oauth_happy_path_cucumber() -> Result<()> {
-  let content = read_example("oauth.happy_path.mermaid")?;
+  let content = read_example("sequence-diagram/oauth.happy_path.mermaid")?;
   let ast = reader::MermaidReader::new().parse(&content)?;
 
   let mut writer = writer::cucumber::CucumberWriter {
@@ -40,7 +40,7 @@ fn oauth_happy_path_cucumber() -> Result<()> {
   writer.write(ast, &mut output)?;
 
   let actual = String::from_utf8(output)?;
-  assert_eq!(actual, read_example("oauth.happy_path.feature")?.replace('\r', ""));
+  assert_eq!(actual, read_example("sequence-diagram/oauth.happy_path.feature")?.replace('\r', ""));
 
   Ok(())
 }

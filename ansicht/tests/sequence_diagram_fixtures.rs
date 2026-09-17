@@ -2100,7 +2100,7 @@ pub fn block_resource_server_text2() -> Vec<Token> {
 pub fn read_example(name: &str) -> Result<String> {
   Ok(fs::read_to_string(
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-      .join("tests/examples/sequence-diagram")
+      .join("tests/examples")
       .join(name),
   )?)
 }

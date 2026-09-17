@@ -10,7 +10,7 @@ use test_helpers::sequence_diagram_elements;
 
 #[test]
 fn oauth_happy_path() -> Result<()> {
-  let content = read_example("oauth.happy_path.ascii")?;
+  let content = read_example("sequence-diagram/oauth.happy_path.ascii")?;
   let reader = reader::AsciiArtReader::new();
   let ast = reader.parse(&content);
 
@@ -24,7 +24,7 @@ fn oauth_happy_path() -> Result<()> {
 
 #[test]
 fn oauth_happy_path_compact() -> Result<()> {
-  let content = read_example("oauth.happy_path.compact.ascii")?;
+  let content = read_example("sequence-diagram/oauth.happy_path.compact.ascii")?;
   let reader = reader::AsciiArtReader::new();
   let ast = reader.parse(&content);
 
@@ -65,7 +65,7 @@ fn single_checked_state() -> Result<()> {
 
 #[test]
 fn service_discovery_flow() -> Result<()> {
-  let content = read_example("service_discovery.ascii")?;
+  let content = read_example("sequence-diagram/service_discovery.ascii")?;
   let reader = reader::AsciiArtReader::new();
   let ast = reader.parse(&content);
 

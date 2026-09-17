@@ -10,7 +10,7 @@ use test_helpers::sequence_diagram_elements;
 
 #[test]
 fn service_discovery_happy_path() -> Result<()> {
-  let content = read_example("service_discovery.mermaid")?;
+  let content = read_example("sequence-diagram/service_discovery.mermaid")?;
   let reader = reader::MermaidReader::new();
   let ast = reader.parse(&content)?;
 
@@ -24,7 +24,7 @@ fn service_discovery_happy_path() -> Result<()> {
 
 #[test]
 fn oauth_happy_path_mermaid() -> Result<()> {
-  let content = read_example("oauth.happy_path.mermaid")?;
+  let content = read_example("sequence-diagram/oauth.happy_path.mermaid")?;
 
   let reader = reader::MermaidReader::new();
   let ast = reader.parse(&content)?;

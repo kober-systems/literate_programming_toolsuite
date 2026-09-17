@@ -7,7 +7,7 @@ use sequence_diagram_fixtures::read_example;
 
 #[test]
 fn oauth_happy_path() -> Result<()> {
-  let content = read_example("oauth.happy_path.ascii")?;
+  let content = read_example("sequence-diagram/oauth.happy_path.ascii")?;
   let tokens = parse_tokens(&content);
 
   assert_eq!(

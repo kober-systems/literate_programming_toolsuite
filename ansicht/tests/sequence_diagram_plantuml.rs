@@ -10,7 +10,7 @@ use sequence_diagram_fixtures::read_example;
 
 #[test]
 fn oauth_happy_path() -> Result<()> {
-  let content = read_example("oauth.happy_path.plantuml")?;
+  let content = read_example("sequence-diagram/oauth.happy_path.plantuml")?;
   let reader = reader::PlantUmlReader::new();
   let ast = reader.parse(&content)?;
 
@@ -24,7 +24,7 @@ fn oauth_happy_path() -> Result<()> {
 
 #[test]
 fn service_discovery_happy_path() -> Result<()> {
-  let content = read_example("service_discovery.plantuml")?;
+  let content = read_example("sequence-diagram/service_discovery.plantuml")?;
   let reader = reader::PlantUmlReader::new();
   let ast = reader.parse(&content)?;
 

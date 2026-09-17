@@ -658,7 +658,7 @@ Footer Text
 
 #[test]
 fn oauth_happy_path() -> Result<()> {
-  let content = read_example("oauth.happy_path.ascii")?;
+  let content = read_example("sequence-diagram/oauth.happy_path.ascii")?;
   let elements = parse_elements(&content);
 
   use sequence_diagram_fixtures::*;
