@@ -425,6 +425,50 @@ impl Token {
       },
     }
   }
+
+  pub fn can_extend_down(&self) -> bool {
+    use Token::*;
+
+    match self {
+      ConnectionSign { sign, ..} => can_extend_down(*sign),
+      Arrow { sign, ..} => can_extend_down(*sign),
+      HLine {..} => true,
+      _ => false,
+    }
+  }
+
+  pub fn can_extend_up(&self) -> bool {
+    use Token::*;
+
+    match self {
+      ConnectionSign { sign, ..} => can_extend_up(*sign),
+      Arrow { sign, ..} => can_extend_up(*sign),
+      HLine {..} => true,
+      _ => false,
+    }
+  }
+
+  pub fn can_extend_left(&self) -> bool {
+    use Token::*;
+
+    match self {
+      ConnectionSign { sign, ..} => can_extend_left(*sign),
+      Arrow { sign, ..} => can_extend_left(*sign),
+      VLine {..} => true,
+      _ => false,
+    }
+  }
+
+  pub fn can_extend_right(&self) -> bool {
+    use Token::*;
+
+    match self {
+      ConnectionSign { sign, ..} => can_extend_right(*sign),
+      Arrow { sign, ..} => can_extend_right(*sign),
+      VLine {..} => true,
+      _ => false,
+    }
+  }
 }
 
 pub struct BoundingBox {
