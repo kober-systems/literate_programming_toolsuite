@@ -16,3 +16,15 @@ fn oauth_happy_path() -> Result<()> {
   );
   Ok(())
 }
+
+#[test]
+fn car_state_machine() -> Result<()> {
+  let content = read_example("state-machine/car.ascii")?;
+  let tokens = parse_tokens(&content);
+
+  assert_eq!(
+    tokens,
+    sequence_diagram_fixtures::car_state_machine_tokens()
+  );
+  Ok(())
+}

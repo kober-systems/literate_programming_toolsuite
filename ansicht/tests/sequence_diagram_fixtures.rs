@@ -91,8 +91,6 @@ pub fn oauth_happy_path_elements() -> Vec<SequenceDiagramElement> {
 }
 
 pub fn oauth_happy_path_tokens() -> Vec<Token> {
-  use Token::*;
-
   let tokens = [
     block_end_user_border(), block_end_user_text(),
     block_users_browser_border(), block_users_browser_text(),
@@ -156,6 +154,502 @@ pub fn oauth_happy_path_tokens() -> Vec<Token> {
     block_resource_server_border2(), block_resource_server_text2(),
   ].concat();
   sort_tokens(tokens)
+}
+
+pub fn car_state_machine_tokens() -> Vec<Token> {
+  let tokens = [
+    state_door_open_border(), state_door_open_text(),
+    state_standing_border(), state_standing_text(),
+    state_change_leave_car_path(), state_change_leave_car_text(),
+    state_change_entry_point_path(), state_change_entry_point_text(),
+    state_change_close_path(), state_change_close_text(),
+    state_change_open_path(), state_change_open_text(),
+    state_change_enter_car_path(), state_change_enter_car_text(),
+    state_change_start_path(), state_change_start_text(),
+    state_change_stop_path(), state_change_stop_text(),
+    state_driving_border(), state_driving_text(),
+  ].concat();
+  sort_tokens(tokens)
+}
+
+pub fn state_door_open_border() -> Vec<Token> {
+  use Token::*;
+
+  vec![
+    ConnectionSign {
+        line: 5,
+        column: 1,
+        sign: '+',
+    },
+    HLine {
+        line: 5,
+        column_start: 2,
+        column_end: 4,
+    },
+    ConnectionSign {
+        line: 5,
+        column: 5,
+        sign: '+',
+    },
+    HLine {
+        line: 5,
+        column_start: 6,
+        column_end: 15,
+    },
+    ConnectionSign {
+        line: 5,
+        column: 16,
+        sign: '+',
+    },
+    VLine {
+        column: 1,
+        line_start: 6,
+        line_end: 10,
+    },
+    VLine {
+        column: 16,
+        line_start: 6,
+        line_end: 6,
+    },
+    ConnectionSign {
+        line: 7,
+        column: 16,
+        sign: '+',
+    },
+    VLine {
+        column: 16,
+        line_start: 8,
+        line_end: 10,
+    },
+    ConnectionSign {
+        line: 11,
+        column: 1,
+        sign: '+',
+    },
+    HLine {
+        line: 11,
+        column_start: 2,
+        column_end: 11,
+    },
+    ConnectionSign {
+        line: 11,
+        column: 12,
+        sign: '+',
+    },
+    HLine {
+        line: 11,
+        column_start: 13,
+        column_end: 15,
+    },
+    ConnectionSign {
+        line: 11,
+        column: 16,
+        sign: '+',
+    },
+  ]
+}
+
+pub fn state_door_open_text() -> Vec<Token> {
+  use Token::*;
+
+  vec![
+    Text {
+        line: 8,
+        column_start: 4,
+        column_end: 12,
+    },
+  ]
+}
+
+pub fn state_standing_border() -> Vec<Token> {
+  use Token::*;
+
+  vec![
+    ConnectionSign {
+        line: 5,
+        column: 26,
+        sign: '+',
+    },
+    HLine {
+        line: 5,
+        column_start: 27,
+        column_end: 41,
+    },
+    ConnectionSign {
+        line: 5,
+        column: 42,
+        sign: '+',
+    },
+    VLine {
+        column: 26,
+        line_start: 6,
+        line_end: 8,
+    },
+    VLine {
+        column: 42,
+        line_start: 6,
+        line_end: 10,
+    },
+    ConnectionSign {
+        line: 9,
+        column: 26,
+        sign: '+',
+    },
+    VLine {
+        column: 26,
+        line_start: 10,
+        line_end: 10,
+    },
+    ConnectionSign {
+        line: 11,
+        column: 26,
+        sign: '+',
+    },
+    HLine {
+        line: 11,
+        column_start: 27,
+        column_end: 29,
+    },
+    ConnectionSign {
+        line: 11,
+        column: 30,
+        sign: '+',
+    },
+    HLine {
+        line: 11,
+        column_start: 31,
+        column_end: 41,
+    },
+    ConnectionSign {
+        line: 11,
+        column: 42,
+        sign: '+',
+    },
+  ]
+}
+
+pub fn state_standing_text() -> Vec<Token> {
+  use Token::*;
+
+  vec![
+    Text {
+        line: 8,
+        column_start: 30,
+        column_end: 37,
+    },
+  ]
+}
+
+pub fn state_change_leave_car_path() -> Vec<Token> {
+  use Token::*;
+
+  vec![
+    ConnectionSign {
+        line: 2,
+        column: 5,
+        sign: '+',
+    },
+    HLine {
+        line: 2,
+        column_start: 6,
+        column_end: 11,
+    },
+    ConnectionSign {
+        line: 2,
+        column: 12,
+        sign: '+',
+    },
+    VLine {
+        column: 5,
+        line_start: 3,
+        line_end: 4,
+    },
+    VLine {
+        column: 12,
+        line_start: 3,
+        line_end: 3,
+    },
+    Arrow {
+        line: 4,
+        column: 12,
+        sign: 'v',
+    },
+  ]
+}
+
+pub fn state_change_leave_car_text() -> Vec<Token> {
+  use Token::*;
+
+  vec![
+    Text {
+        line: 1,
+        column_start: 6,
+        column_end: 14,
+    },
+  ]
+}
+
+pub fn state_change_entry_point_path() -> Vec<Token> {
+  use Token::*;
+
+  vec![
+    VLine {
+        column: 35,
+        line_start: 3,
+        line_end: 3,
+    },
+    Arrow {
+        line: 4,
+        column: 35,
+        sign: 'v',
+    },
+  ]
+}
+
+pub fn state_change_entry_point_text() -> Vec<Token> {
+  use Token::*;
+
+  vec![
+    Text {
+        line: 2,
+        column_start: 35,
+        column_end: 35,
+    },
+  ]
+}
+
+pub fn state_change_close_path() -> Vec<Token> {
+  use Token::*;
+
+  vec![
+    HLine {
+        line: 7,
+        column_start: 17,
+        column_end: 24,
+    },
+    Arrow {
+        line: 7,
+        column: 25,
+        sign: '>',
+    },
+  ]
+}
+
+pub fn state_change_close_text() -> Vec<Token> {
+  use Token::*;
+
+  vec![
+    Text {
+        line: 6,
+        column_start: 19,
+        column_end: 23,
+    },
+  ]
+}
+
+pub fn state_change_open_path() -> Vec<Token> {
+  use Token::*;
+
+  vec![
+    Arrow {
+        line: 9,
+        column: 17,
+        sign: '<',
+    },
+    HLine {
+        line: 9,
+        column_start: 18,
+        column_end: 25,
+    },
+  ]
+}
+
+pub fn state_change_open_text() -> Vec<Token> {
+  use Token::*;
+
+  vec![
+    Text {
+        line: 10,
+        column_start: 20,
+        column_end: 23,
+    },
+  ]
+}
+
+pub fn state_change_enter_car_path() -> Vec<Token> {
+  use Token::*;
+
+  vec![
+    Arrow {
+        line: 12,
+        column: 5,
+        sign: '^',
+    },
+    VLine {
+        column: 12,
+        line_start: 12,
+        line_end: 13,
+    },
+    VLine {
+        column: 5,
+        line_start: 13,
+        line_end: 13,
+    },
+    ConnectionSign {
+        line: 14,
+        column: 5,
+        sign: '+',
+    },
+    HLine {
+        line: 14,
+        column_start: 6,
+        column_end: 11,
+    },
+    ConnectionSign {
+        line: 14,
+        column: 12,
+        sign: '+',
+    },
+  ]
+}
+
+pub fn state_change_enter_car_text() -> Vec<Token> {
+  use Token::*;
+
+  vec![
+    Text {
+        line: 15,
+        column_start: 7,
+        column_end: 15,
+    },
+  ]
+}
+
+pub fn state_change_start_path() -> Vec<Token> {
+  use Token::*;
+
+  vec![
+    VLine {
+        column: 30,
+        line_start: 12,
+        line_end: 12,
+    },
+    Arrow {
+        line: 13,
+        column: 30,
+        sign: 'v',
+    },
+  ]
+}
+
+pub fn state_change_start_text() -> Vec<Token> {
+  use Token::*;
+
+  vec![
+    Text {
+        line: 12,
+        column_start: 25,
+        column_end: 29,
+    },
+  ]
+}
+
+pub fn state_change_stop_path() -> Vec<Token> {
+  use Token::*;
+
+  vec![
+    Arrow {
+        line: 12,
+        column: 37,
+        sign: '^',
+    },
+    VLine {
+        column: 37,
+        line_start: 13,
+        line_end: 13,
+    },
+  ]
+}
+
+pub fn state_change_stop_text() -> Vec<Token> {
+  use Token::*;
+
+  vec![
+    Text {
+        line: 13,
+        column_start: 38,
+        column_end: 41,
+    },
+  ]
+}
+
+pub fn state_driving_border() -> Vec<Token> {
+  use Token::*;
+
+  vec![
+    ConnectionSign {
+        line: 14,
+        column: 26,
+        sign: '+',
+    },
+    HLine {
+        line: 14,
+        column_start: 27,
+        column_end: 36,
+    },
+    ConnectionSign {
+        line: 14,
+        column: 37,
+        sign: '+',
+    },
+    HLine {
+        line: 14,
+        column_start: 38,
+        column_end: 41,
+    },
+    ConnectionSign {
+        line: 14,
+        column: 42,
+        sign: '+',
+    },
+    VLine {
+        column: 26,
+        line_start: 15,
+        line_end: 19,
+    },
+    VLine {
+        column: 42,
+        line_start: 15,
+        line_end: 19,
+    },
+    ConnectionSign {
+        line: 20,
+        column: 26,
+        sign: '+',
+    },
+    HLine {
+        line: 20,
+        column_start: 27,
+        column_end: 41,
+    },
+    ConnectionSign {
+        line: 20,
+        column: 42,
+        sign: '+',
+    },
+  ]
+}
+
+pub fn state_driving_text() -> Vec<Token> {
+  use Token::*;
+
+  vec![
+    Text {
+        line: 17,
+        column_start: 31,
+        column_end: 37,
+    },
+  ]
 }
 
 pub fn block_end_user_border() -> Vec<Token> {
