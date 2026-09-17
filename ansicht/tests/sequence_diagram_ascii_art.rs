@@ -21,6 +21,20 @@ fn oauth_happy_path() -> Result<()> {
 }
 
 #[test]
+fn oauth_happy_path_compact() -> Result<()> {
+  let content = read_example("oauth.happy_path.compact.ascii")?;
+  let reader = reader::AsciiArtReader::new();
+  let ast = reader.parse(&content);
+
+  assert_eq!(
+    sequence_diagram_elements(ast.elements),
+    sequence_diagram_fixtures::oauth_happy_path_elements()
+  );
+
+  Ok(())
+}
+
+#[test]
 fn single_checked_state() -> Result<()> {
   let content = r"
      ┌─────┐      ┌─────┐
