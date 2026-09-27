@@ -351,23 +351,11 @@ fn parse_basic_table() -> Result<()> {
 | Cell 1   | Cell 2   |
 | Cell 3   | Cell 4   |
 "#;
-
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    assert_eq!(ast.elements.len(), 1);
-    assert_eq!(ast.elements[0].element, Element::Table);
-
-    // Should have rows (header + 2 data rows)
-    assert!(ast.elements[0].children.len() >= 2);
-
-    // First should be header row
-    let first_row = &ast.elements[0].children[0];
-    assert_eq!(first_row.element, Element::TableRow);
-
-    Ok(())
+    check(input, expected(input, vec![node(input, input, Element::Table, vec![
+        table_row(input, "| Header 1 | Header 2 |\n", &["Header 1", "Header 2"]),
+        table_row(input, "| Cell 1   | Cell 2   |\n", &["Cell 1", "Cell 2"]),
+        table_row(input, "| Cell 3   | Cell 4   |\n", &["Cell 3", "Cell 4"]),
+    ])]))
 }
 
 #[test]
@@ -376,16 +364,10 @@ fn parse_table_with_alignment() -> Result<()> {
 |:-----|:------:|------:|
 | L    | C      | R     |
 "#;
-
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    assert_eq!(ast.elements.len(), 1);
-    assert_eq!(ast.elements[0].element, Element::Table);
-
-    Ok(())
+    // Alignment markers do not currently become cell attributes.
+    let header = table_row(input, "| Left | Center | Right |\n", &["Left", "Center", "Right"]);
+    let body = table_row(input, "| L    | C      | R     |\n", &["L", "C", "R"]);
+    check(input, expected(input, vec![node(input, input, Element::Table, vec![header, body])]))
 }
 
 #[test]
@@ -393,16 +375,10 @@ fn parse_table_without_header() -> Result<()> {
     let input = r#"| Cell 1 | Cell 2 |
 | Cell 3 | Cell 4 |
 "#;
-
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    // Without pipe alignment row, this might not be parsed as table
-    // or might be parsed differently depending on GFM implementation
-    // This test documents the behavior
-    Ok(())
+    check(input, expected(input, vec![node(input, input, Element::Table, vec![
+        table_row(input, "| Cell 1 | Cell 2 |\n", &["Cell 1", "Cell 2"]),
+        table_row(input, "| Cell 3 | Cell 4 |\n", &["Cell 3", "Cell 4"]),
+    ])]))
 }
 
 // --------------------------------------------------------------------------

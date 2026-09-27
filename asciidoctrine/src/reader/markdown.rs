@@ -78,6 +78,34 @@ impl MarkdownReader {
     Self::span(input, start, end, Element::TypedBlock { kind: BlockType::Quote }, children)
   }
 
+  fn headerless_table<'a>(input: &'a str, paragraph: &ElementSpan<'a>) -> Option<ElementSpan<'a>> {
+    if !matches!(paragraph.element, Element::Paragraph) { return None; }
+    let lines: Vec<_> = paragraph.content.split_inclusive('\n').collect();
+    if lines.len() < 2 { return None; }
+    let mut rows = Vec::new();
+    let mut offset = paragraph.start;
+    let mut column_count = None;
+    for line in lines {
+      let row_text = line.trim_end_matches('\n');
+      if !row_text.starts_with('|') || !row_text.ends_with('|') { return None; }
+      let mut cells = Vec::new();
+      let mut cell_start = offset + 1;
+      for cell in row_text[1..].split_terminator('|') {
+        let cell_end = cell_start + cell.len();
+        let trimmed = cell.trim();
+        let text_start = cell_start + cell.find(trimmed).unwrap_or(0);
+        cells.push(Self::span(input, cell_start, cell_end, Element::TableCell,
+          vec![Self::span(input, text_start, text_start + trimmed.len(), Element::Text, vec![])]));
+        cell_start = cell_end + 1;
+      }
+      if cells.is_empty() || column_count.is_some_and(|count| count != cells.len()) { return None; }
+      column_count = Some(cells.len());
+      rows.push(Self::span(input, offset, offset + line.len(), Element::TableRow, cells));
+      offset += line.len();
+    }
+    Some(Self::span(input, paragraph.start, paragraph.end, Element::Table, rows))
+  }
+
   fn convert_events<'a>(&self, input: &'a str) -> Vec<ElementSpan<'a>> {
     let mut options = Options::empty();
     options.insert(Options::ENABLE_TABLES);
@@ -567,6 +595,9 @@ impl MarkdownReader {
     }
 
     for elem in &mut elements {
+      if let Some(table) = Self::headerless_table(input, elem) {
+        *elem = table;
+      }
       if matches!(elem.element, Element::TypedBlock { kind: BlockType::Quote })
         && elem.content.contains("\n> > ")
       {
