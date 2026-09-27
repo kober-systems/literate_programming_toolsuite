@@ -6,32 +6,12 @@ use pretty_assertions::assert_eq;
 
 #[test]
 fn parse_empty_document() -> Result<()> {
-    let ast = AST {
-        content: "",
-        elements: Vec::new(),
-        attributes: Vec::new(),
-    };
-
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    assert_eq!(ast, reader.parse("", &opts, &mut env)?);
-    Ok(())
+    check("", expected("", vec![]))
 }
 
 #[test]
 fn parse_whitespace_only() -> Result<()> {
-    let ast = AST {
-        content: "  ",
-        elements: Vec::new(),
-        attributes: Vec::new(),
-    };
-
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    assert_eq!(ast, reader.parse("  ", &opts, &mut env)?);
-    Ok(())
+    check("  ", expected("  ", vec![]))
 }
 
 // --------------------------------------------------------------------------
@@ -42,18 +22,7 @@ fn parse_whitespace_only() -> Result<()> {
 fn parse_basic_header() -> Result<()> {
     let input = "# test\n";
 
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    assert_eq!(ast.elements.len(), 1);
-    assert_eq!(ast.elements[0].element, Element::Title { level: 1 });
-    assert_eq!(ast.elements[0].children.len(), 1);
-    assert_eq!(ast.elements[0].children[0].element, Element::Text);
-    assert_eq!(ast.elements[0].children[0].content, "test");
-
-    Ok(())
+    check(input, expected(input, vec![node(input, "# test\n", Element::Title { level: 1 }, vec![text(input, "test")])]))
 }
 
 #[test]
@@ -949,3 +918,108 @@ fn parse_code_in_list() -> Result<()> {
 
     Ok(())
 }
+
+// --------------------------------------------------------------------------
+// Helper Functions
+// --------------------------------------------------------------------------
+
+// Construct expected trees from the fixture, never from the parser's output.
+// Source ranges and line/column positions are part of the AST contract too.
+fn at<'a>(input: &'a str, start: usize, source: &'a str, element: Element<'a>, children: Vec<ElementSpan<'a>>) -> ElementSpan<'a> {
+    assert_eq!(&input[start..start + source.len()], source);
+    let position = |offset: usize| {
+        let prefix = &input[..offset];
+        (prefix.bytes().filter(|&b| b == b'\n').count() + 1,
+         prefix.rsplit('\n').next().unwrap().chars().count() + 1)
+    };
+    let (start_line, start_col) = position(start);
+    let (end_line, end_col) = position(start + source.len());
+    ElementSpan {
+        source: None, content: source, element, start, end: start + source.len(),
+        start_line, start_col, end_line, end_col, children,
+        positional_attributes: vec![], attributes: vec![],
+    }
+}
+
+fn node<'a>(input: &'a str, source: &'a str, element: Element<'a>, children: Vec<ElementSpan<'a>>) -> ElementSpan<'a> {
+    let start = input.find(source).expect("expected source in fixture");
+    // pulldown-cmark starts nested list spans at the marker, after indentation.
+    if matches!(element, Element::List(_)) && source.starts_with("  ") {
+        return at(input, start + 2, &source[2..], element, children);
+    }
+    at(input, start, source, element, children)
+}
+
+fn text<'a>(input: &'a str, source: &'a str) -> ElementSpan<'a> {
+    node(input, source, Element::Text, vec![])
+}
+
+fn paragraph<'a>(input: &'a str, source: &'a str, children: Vec<ElementSpan<'a>>) -> ElementSpan<'a> {
+    let start = input.find(source).expect("expected paragraph in fixture");
+    let end = start + source.len();
+    let end = if input[end..].starts_with('\n') { end + 1 } else { end };
+    at(input, start, &input[start..end], Element::Paragraph, children)
+}
+
+fn plain<'a>(input: &'a str, source: &'a str) -> ElementSpan<'a> {
+    paragraph(input, source, vec![text(input, source)])
+}
+
+fn attr<'a>(key: &str, value: &'a str) -> Attribute<'a> {
+    Attribute { key: key.into(), value: AttributeValue::Ref(value) }
+}
+
+fn with_attr<'a>(mut span: ElementSpan<'a>, key: &str, value: &'a str) -> ElementSpan<'a> {
+    span.attributes.push(attr(key, value));
+    span
+}
+
+fn with_string_attr<'a>(mut span: ElementSpan<'a>, key: &str, value: &str) -> ElementSpan<'a> {
+    span.attributes.push(Attribute { key: key.into(), value: AttributeValue::String(value.into()) });
+    span
+}
+
+fn styled<'a>(input: &'a str, source: &'a str, style: &'a str, children: Vec<ElementSpan<'a>>) -> ElementSpan<'a> {
+    with_attr(node(input, source, Element::Styled, children), "style", style)
+}
+
+fn link<'a>(input: &'a str, source: &'a str, label: &'a str, url: &'a str) -> ElementSpan<'a> {
+    with_string_attr(node(input, source, Element::Link, vec![text(input, label)]), "url", url)
+}
+
+fn list_item<'a>(input: &'a str, source: &'a str, children: Vec<ElementSpan<'a>>) -> ElementSpan<'a> {
+    let start = input.find(source).expect("expected list item in fixture");
+    let end = start + source.len();
+    let end = if input[end..].starts_with('\n') { end + 1 } else { end };
+    let start = if source.starts_with("  ") { start + 2 } else { start };
+    at(input, start, &input[start..end], Element::ListItem(1), children)
+}
+
+fn table_row<'a>(input: &'a str, source: &'a str, cells: &[&'a str]) -> ElementSpan<'a> {
+    let row_start = input.find(source).expect("expected row");
+    let mut next = row_start + 1;
+    let mut children = Vec::new();
+    for &cell_text in cells {
+        let end = next + input[next..row_start + source.len()].find('|').expect("expected cell delimiter");
+        let content = &input[next..end];
+        let text_start = next + content.find(cell_text).expect("expected cell text");
+        let cell = at(input, next, content, Element::TableCell,
+            vec![at(input, text_start, cell_text, Element::Text, vec![])]);
+        children.push(cell);
+        next = end + 1;
+    }
+    at(input, row_start, source, Element::TableRow, children)
+}
+
+fn expected<'a>(input: &'a str, elements: Vec<ElementSpan<'a>>) -> AST<'a> {
+    AST { content: input, elements, attributes: vec![] }
+}
+
+fn check(input: &str, expected: AST<'_>) -> Result<()> {
+    let reader = MarkdownReader::new();
+    let opts = options::Opts::parse_from(vec![""].into_iter());
+    let mut env = util::Env::Cache(util::Cache::new());
+    assert_eq!(reader.parse(input, &opts, &mut env)?, expected);
+    Ok(())
+}
+
