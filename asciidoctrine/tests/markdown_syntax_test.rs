@@ -332,27 +332,12 @@ fn parse_nested_blockquote() -> Result<()> {
 > > Nested quote
 > Back to outer
 "#;
-
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    assert_eq!(ast.elements.len(), 1);
-    assert_eq!(
-        ast.elements[0].element,
-        Element::TypedBlock {
-            kind: BlockType::Quote
-        }
-    );
-
-    // Should contain a nested quote
-    let has_nested = ast.elements[0].children.iter()
-        .any(|c| matches!(c.element, Element::TypedBlock { kind: BlockType::Quote }));
-
-    assert!(has_nested);
-
-    Ok(())
+    let quote = node(input, input, Element::TypedBlock { kind: BlockType::Quote }, vec![
+        paragraph(input, "Outer quote", vec![text(input, "Outer quote")]),
+        node(input, "> Nested quote\n", Element::TypedBlock { kind: BlockType::Quote }, vec![plain(input, "Nested quote")]),
+        plain(input, "Back to outer"),
+    ]);
+    check(input, expected(input, vec![quote]))
 }
 
 // --------------------------------------------------------------------------

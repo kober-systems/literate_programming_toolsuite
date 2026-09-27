@@ -41,6 +41,43 @@ impl MarkdownReader {
     }
   }
 
+  fn span<'a>(input: &'a str, start: usize, end: usize, element: Element<'a>, children: Vec<ElementSpan<'a>>) -> ElementSpan<'a> {
+    let (start_line, start_col) = Self::byte_offset_to_position(input, start);
+    let (end_line, end_col) = Self::byte_offset_to_position(input, end);
+    ElementSpan {
+      source: None, content: &input[start..end], element, start, end,
+      start_line, start_col, end_line, end_col, children,
+      positional_attributes: Vec::new(), attributes: Vec::new(),
+    }
+  }
+
+  // A deeper quote marker can be treated as a lazy paragraph continuation by
+  // the Markdown parser. Recover the explicit quote structure for plain lines.
+  fn nested_quote<'a>(input: &'a str, start: usize, end: usize) -> ElementSpan<'a> {
+    let mut children = Vec::new();
+    let mut cursor = start;
+    while cursor < end {
+      let line_end = input[cursor..end].find('\n').map_or(end, |n| cursor + n + 1);
+      let prefix = if input[cursor..line_end].starts_with("> ") { 2 } else { 1 };
+      if input[cursor + prefix..line_end].starts_with("> ") {
+        let nested_start = cursor + prefix;
+        let mut group_end = line_end;
+        while group_end < end && input[group_end..end].starts_with("> > ") {
+          group_end += input[group_end..end].find('\n').map_or(end - group_end, |n| n + 1);
+        }
+        children.push(Self::nested_quote(input, nested_start, group_end));
+        cursor = group_end;
+      } else {
+        let text_start = cursor + prefix;
+        let text_end = if input.as_bytes()[line_end - 1] == b'\n' { line_end - 1 } else { line_end };
+        children.push(Self::span(input, text_start, line_end, Element::Paragraph,
+          vec![Self::span(input, text_start, text_end, Element::Text, vec![])]));
+        cursor = line_end;
+      }
+    }
+    Self::span(input, start, end, Element::TypedBlock { kind: BlockType::Quote }, children)
+  }
+
   fn convert_events<'a>(&self, input: &'a str) -> Vec<ElementSpan<'a>> {
     let mut options = Options::empty();
     options.insert(Options::ENABLE_TABLES);
@@ -513,6 +550,13 @@ impl MarkdownReader {
       }
     }
 
+    for elem in &mut elements {
+      if matches!(elem.element, Element::TypedBlock { kind: BlockType::Quote })
+        && elem.content.contains("\n> > ")
+      {
+        *elem = Self::nested_quote(input, elem.start, elem.end);
+      }
+    }
     elements
   }
 }
