@@ -176,7 +176,7 @@ param1: True
 param2: 42
 ----
 "#
-);
+)?;
 
   let ast = reader.parse(content, &opts, &mut env)?;
 

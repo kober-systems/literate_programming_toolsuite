@@ -340,7 +340,7 @@ fn inline<T: io::Write>(input: &ElementSpan, out: &mut T) -> Result<()> {
     }
     Element::XRef => {
       let id = input.get_attribute("id").unwrap_or("");
-      let content = input.get_attribute("content").unwrap_or(id.clone());
+      let content = input.get_attribute("content").unwrap_or(id);
 
       out.write_all(&format!("<a href=\"#{}\">{}</a>", id, content).as_bytes())?;
     }
@@ -471,7 +471,7 @@ fn write_attribute_tag<T: io::Write>(
         out.write_all(&b"  ".repeat(indent - 1))?;
       }
     }
-    el => write_html(inner, indent + 1, out)?,
+    _el => write_html(inner, indent + 1, out)?,
   };
 
   out.write_all(format!("</{}>", tag).as_bytes())?;

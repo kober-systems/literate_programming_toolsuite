@@ -31,7 +31,7 @@ fn paragraph(input: &ElementSpan, out: Paragraph) -> Result<Paragraph> {
     }
     Element::Link => {
       let url = input.get_attribute("url").unwrap_or("");
-      let content = match input.positional_attributes.get(0) {
+      let _content = match input.positional_attributes.get(0) {
         Some(value) => match value {
           AttributeValue::Ref(value) => value.to_string(),
           AttributeValue::String(value) => value.clone(),

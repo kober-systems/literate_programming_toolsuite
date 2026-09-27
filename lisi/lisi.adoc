@@ -1529,7 +1529,7 @@ impl SnippetDB {
   }
 
   /// Get iterator over all snippets
-  pub fn iter(&self) -> hash_map::Iter<String, Snippet> {
+  pub fn iter(&self) -> hash_map::Iter<'_, String, Snippet> {
     self.snippets.iter()
   }
 }
@@ -1807,7 +1807,7 @@ pub fn store(&mut self, name: String, snippet: Snippet) {
     Some(base) => { // <2>
       if &base.children.len() < &1 {
         let other = base.clone();
-        &base.children.push(other);
+        base.children.push(other);
       }
       <<copy_dependencies_to_base_snippet>>
       base.children.push(snippet);
@@ -2080,7 +2080,7 @@ fn merge_dependencies_inner<'a>(
   ast: pest::iterators::Pairs<'a, codeblock_parser::Rule>,
   snippets: &SnippetDB,
   snippet_params: SnippetParams,
-  key: &str,
+  _key: &str,
 ) -> String {
   let mut output = String::new();
 
@@ -2840,7 +2840,7 @@ impl LisiWrapper {
   pub fn get_snippet_names(&mut self) -> rhai::Array {
     let mut snippets = self.snippets.borrow_mut();
 
-    let mut out = rhai::Array::new();
+    let _out = rhai::Array::new();
 
     let mut keys = snippets
       .iter()
@@ -2980,7 +2980,7 @@ setzen sie folgendermaßen auf.
 ----
 env.write("{filepath}",
   r#"{expected_content}"#
-);
+)?;
 ----
 
 Das Überprüfen des Inhaltes einer erzeugten Datei läuft immer gleich ab: Wir holen den erzeugten Text aus dem Ausgabepuffer mit dem entsprechenden Dateinamen und vergleichen ihn mit dem dazugeörigen Snippet aus der Dokumentation.

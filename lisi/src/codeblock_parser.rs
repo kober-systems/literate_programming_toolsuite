@@ -18,7 +18,7 @@ fn merge_dependencies_inner<'a>(
   ast: pest::iterators::Pairs<'a, codeblock_parser::Rule>,
   snippets: &SnippetDB,
   snippet_params: SnippetParams,
-  key: &str,
+  _key: &str,
 ) -> String {
   let mut output = String::new();
 

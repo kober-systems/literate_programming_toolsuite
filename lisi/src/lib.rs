@@ -31,7 +31,7 @@ impl SnippetDB {
       Some(base) => {
         if &base.children.len() < &1 {
           let other = base.clone();
-          &base.children.push(other);
+          base.children.push(other);
         }
         for dependency in snippet.depends_on.clone().into_iter() {
           base.depends_on.push(dependency);
@@ -56,7 +56,7 @@ impl SnippetDB {
   }
 
   /// Get iterator over all snippets
-  pub fn iter(&self) -> hash_map::Iter<String, Snippet> {
+  pub fn iter(&self) -> hash_map::Iter<'_, String, Snippet> {
     self.snippets.iter()
   }
 }
@@ -146,7 +146,7 @@ impl LisiWrapper {
   pub fn get_snippet_names(&mut self) -> rhai::Array {
     let mut snippets = self.snippets.borrow_mut();
 
-    let mut out = rhai::Array::new();
+    let _out = rhai::Array::new();
 
     let mut keys = snippets
       .iter()
