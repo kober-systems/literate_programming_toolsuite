@@ -349,6 +349,22 @@ impl MarkdownReader {
 
         Event::End(tag) => {
           match tag {
+            TagEnd::HtmlBlock => {
+              if let Some(mut elem) = stack.pop() {
+                let mut content = Self::span(input, elem.start, elem.end,
+                  Element::TypedBlock { kind: BlockType::Passtrough }, vec![]);
+                content.attributes.push(Attribute {
+                  key: "content".to_string(),
+                  value: AttributeValue::String(content.content.to_string()),
+                });
+                elem.children = vec![content];
+                if let Some(parent) = stack.last_mut() {
+                  parent.children.push(elem);
+                } else {
+                  elements.push(elem);
+                }
+              }
+            }
             TagEnd::CodeBlock => {
               // For code blocks, the content is in current_text
               if let Some(mut elem) = stack.pop() {

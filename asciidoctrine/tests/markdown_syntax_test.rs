@@ -454,22 +454,13 @@ fn parse_inline_html() -> Result<()> {
 
 #[test]
 fn parse_html_block() -> Result<()> {
-    let input = r#"<div class="custom">
+    let input = r#"<div class=\"custom\">
   <p>Raw HTML content</p>
 </div>
 "#;
-
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    let html = ast.elements.iter()
-        .find(|e| matches!(e.element, Element::TypedBlock { kind: BlockType::Passtrough }));
-
-    assert!(html.is_some());
-
-    Ok(())
+    check(input, expected(input, vec![node(input, input, Element::TypedBlock { kind: BlockType::Passtrough }, vec![
+        with_string_attr(node(input, input, Element::TypedBlock { kind: BlockType::Passtrough }, vec![]), "content", input),
+    ])]))
 }
 
 // --------------------------------------------------------------------------
