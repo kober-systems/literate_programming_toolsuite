@@ -35,20 +35,14 @@ fn parse_all_header_levels() -> Result<()> {
 ###### Level 6
 "#;
 
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    assert_eq!(ast.elements.len(), 6);
-    for (i, expected_level) in [1, 2, 3, 4, 5, 6].iter().enumerate() {
-        assert_eq!(
-            ast.elements[i].element,
-            Element::Title { level: *expected_level }
-        );
-    }
-
-    Ok(())
+    let titles = (1..=6).map(|level| {
+        let prefix = format!("{} ", "#".repeat(level));
+        let line = input.lines().find(|line| line.starts_with(&prefix)).unwrap();
+        let start = input.find(line).unwrap();
+        at(input, start, &input[start..start + line.len() + 1], Element::Title { level: level as u32 },
+            vec![text(input, line.strip_prefix(&prefix).unwrap())])
+    }).collect();
+    check(input, expected(input, titles))
 }
 
 #[test]
@@ -60,16 +54,10 @@ Level 2
 -------
 "#;
 
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    assert_eq!(ast.elements.len(), 2);
-    assert_eq!(ast.elements[0].element, Element::Title { level: 1 });
-    assert_eq!(ast.elements[1].element, Element::Title { level: 2 });
-
-    Ok(())
+    check(input, expected(input, vec![
+        node(input, "Level 1\n=======\n", Element::Title { level: 1 }, vec![text(input, "Level 1")]),
+        node(input, "Level 2\n-------\n", Element::Title { level: 2 }, vec![text(input, "Level 2")]),
+    ]))
 }
 
 // --------------------------------------------------------------------------
@@ -79,18 +67,7 @@ Level 2
 #[test]
 fn parse_basic_paragraph() -> Result<()> {
     let input = "This is a basic paragraph.\n";
-
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    assert_eq!(ast.elements.len(), 1);
-    assert_eq!(ast.elements[0].element, Element::Paragraph);
-    assert_eq!(ast.elements[0].children.len(), 1);
-    assert_eq!(ast.elements[0].children[0].element, Element::Text);
-
-    Ok(())
+    check(input, expected(input, vec![plain(input, "This is a basic paragraph.")]))
 }
 
 #[test]
@@ -102,17 +79,9 @@ Second paragraph.
 Third paragraph.
 "#;
 
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    assert_eq!(ast.elements.len(), 3);
-    for elem in &ast.elements {
-        assert_eq!(elem.element, Element::Paragraph);
-    }
-
-    Ok(())
+    check(input, expected(input, vec![
+        plain(input, "First paragraph."), plain(input, "Second paragraph."), plain(input, "Third paragraph."),
+    ]))
 }
 
 // --------------------------------------------------------------------------
@@ -122,65 +91,24 @@ Third paragraph.
 #[test]
 fn parse_inline_link() -> Result<()> {
     let input = "This has a [link](https://example.com) in it.\n";
-
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    assert_eq!(ast.elements.len(), 1);
-    assert_eq!(ast.elements[0].element, Element::Paragraph);
-
-    // Find the link element in children
-    let link = ast.elements[0]
-        .children
-        .iter()
-        .find(|c| matches!(c.element, Element::Link));
-
-    assert!(link.is_some());
-    let link = link.unwrap();
-    assert_eq!(link.get_attribute("url"), Some("https://example.com"));
-    assert_eq!(link.get_attribute("protocol"), Some("https"));
-
-    Ok(())
+    let linked = with_string_attr(link(input, "[link](https://example.com)", "link", "https://example.com"), "protocol", "https");
+    check(input, expected(input, vec![paragraph(input, "This has a [link](https://example.com) in it.", vec![
+        text(input, "This has a "), linked, text(input, " in it."),
+    ])]))
 }
 
 #[test]
 fn parse_link_with_title() -> Result<()> {
     let input = r#"[Link](https://example.com "Title text")"#;
-
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    let link = &ast.elements[0].children.iter()
-        .find(|c| matches!(c.element, Element::Link));
-
-    assert!(link.is_some());
-    let link = link.unwrap();
-    assert_eq!(link.get_attribute("title"), Some("Title text"));
-
-    Ok(())
+    let linked = with_string_attr(with_string_attr(link(input, input, "Link", "https://example.com"), "title", "Title text"), "protocol", "https");
+    check(input, expected(input, vec![paragraph(input, input, vec![linked])]))
 }
 
 #[test]
 fn parse_autolink() -> Result<()> {
     let input = "<https://example.com>\n";
-
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    let link = ast.elements[0].children.iter()
-        .find(|c| matches!(c.element, Element::Link));
-
-    assert!(link.is_some());
-    let link = link.unwrap();
-    assert_eq!(link.get_attribute("url"), Some("https://example.com"));
-
-    Ok(())
+    let linked = with_string_attr(link(input, "<https://example.com>", "https://example.com", "https://example.com"), "protocol", "https");
+    check(input, expected(input, vec![paragraph(input, "<https://example.com>", vec![linked])]))
 }
 
 // --------------------------------------------------------------------------
@@ -190,40 +118,16 @@ fn parse_autolink() -> Result<()> {
 #[test]
 fn parse_image() -> Result<()> {
     let input = "![Alt text](image.png)\n";
-
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    let img = ast.elements[0].children.iter()
-        .find(|c| matches!(c.element, Element::Image));
-
-    assert!(img.is_some());
-    let img = img.unwrap();
-    assert_eq!(img.get_attribute("path"), Some("image.png"));
-
-    Ok(())
+    let image = with_string_attr(node(input, "![Alt text](image.png)", Element::Image, vec![text(input, "Alt text")]), "path", "image.png");
+    check(input, expected(input, vec![paragraph(input, "![Alt text](image.png)", vec![image])]))
 }
 
 #[test]
 fn parse_image_with_title() -> Result<()> {
-    let input = r#"![Alt text](image.png "Image title")"#;
-
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    let img = ast.elements[0].children.iter()
-        .find(|c| matches!(c.element, Element::Image));
-
-    assert!(img.is_some());
-    let img = img.unwrap();
-    assert_eq!(img.positional_attributes.len(), 1);
-    assert_eq!(img.positional_attributes[0].as_str(), "Image title");
-
-    Ok(())
+    let input = "![Alt text](image.png \"Image title\")";
+    let mut image = with_string_attr(node(input, input, Element::Image, vec![text(input, "Alt text")]), "path", "image.png");
+    image.positional_attributes.push(AttributeValue::String("Image title".into()));
+    check(input, expected(input, vec![paragraph(input, input, vec![image])]))
 }
 
 // --------------------------------------------------------------------------
@@ -233,96 +137,45 @@ fn parse_image_with_title() -> Result<()> {
 #[test]
 fn parse_bold() -> Result<()> {
     let input = "This is **bold** text.\n";
-
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    let strong = ast.elements[0].children.iter()
-        .find(|c| matches!(c.element, Element::Styled) && c.get_attribute("style") == Some("strong"));
-
-    assert!(strong.is_some());
-
-    Ok(())
+    check(input, expected(input, vec![paragraph(input, "This is **bold** text.", vec![
+        text(input, "This is "), styled(input, "**bold**", "strong", vec![text(input, "bold")]), text(input, " text."),
+    ])]))
 }
 
 #[test]
 fn parse_italic() -> Result<()> {
     let input = "This is *italic* text.\n";
-
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    let em = ast.elements[0].children.iter()
-        .find(|c| matches!(c.element, Element::Styled) && c.get_attribute("style") == Some("em"));
-
-    assert!(em.is_some());
-
-    Ok(())
+    check(input, expected(input, vec![paragraph(input, "This is *italic* text.", vec![
+        text(input, "This is "), styled(input, "*italic*", "em", vec![text(input, "italic")]), text(input, " text."),
+    ])]))
 }
 
 #[test]
 fn parse_inline_code() -> Result<()> {
     let input = "This has `inline code` in it.\n";
-
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    let code = ast.elements[0].children.iter()
-        .find(|c| matches!(c.element, Element::Styled) && c.get_attribute("style") == Some("monospaced"));
-
-    assert!(code.is_some());
-    let code = code.unwrap();
-    assert_eq!(code.get_attribute("content"), Some("inline code"));
-
-    Ok(())
+    check(input, expected(input, vec![paragraph(input, "This has `inline code` in it.", vec![
+        text(input, "This has "), with_string_attr(styled(input, "`inline code`", "monospaced", vec![]), "content", "inline code"), text(input, " in it."),
+    ])]))
 }
 
 #[test]
 fn parse_strikethrough() -> Result<()> {
     let input = "This is ~~strikethrough~~ text.\n";
-
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    let strike = ast.elements[0].children.iter()
-        .find(|c| matches!(c.element, Element::Styled) && c.get_attribute("style") == Some("strikethrough"));
-
-    assert!(strike.is_some());
-
-    Ok(())
+    check(input, expected(input, vec![paragraph(input, "This is ~~strikethrough~~ text.", vec![
+        text(input, "This is "), styled(input, "~~strikethrough~~", "strikethrough", vec![text(input, "strikethrough")]), text(input, " text."),
+    ])]))
 }
 
 #[test]
 fn parse_combined_formatting() -> Result<()> {
     let input = "This has **bold** and *italic* and `code` together.\n";
-
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    assert_eq!(ast.elements[0].element, Element::Paragraph);
-
-    let has_bold = ast.elements[0].children.iter()
-        .any(|c| matches!(c.element, Element::Styled) && c.get_attribute("style") == Some("strong"));
-    let has_italic = ast.elements[0].children.iter()
-        .any(|c| matches!(c.element, Element::Styled) && c.get_attribute("style") == Some("em"));
-    let has_code = ast.elements[0].children.iter()
-        .any(|c| matches!(c.element, Element::Styled) && c.get_attribute("style") == Some("monospaced"));
-
-    assert!(has_bold);
-    assert!(has_italic);
-    assert!(has_code);
-
-    Ok(())
+    check(input, expected(input, vec![paragraph(input, "This has **bold** and *italic* and `code` together.", vec![
+        text(input, "This has "), styled(input, "**bold**", "strong", vec![text(input, "bold")]),
+        text(input, " and "), styled(input, "*italic*", "em", vec![text(input, "italic")]),
+        at(input, input.find(" and `code`").unwrap(), " and ", Element::Text, vec![]),
+        with_string_attr(styled(input, "`code`", "monospaced", vec![]), "content", "code"),
+        text(input, " together."),
+    ])]))
 }
 
 // --------------------------------------------------------------------------
@@ -336,22 +189,8 @@ code here
 more code
 ```
 "#;
-
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    assert_eq!(ast.elements.len(), 1);
-    assert_eq!(
-        ast.elements[0].element,
-        Element::TypedBlock {
-            kind: BlockType::Listing
-        }
-    );
-    assert_eq!(ast.elements[0].get_attribute("content"), Some("code here\nmore code\n"));
-
-    Ok(())
+    let block = with_string_attr(node(input, &input[..input.len() - 1], Element::TypedBlock { kind: BlockType::Listing }, vec![]), "content", "code here\nmore code\n");
+    check(input, expected(input, vec![block]))
 }
 
 #[test]
@@ -362,24 +201,10 @@ fn main() {
 }
 ```
 "#;
-
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    assert_eq!(ast.elements.len(), 1);
-    assert_eq!(
-        ast.elements[0].element,
-        Element::TypedBlock {
-            kind: BlockType::Listing
-        }
-    );
-    assert_eq!(ast.elements[0].positional_attributes.len(), 2);
-    assert_eq!(ast.elements[0].positional_attributes[0].as_str(), "source");
-    assert_eq!(ast.elements[0].positional_attributes[1].as_str(), "rust");
-
-    Ok(())
+    let mut block = with_string_attr(node(input, &input[..input.len() - 1], Element::TypedBlock { kind: BlockType::Listing }, vec![]),
+        "content", "fn main() {\n    println!(\"Hello\");\n}\n");
+    block.positional_attributes = vec![AttributeValue::String("source".into()), AttributeValue::String("rust".into())];
+    check(input, expected(input, vec![block]))
 }
 
 #[test]
@@ -392,17 +217,9 @@ fn parse_indented_code_block() -> Result<()> {
 Back to normal.
 "#;
 
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    let code_block = ast.elements.iter()
-        .find(|e| matches!(e.element, Element::TypedBlock { kind: BlockType::Listing }));
-
-    assert!(code_block.is_some());
-
-    Ok(())
+    let code = with_string_attr(node(input, "indented code\n    more code\n", Element::TypedBlock { kind: BlockType::Listing }, vec![]),
+        "content", "indented code\nmore code\n");
+    check(input, expected(input, vec![plain(input, "Normal paragraph."), code, plain(input, "Back to normal.")]))
 }
 
 // --------------------------------------------------------------------------
@@ -415,21 +232,11 @@ fn parse_bullet_list() -> Result<()> {
 - Item 2
 - Item 3
 "#;
-
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    assert_eq!(ast.elements.len(), 1);
-    assert_eq!(ast.elements[0].element, Element::List(ListType::Bullet));
-    assert_eq!(ast.elements[0].children.len(), 3);
-
-    for child in &ast.elements[0].children {
-        assert!(matches!(child.element, Element::ListItem(_)));
-    }
-
-    Ok(())
+    check(input, expected(input, vec![node(input, input, Element::List(ListType::Bullet), vec![
+        list_item(input, "- Item 1\n", vec![text(input, "Item 1")]),
+        list_item(input, "- Item 2\n", vec![text(input, "Item 2")]),
+        list_item(input, "- Item 3\n", vec![text(input, "Item 3")]),
+    ])]))
 }
 
 #[test]
@@ -438,17 +245,11 @@ fn parse_numbered_list() -> Result<()> {
 2. Second item
 3. Third item
 "#;
-
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    assert_eq!(ast.elements.len(), 1);
-    assert_eq!(ast.elements[0].element, Element::List(ListType::Number));
-    assert_eq!(ast.elements[0].children.len(), 3);
-
-    Ok(())
+    check(input, expected(input, vec![node(input, input, Element::List(ListType::Number), vec![
+        list_item(input, "1. First item\n", vec![text(input, "First item")]),
+        list_item(input, "2. Second item\n", vec![text(input, "Second item")]),
+        list_item(input, "3. Third item\n", vec![text(input, "Third item")]),
+    ])]))
 }
 
 #[test]
@@ -460,22 +261,19 @@ fn parse_nested_list() -> Result<()> {
   - Nested 2.1
 "#;
 
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    assert_eq!(ast.elements.len(), 1);
-    assert_eq!(ast.elements[0].element, Element::List(ListType::Bullet));
-
-    // First item should have a nested list
-    let first_item = &ast.elements[0].children[0];
-    let has_nested_list = first_item.children.iter()
-        .any(|c| matches!(c.element, Element::List(ListType::Bullet)));
-
-    assert!(has_nested_list);
-
-    Ok(())
+    check(input, expected(input, vec![node(input, input, Element::List(ListType::Bullet), vec![
+        list_item(input, "- Item 1\n  - Nested 1.1\n  - Nested 1.2\n", vec![
+            text(input, "Item 1"), node(input, "  - Nested 1.1\n  - Nested 1.2\n", Element::List(ListType::Bullet), vec![
+                list_item(input, "  - Nested 1.1\n", vec![text(input, "Nested 1.1")]),
+                list_item(input, "  - Nested 1.2\n", vec![text(input, "Nested 1.2")]),
+            ]),
+        ]),
+        list_item(input, "- Item 2\n  - Nested 2.1\n", vec![
+            text(input, "Item 2"), node(input, "  - Nested 2.1\n", Element::List(ListType::Bullet), vec![
+                list_item(input, "  - Nested 2.1\n", vec![text(input, "Nested 2.1")]),
+            ]),
+        ]),
+    ])]))
 }
 
 #[test]
@@ -486,15 +284,15 @@ fn parse_mixed_list() -> Result<()> {
 - Another bullet
 "#;
 
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    assert_eq!(ast.elements.len(), 1);
-    assert_eq!(ast.elements[0].element, Element::List(ListType::Bullet));
-
-    Ok(())
+    check(input, expected(input, vec![node(input, input, Element::List(ListType::Bullet), vec![
+        list_item(input, "- Bullet item\n  1. Numbered sub-item\n  2. Another numbered\n", vec![
+            text(input, "Bullet item"), node(input, "  1. Numbered sub-item\n  2. Another numbered\n", Element::List(ListType::Number), vec![
+                list_item(input, "  1. Numbered sub-item\n", vec![text(input, "Numbered sub-item")]),
+                list_item(input, "  2. Another numbered\n", vec![text(input, "Another numbered")]),
+            ]),
+        ]),
+        list_item(input, "- Another bullet\n", vec![text(input, "Another bullet")]),
+    ])]))
 }
 
 #[test]
@@ -503,24 +301,11 @@ fn parse_task_list() -> Result<()> {
 - [ ] Incomplete task
 - [x] Another completed
 "#;
-
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    assert_eq!(ast.elements.len(), 1);
-    assert_eq!(ast.elements[0].element, Element::List(ListType::Bullet));
-
-    // Check first item is checked
-    let first_item = &ast.elements[0].children[0];
-    assert_eq!(first_item.get_attribute("checked"), Some("true"));
-
-    // Check second item is unchecked
-    let second_item = &ast.elements[0].children[1];
-    assert_eq!(second_item.get_attribute("checked"), Some("false"));
-
-    Ok(())
+    check(input, expected(input, vec![node(input, input, Element::List(ListType::Bullet), vec![
+        with_string_attr(list_item(input, "- [x] Completed task\n", vec![text(input, "Completed task")]), "checked", "true"),
+        with_string_attr(list_item(input, "- [ ] Incomplete task\n", vec![text(input, "Incomplete task")]), "checked", "false"),
+        with_string_attr(list_item(input, "- [x] Another completed\n", vec![text(input, "Another completed")]), "checked", "true"),
+    ])]))
 }
 
 // --------------------------------------------------------------------------
@@ -532,21 +317,13 @@ fn parse_blockquote() -> Result<()> {
     let input = r#"> This is a quote.
 > It spans multiple lines.
 "#;
-
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    assert_eq!(ast.elements.len(), 1);
-    assert_eq!(
-        ast.elements[0].element,
-        Element::TypedBlock {
-            kind: BlockType::Quote
-        }
-    );
-
-    Ok(())
+    let quote = node(input, input, Element::TypedBlock { kind: BlockType::Quote }, vec![
+        paragraph(input, "This is a quote.\n> It spans multiple lines.", vec![
+            text(input, "This is a quote."), node(input, "\n", Element::Text, vec![]),
+            text(input, "It spans multiple lines."),
+        ]),
+    ]);
+    check(input, expected(input, vec![quote]))
 }
 
 #[test]
@@ -655,20 +432,10 @@ fn parse_horizontal_rule() -> Result<()> {
 
 After rule
 "#;
-
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    let rule = ast.elements.iter()
-        .find(|e| matches!(e.element, Element::ExternalContent));
-
-    assert!(rule.is_some());
-    let rule = rule.unwrap();
-    assert_eq!(rule.get_attribute("type"), Some("horizontal-rule"));
-
-    Ok(())
+    check(input, expected(input, vec![
+        plain(input, "Before rule"), with_attr(node(input, "---\n", Element::ExternalContent, vec![]), "type", "horizontal-rule"),
+        plain(input, "After rule"),
+    ]))
 }
 
 #[test]
@@ -679,19 +446,11 @@ fn parse_horizontal_rule_variants() -> Result<()> {
 
 ___
 "#;
-
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    let rules: Vec<_> = ast.elements.iter()
-        .filter(|e| matches!(e.element, Element::ExternalContent))
-        .collect();
-
-    assert_eq!(rules.len(), 3);
-
-    Ok(())
+    check(input, expected(input, vec![
+        with_attr(node(input, "---\n", Element::ExternalContent, vec![]), "type", "horizontal-rule"),
+        with_attr(node(input, "***\n", Element::ExternalContent, vec![]), "type", "horizontal-rule"),
+        with_attr(node(input, "___\n", Element::ExternalContent, vec![]), "type", "horizontal-rule"),
+    ]))
 }
 
 // --------------------------------------------------------------------------
@@ -700,20 +459,12 @@ ___
 
 #[test]
 fn parse_inline_html() -> Result<()> {
-    let input = r#"This has <em>HTML</em> inline.
-"#;
-
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    let html = ast.elements[0].children.iter()
-        .find(|c| matches!(c.element, Element::TypedBlock { kind: BlockType::Passtrough }));
-
-    assert!(html.is_some());
-
-    Ok(())
+    let input = "This has <em>HTML</em> inline.\n";
+    check(input, expected(input, vec![paragraph(input, "This has <em>HTML</em> inline.", vec![
+        text(input, "This has "), with_string_attr(node(input, "<em>", Element::TypedBlock { kind: BlockType::Passtrough }, vec![]), "content", "<em>"),
+        text(input, "HTML"), with_string_attr(node(input, "</em>", Element::TypedBlock { kind: BlockType::Passtrough }, vec![]), "content", "</em>"),
+        text(input, " inline."),
+    ])]))
 }
 
 #[test]
@@ -779,39 +530,45 @@ And a numbered list:
 Final paragraph.
 "#;
 
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    // Document should have multiple elements
-    assert!(ast.elements.len() > 10);
-
-    // Should have titles
-    let titles: Vec<_> = ast.elements.iter()
-        .filter(|e| matches!(e.element, Element::Title { .. }))
-        .collect();
-    assert_eq!(titles.len(), 3);
-
-    // Should have code block
-    let code_blocks: Vec<_> = ast.elements.iter()
-        .filter(|e| matches!(e.element, Element::TypedBlock { kind: BlockType::Listing }))
-        .collect();
-    assert!(code_blocks.len() >= 1);
-
-    // Should have lists
-    let lists: Vec<_> = ast.elements.iter()
-        .filter(|e| matches!(e.element, Element::List(_)))
-        .collect();
-    assert!(lists.len() >= 2);
-
-    // Should have blockquote
-    let quotes: Vec<_> = ast.elements.iter()
-        .filter(|e| matches!(e.element, Element::TypedBlock { kind: BlockType::Quote }))
-        .collect();
-    assert_eq!(quotes.len(), 1);
-
-    Ok(())
+    let intro = paragraph(input, "This is an introduction paragraph with **bold** and *italic* text.", vec![
+        text(input, "This is an introduction paragraph with "), styled(input, "**bold**", "strong", vec![text(input, "bold")]),
+        text(input, " and "), styled(input, "*italic*", "em", vec![text(input, "italic")]), text(input, " text."),
+    ]);
+    let section = paragraph(input, "Here's a [link](https://example.com) and some `inline code`.", vec![
+        text(input, "Here's a "), with_string_attr(link(input, "[link](https://example.com)", "link", "https://example.com"), "protocol", "https"),
+        text(input, " and some "), with_string_attr(styled(input, "`inline code`", "monospaced", vec![]), "content", "inline code"),
+        at(input, input.find("`inline code`.").unwrap() + "`inline code`".len(), ".", Element::Text, vec![]),
+    ]);
+    let mut code = with_string_attr(node(input, "```rust\nfn main() {\n    println!(\"Hello, world!\");\n}\n```", Element::TypedBlock { kind: BlockType::Listing }, vec![]),
+        "content", "fn main() {\n    println!(\"Hello, world!\");\n}\n");
+    code.positional_attributes = vec![AttributeValue::String("source".into()), AttributeValue::String("rust".into())];
+    check(input, expected(input, vec![
+        node(input, "# Document Title\n", Element::Title { level: 1 }, vec![text(input, "Document Title")]), intro,
+        node(input, "## Section 1\n", Element::Title { level: 2 }, vec![text(input, "Section 1")]), section, code,
+        node(input, "## Section 2\n", Element::Title { level: 2 }, vec![text(input, "Section 2")]),
+        plain(input, "A bullet list:"),
+        node(input, "- Item 1\n- Item 2\n  - Nested item\n- Item 3\n\n", Element::List(ListType::Bullet), vec![
+            list_item(input, "- Item 1\n", vec![text(input, "Item 1")]),
+            list_item(input, "- Item 2\n  - Nested item\n", vec![text(input, "Item 2"),
+                node(input, "  - Nested item\n", Element::List(ListType::Bullet), vec![list_item(input, "  - Nested item\n", vec![text(input, "Nested item")])])]),
+            list_item(input, "- Item 3\n", vec![text(input, "Item 3")]),
+        ]),
+        plain(input, "And a numbered list:"),
+        node(input, "1. First\n2. Second\n3. Third\n\n", Element::List(ListType::Number), vec![
+            list_item(input, "1. First\n", vec![text(input, "First")]),
+            list_item(input, "2. Second\n", vec![text(input, "Second")]),
+            list_item(input, "3. Third\n", vec![text(input, "Third")]),
+        ]),
+        node(input, "> A blockquote with multiple lines.\n> This is the second line.\n", Element::TypedBlock { kind: BlockType::Quote }, vec![
+            paragraph(input, "A blockquote with multiple lines.\n> This is the second line.", vec![
+                text(input, "A blockquote with multiple lines."),
+                at(input, input.find("A blockquote with multiple lines.\n").unwrap() + "A blockquote with multiple lines.".len(), "\n", Element::Text, vec![]),
+                text(input, "This is the second line."),
+            ]),
+        ]),
+        with_attr(node(input, "---\n", Element::ExternalContent, vec![]), "type", "horizontal-rule"),
+        plain(input, "Final paragraph."),
+    ]))
 }
 
 // --------------------------------------------------------------------------
@@ -820,18 +577,12 @@ Final paragraph.
 
 #[test]
 fn parse_escaped_characters() -> Result<()> {
-    let input = r#"This has \*escaped\* asterisks and \[brackets\].
-"#;
-
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    // Should parse without treating escaped chars as formatting
-    assert_eq!(ast.elements.len(), 1);
-
-    Ok(())
+    let input = "This has \\*escaped\\* asterisks and \\[brackets\\].\n";
+    check(input, expected(input, vec![paragraph(input, "This has \\*escaped\\* asterisks and \\[brackets\\].", vec![
+        text(input, "This has "), text(input, "*escaped"),
+        at(input, input.find("\\* asterisks").unwrap() + 1, "* asterisks and ", Element::Text, vec![]),
+        text(input, "[brackets"), text(input, "]."),
+    ])]))
 }
 
 #[test]
@@ -841,20 +592,11 @@ fn parse_reference_links() -> Result<()> {
 [ref]: https://example.com "Title"
 "#;
 
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    // Should resolve reference link
-    let link = ast.elements[0].children.iter()
-        .find(|c| matches!(c.element, Element::Link));
-
-    assert!(link.is_some());
-    let link = link.unwrap();
-    assert_eq!(link.get_attribute("url"), Some("https://example.com"));
-
-    Ok(())
+    let linked = with_string_attr(with_string_attr(link(input, "[reference link][ref]", "reference link", "https://example.com"), "title", "Title"), "protocol", "https");
+    check(input, expected(input, vec![paragraph(input, "This is a [reference link][ref].", vec![
+        text(input, "This is a "), linked,
+        at(input, input.find("[reference link][ref].").unwrap() + "[reference link][ref]".len(), ".", Element::Text, vec![]),
+    ])]))
 }
 
 #[test]
@@ -863,17 +605,14 @@ fn parse_footnotes() -> Result<()> {
 
 [^1]: This is the footnote text.
 "#;
-
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    // Footnotes are supported by pulldown-cmark with ENABLE_FOOTNOTES
-    // The exact AST structure depends on implementation details
-    assert!(ast.elements.len() >= 1);
-
-    Ok(())
+    // Footnote references are not represented by the reader; definitions use a generic tag.
+    let definition = node(input, "[^1]: This is the footnote text.\n", Element::Text, vec![
+        plain(input, "This is the footnote text."),
+    ]);
+    check(input, expected(input, vec![
+        paragraph(input, "This has a footnote[^1].", vec![text(input, "This has a footnote"), text(input, ".")]),
+        definition,
+    ]))
 }
 
 #[test]
@@ -884,17 +623,11 @@ fn parse_empty_lines_in_lists() -> Result<()> {
 
 - Item 3
 "#;
-
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    // Empty lines create loose list (items wrapped in paragraphs)
-    assert_eq!(ast.elements.len(), 1);
-    assert_eq!(ast.elements[0].element, Element::List(ListType::Bullet));
-
-    Ok(())
+    check(input, expected(input, vec![node(input, input, Element::List(ListType::Bullet), vec![
+        list_item(input, "- Item 1\n", vec![plain(input, "Item 1")]),
+        list_item(input, "- Item 2\n", vec![plain(input, "Item 2")]),
+        list_item(input, "- Item 3\n", vec![plain(input, "Item 3")]),
+    ])]))
 }
 
 #[test]
@@ -908,15 +641,12 @@ fn parse_code_in_list() -> Result<()> {
 - Another item
 "#;
 
-    let reader = MarkdownReader::new();
-    let opts = options::Opts::parse_from(vec![""].into_iter());
-    let mut env = util::Env::Cache(util::Cache::new());
-    let ast = reader.parse(input, &opts, &mut env)?;
-
-    assert_eq!(ast.elements.len(), 1);
-    assert_eq!(ast.elements[0].element, Element::List(ListType::Bullet));
-
-    Ok(())
+    let mut code = with_string_attr(node(input, "```rust\n  fn test() {}\n  ```", Element::TypedBlock { kind: BlockType::Listing }, vec![]), "content", "fn test() {}\n");
+    code.positional_attributes = vec![AttributeValue::String("source".into()), AttributeValue::String("rust".into())];
+    check(input, expected(input, vec![node(input, input, Element::List(ListType::Bullet), vec![
+        list_item(input, "- Item with code:\n\n  ```rust\n  fn test() {}\n  ```\n", vec![plain(input, "Item with code:"), code]),
+        list_item(input, "- Another item\n", vec![plain(input, "Another item")]),
+    ])]))
 }
 
 // --------------------------------------------------------------------------
